@@ -1,12 +1,18 @@
 package inngest.kotlin.app
 
+import com.beust.klaxon.Json
+
 // IDEA: Use data classes
 data class FunctionOptions(
         val id: String,
         val name: String,
 )
 
-typealias FunctionTrigger = Map<String, Any>
+data class FunctionTrigger(
+        @Json(serializeNull = false) val event: String? = null,
+        @Json(serializeNull = false) val `if`: String? = null,
+        @Json(serializeNull = false) val cron: String? = null,
+)
 
 typealias Context = Map<String, Any>
 
@@ -55,6 +61,8 @@ class InngestFunction(
         val trigger: FunctionTrigger,
         val handler: (event: Event, events: List<Event>, step: Step, ctx: Context) -> kotlin.Any?
 ) {
+    // TODO - Validate options and trigger
+
     fun call(event: Event, events: List<Event>, state: MemoizedState, ctx: Context): StepResult {
         val step = Step(state)
         try {

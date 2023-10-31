@@ -14,7 +14,7 @@ package inngest.kotlin.app
 
 val myFunction = InngestFunction(
         FunctionOptions(id = "fn-id-slug", name = "My function!"),
-        mapOf("event" to "user.signup")
+        FunctionTrigger(event = "user.signup"),
     ) { event, _, step, _ ->
       var x = 10
 

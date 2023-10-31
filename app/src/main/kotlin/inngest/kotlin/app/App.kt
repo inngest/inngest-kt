@@ -71,7 +71,7 @@ fun Application.module() {
 val fn =
         InngestFunction(
                 FunctionOptions(id = "fn-id-slug", name = "My function!"),
-                mapOf("event" to "user.signup")
+                FunctionTrigger(event = "user.signup"),
                 // NOTE - Should we just make the args always the events array so that there isn't a
                 // required blank _ arg?
                 ) { event, _, step, _ ->
