@@ -2,7 +2,7 @@
 
 ## 🚧 Currently in Alpha! Not production ready 🚧
 
-An Inngest SDK for Kotlin with Java interoperability.
+An [Inngest](https://www.inngest.com) SDK for Kotlin with Java interoperability.
 
 ## Defining a function
 
@@ -10,7 +10,9 @@ An Inngest SDK for Kotlin with Java interoperability.
   <summary>Kotlin</summary>
 
 ```kotlin
-package inngest.kotlin.app
+import io.inngest.InngestFunction
+import io.inngest.FunctionOptions
+import io.inngest.FunctionTrigger
 
 val myFunction = InngestFunction(
         FunctionOptions(id = "fn-id-slug", name = "My function!"),
@@ -40,4 +42,10 @@ val myFunction = InngestFunction(
 
 ## Contributing [WIP]
 
-To build this in development, set up Java, Kotlin and Gradle locally and run `gradle run`.
+To build this in development, set up Java, Kotlin and Gradle locally and run the test server:
+
+```
+gradle run inngest-test-server:run
+```
+
+This runs a `ktor` web server to test the SDK against the dev server.

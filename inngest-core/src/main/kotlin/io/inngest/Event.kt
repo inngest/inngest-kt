@@ -1,4 +1,4 @@
-package inngest.kotlin.app
+package io.inngest
 
 data class Event(
         val name: String,

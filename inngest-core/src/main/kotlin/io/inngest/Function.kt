@@ -1,4 +1,4 @@
-package inngest.kotlin.app
+package io.inngest
 
 import com.beust.klaxon.Json
 
@@ -76,7 +76,8 @@ class InngestFunction(
                     statusCode = ResultStatusCode.FunctionComplete
             )
         } catch (e: StepInterruptException) {
-            // NOTE - Currently this error could be caught in the user's own function that wraps a
+            // NOTE - Currently this error could be caught in the user's own function
+            // that wraps a
             // step.run() - how can we prevent that or warn?
             return StepResult(
                     data = e.data,

@@ -10,5 +10,6 @@ plugins {
     id("org.gradle.toolchains.foojay-resolver-convention") version "0.7.0"
 }
 
-rootProject.name = "inngest-kotlin-app"
-include("app")
+rootProject.name = "inngest-sdk"
+
+include("inngest-core", "inngest-test-server")

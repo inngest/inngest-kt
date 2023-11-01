@@ -1,28 +1,9 @@
-package inngest.kotlin.app
+package io.inngest.testserver
 
-// fun main() {
-
-//     println("start")
-
-//     // This fakes out the executor generator loop
-//     // val result = fn.call(event = evt, state = state)
-//     // var newState = HashMap(state)
-//     // newState.put(result.id, result.data)
-
-//     // println(newState)
-
-//     // println("===== NEXT EXECUTION =====")
-//     // val result2 = fn.call(event = evt, state = newState)
-//     // println("result2 " + result2)
-
-//     println("===== COMM =====")
-//     val comm = CommHandler(functions = hashMapOf("fn-id-slug" to fn))
-
-//     val response = comm.callFunction("fn-id-slug")
-
-//     println("response: " + response)
-// }
-
+import io.inngest.CommHandler
+import io.inngest.FunctionOptions
+import io.inngest.FunctionTrigger
+import io.inngest.InngestFunction
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.engine.*
