@@ -34,7 +34,7 @@ java { toolchain { languageVersion.set(JavaLanguageVersion.of(20)) } }
 
 application {
     // Define the main class for the application.
-    mainClass.set("io.inngest.testserver.AppKt")
+    mainClass.set("com.inngest.testserver.AppKt")
 }
 
 tasks.named<Test>("test") {

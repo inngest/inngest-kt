@@ -1,9 +1,9 @@
-package io.inngest.testserver
+package com.inngest.testserver
 
-import io.inngest.CommHandler
-import io.inngest.FunctionOptions
-import io.inngest.FunctionTrigger
-import io.inngest.InngestFunction
+import com.inngest.CommHandler
+import com.inngest.FunctionOptions
+import com.inngest.FunctionTrigger
+import com.inngest.InngestFunction
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.engine.*
@@ -13,7 +13,6 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import com.fasterxml.jackson.annotation.JsonProperty
 import java.time.Duration
-import java.time.Period
 
 data class IngestData(val message: String)
 

@@ -1,4 +1,4 @@
-package io.inngest
+package com.inngest
 
 data class Event(
     val name: String,

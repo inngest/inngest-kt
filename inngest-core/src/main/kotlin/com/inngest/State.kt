@@ -1,10 +1,7 @@
-package io.inngest
+package com.inngest
 
-import com.beust.klaxon.JsonObject
-import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.JsonNode
-import java.io.StringReader
 import java.security.MessageDigest
 
 

@@ -1,8 +1,8 @@
 # Inngest Kotlin SDK
 
-## 🚧 Currently in Alpha! Not production ready 🚧
+### 🚧 In development 🚧
 
-An [Inngest](https://www.inngest.com) SDK for Kotlin with Java interoperability.
+[Inngest](https://www.inngest.com) SDK for Kotlin with Java interoperability.
 
 ## Defining a function
 
@@ -10,27 +10,33 @@ An [Inngest](https://www.inngest.com) SDK for Kotlin with Java interoperability.
   <summary>Kotlin</summary>
 
 ```kotlin
-import io.inngest.InngestFunction
-import io.inngest.FunctionOptions
-import io.inngest.FunctionTrigger
+import com.inngest.InngestFunction
+import com.inngest.FunctionOptions
+import com.inngest.FunctionTrigger
 
 val myFunction = InngestFunction(
-        FunctionOptions(id = "fn-id-slug", name = "My function!"),
-        FunctionTrigger(event = "user.signup"),
-    ) { event, _, step, _ ->
-      var x = 10
+    FunctionOptions(
+        id = "fn-id-slug",
+        name = "My function!",
+        triggers = arrayOf(FunctionTrigger(event = "user.signup")),
+    ),
+) { ctx, step ->
+    val x = 10
 
-      var res: Int =
-              step.run("step-1") { ->
-                  x + 10
-              }
-      var add: Int =
-              step.run("step-abc") {
-                  res + 100
-              }
-      step.run("last-step") { res * add }
-      hashMapOf("message" to "success")
-  }
+    val res =
+        step.run<Int>("add-ten") { ->
+            x + 10
+        }
+    val add: Int =
+        step.run("multiply-by-100") {
+            res * 100
+        }
+    step.sleep("wait-one-minute", Duration.ofSeconds(60))
+
+    step.run("last-step") { res * add }
+
+    hashMapOf("message" to "success")
+}
 ```
 
 </details>
