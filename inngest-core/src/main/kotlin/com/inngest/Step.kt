@@ -1,47 +1,6 @@
-package io.inngest
+package com.inngest
 
-import com.beust.klaxon.JsonObject
-import com.beust.klaxon.Klaxon
-import com.beust.klaxon.TypeAdapter
-import com.beust.klaxon.TypeFor
-import java.security.MessageDigest
 import java.time.Duration
-import kotlin.reflect.KClass
-
-class MemoizedStepResult(
-    val data: Any?,
-    val error: SerializedError?,
-) {
-    fun isError(): Boolean {
-        return error != null;
-    }
-}
-
-//@TypeFor(field = "data", adapter = MemoAdapter::class)
-open class Memo()
-data class MemoizedStep(
-    val data: Any,
-) : Memo()
-
-data class MemoizedStepError(
-    val error: SerializedError,
-) : Memo()
-
-data class SerializedError(
-    val name: String,
-    val message: String,
-    val stack: String?
-)
-
-//class MemoAdapter : TypeAdapter<Memo> {
-//    override fun classFor(data: Any): KClass<out Memo> = when (data) {
-//        null ->
-//        "rectangle" -> MemoizedStep::class
-//        "circle" -> MemoizedStepError::class
-//        else -> throw IllegalArgumentException("Unknown type: $data")
-//    }
-//}
-
 
 typealias MemoizedRecord = HashMap<String, Any>
 typealias MemoizedState = HashMap<String, MemoizedRecord>
