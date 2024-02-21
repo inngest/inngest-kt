@@ -1,4 +1,4 @@
-package io.inngest
+package com.inngest
 
 import com.beust.klaxon.Json
 
