@@ -33,6 +33,7 @@ enum class ResultStatusCode(val code: Int, val message: String) {
     Error(500, "Function Error"),
 }
 
+
 abstract class StepOp(
     // The hashed ID of a step
     open val id: String = "",
@@ -116,6 +117,7 @@ open class InngestFunction(
         } catch (e: StepInterruptSleepException) {
             return StepOptions(
                 opts = hashMapOf("duration" to e.data),
+
                 id = e.hashedId,
                 name = e.id,
                 op = OpCode.Sleep,

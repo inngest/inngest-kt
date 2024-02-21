@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.JsonNode
 import java.io.StringReader
 import java.security.MessageDigest
 
+
 class StateNotFound() : Throwable("State not found for id")
 
 class State(val payloadJson: String) {
