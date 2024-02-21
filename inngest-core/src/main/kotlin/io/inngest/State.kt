@@ -7,6 +7,8 @@ import com.fasterxml.jackson.databind.JsonNode
 import java.io.StringReader
 import java.security.MessageDigest
 
+class StateNotFound() : Throwable("State not found for id")
+
 class State(val payloadJson: String) {
 
     fun getHashFromId(id: String): String {
@@ -23,16 +25,15 @@ class State(val payloadJson: String) {
     inline fun <reified T> getState(hashedId: String): T? {
         val mapper = ObjectMapper()
         val node: JsonNode = mapper.readTree(payloadJson)
-        val stepResult = node.path("steps").get(hashedId) ?: return null
+        val stepResult = node.path("steps").get(hashedId) ?: throw StateNotFound()
         if (stepResult.has("data")) {
             val dataNode = stepResult.get("data")
             return mapper.treeToValue(dataNode, T::class.java);
-        }
-        if (stepResult.has("error")) {
+        } else if (stepResult.has("error")) {
             // TODO - Parse the error and throw it
             return null
         }
-        // NOTE - Should we throw error for unable to parse state?
+        // NOTE - Sleep steps will be stored as null
         return null;
     }
 

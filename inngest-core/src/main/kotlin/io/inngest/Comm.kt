@@ -76,10 +76,10 @@ class CommHandler(val functions: HashMap<String, InngestFunction>) {
                     requestBody,
                 )
             var body: Any? = null
-            if (result.statusCode == ResultStatusCode.StepComplete) {
+            if (result.statusCode == ResultStatusCode.StepComplete || result is StepOptions) {
                 body = listOf(result)
             }
-            if (result.statusCode == ResultStatusCode.FunctionComplete) {
+            if (result is StepResult && result.statusCode == ResultStatusCode.FunctionComplete) {
                 body = result.data
             }
             return CommResponse(
