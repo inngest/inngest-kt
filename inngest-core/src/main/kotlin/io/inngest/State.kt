@@ -35,6 +35,7 @@ class State(val payloadJson: String) {
             return null
         }
         // NOTE - Sleep steps will be stored as null
+        // TODO - Check the state is actually null
         return null;
     }
 

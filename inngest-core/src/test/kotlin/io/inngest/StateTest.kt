@@ -3,7 +3,7 @@ package io.inngest
 import com.fasterxml.jackson.annotation.JsonProperty
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertNull
+import kotlin.test.assertFailsWith
 import kotlin.test.assertNotNull
 
 data class DummyClass(
@@ -33,8 +33,9 @@ internal class StateTest {
         """.trimIndent()
         val state = State(json)
         val hashedId = state.getHashFromId("something-not-in-state")
-        val stepState = state.getState<DummyClass>(hashedId)
-        assertNull(stepState, "missing state values should return null")
+        assertFailsWith<StateNotFound> {
+            state.getState<DummyClass>(hashedId)
+        }
     }
 
     @Test
