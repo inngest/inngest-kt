@@ -52,7 +52,7 @@ class StepStateTypeMismatchException(val id: String, val hashedId: String) : Thr
 open class StepInterruptException(val id: String, val hashedId: String, open val data: kotlin.Any?) :
     Throwable("Interrupt $id") {}
 
-class StepInterruptSleepException(id: String, hashedId: String, override val data: Duration) :
+class StepInterruptSleepException(id: String, hashedId: String, override val data: String) :
     StepInterruptException(id, hashedId, data) {}
 
 // TODO: Add name, stack, etc. if poss
@@ -69,16 +69,20 @@ class Step(val state: State) {
     inline fun <reified T> run(id: String, fn: () -> T): T {
         val hashedId = state.getHashFromId(id)
 
-        // TODO - Catch Step Error here and throw it when error parsing is added to getState
-        val stepResult = state.getState<T>(hashedId)
-
-        // If there is no existing result, run the action
-        if (stepResult == null) {
+        try {
+            val stepResult = state.getState<T>(hashedId)
+            if (stepResult is T) {
+                return stepResult
+            }
+        } catch (e: StateNotFound) {
+            // If there is no existing result, run the lambda
             val data = fn()
             throw StepInterruptException(id, hashedId, data)
         }
+        // TODO - Catch Step Error here and throw it when error parsing is added to getState
 
-        return stepResult;
+        // TODO - handle invalidly stored step types properly
+        throw Exception("step state incorrect type")
     }
 
     /**
@@ -89,15 +93,18 @@ class Step(val state: State) {
      */
     fun sleep(id: String, duration: Duration) {
         val hashedId = state.getHashFromId(id)
-        // TODO - Use the proper value for the return type here
-        val stepResult = state.getState<Any>(hashedId)
 
-        if (stepResult != null) {
-            println("State found for id $id - SKIPPING")
-            return;
+        try {
+            // If this doesn't throw an error, it's null and that's what is expected
+            val stepState = state.getState<Any?>(hashedId)
+            if (stepState != null) {
+                throw Exception("step state expected sleep, got something else")
+            }
+            return
+        } catch (e: StateNotFound) {
+            val durationInSeconds = duration.getSeconds()
+            throw StepInterruptSleepException(id, hashedId, "${durationInSeconds}s")
         }
-
-        throw StepInterruptSleepException(id, hashedId, duration)
     }
 }
 

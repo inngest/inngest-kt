@@ -12,6 +12,8 @@ import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import com.fasterxml.jackson.annotation.JsonProperty
+import java.time.Duration
+import java.time.Period
 
 data class IngestData(val message: String)
 
@@ -83,11 +85,13 @@ val fn =
 
         println("res" + res)
         val add: Int =
-            step.run<Int>("step-abc") {
-//                println("-> running step 2 :) " + res?.sum)
-//                res?.sum.plus(100)
-                99
+            step.run<Int>("add-one-hundred") {
+                println("-> running step 2 :) " + res?.sum)
+                res.sum + 100
             }
+
+        step.sleep("wait-one-sec", Duration.ofSeconds(2))
+
         step.run("last-step") { res.sum.times(add) ?: 0 }
         hashMapOf("message" to "cool - this finished running")
     }

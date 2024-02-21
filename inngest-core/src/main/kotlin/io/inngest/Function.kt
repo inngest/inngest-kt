@@ -33,14 +33,30 @@ enum class ResultStatusCode(val code: Int, val message: String) {
     Error(500, "Function Error"),
 }
 
-data class StepResult(
-    val data: Any? = null,
+
+abstract class StepOp(
     // The hashed ID of a step
-    val id: String = "",
-    val name: String = "",
-    val op: OpCode,
-    val statusCode: ResultStatusCode,
+    open val id: String = "",
+    open val name: String = "",
+    open val op: OpCode,
+    open val statusCode: ResultStatusCode,
 )
+
+data class StepResult(
+    override val id: String,
+    override val name: String,
+    override val op: OpCode,
+    override val statusCode: ResultStatusCode,
+    val data: Any? = null,
+) : StepOp(id, name, op, statusCode)
+
+data class StepOptions(
+    override val id: String,
+    override val name: String,
+    override val op: OpCode,
+    override val statusCode: ResultStatusCode,
+    val opts: HashMap<String, String>? = null,
+) : StepOp(id, name, op, statusCode)
 
 data class StepConfig(
     val id: String,
@@ -82,7 +98,7 @@ open class InngestFunction(
 ) {
     // TODO - Validate options and trigger
 
-    fun call(ctx: FunctionContext, requestBody: String): StepResult {
+    fun call(ctx: FunctionContext, requestBody: String): StepOp {
         val state = State(requestBody)
         val step = Step(state)
 
@@ -92,15 +108,16 @@ open class InngestFunction(
         try {
             val data = handler(ctx, step)
             return StepResult(
-                data,
+                data = data,
                 id = "",
                 name = "",
                 op = OpCode.StepRun,
                 statusCode = ResultStatusCode.FunctionComplete
             )
         } catch (e: StepInterruptSleepException) {
-            return StepResult(
-                data = e.data,
+            return StepOptions(
+                opts = hashMapOf("duration" to e.data),
+
                 id = e.hashedId,
                 name = e.id,
                 op = OpCode.Sleep,
