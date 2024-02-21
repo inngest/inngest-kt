@@ -69,4 +69,5 @@ gradle-app.setting
 
 # End of https://www.toptal.com/developers/gitignore/api/gradle,java,kotlin
 
+/.direnv
 .DS_Store
