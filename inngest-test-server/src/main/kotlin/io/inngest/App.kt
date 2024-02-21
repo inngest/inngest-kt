@@ -11,6 +11,7 @@ import io.ktor.server.netty.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import com.fasterxml.jackson.annotation.JsonProperty
 
 data class IngestData(val message: String)
 
@@ -25,11 +26,11 @@ fun Application.module() {
                 try {
                     val response = comm.callFunction(functionId, body)
                     call.response.header(
-                            HttpHeaders.ContentType,
-                            ContentType.Application.Json.toString()
+                        HttpHeaders.ContentType,
+                        ContentType.Application.Json.toString()
                     )
                     call.response.status(
-                            HttpStatusCode(response.statusCode.code, response.statusCode.message)
+                        HttpStatusCode(response.statusCode.code, response.statusCode.message)
                     )
                     println("response: " + response.body)
                     call.respond(response.body)
@@ -49,37 +50,55 @@ fun Application.module() {
     }
 }
 
+data class Result(
+    @JsonProperty("sum")
+    val sum: Int,
+)
+
 val fn =
-        InngestFunction(
-                FunctionOptions(id = "fn-id-slug", name = "My function!"),
-                FunctionTrigger(event = "user.signup"),
-                // NOTE - Should we just make the args always the events array so that there isn't a
-                // required blank _ arg?
-                ) { event, _, step, _ ->
-            var x = 10
+    InngestFunction(
+        FunctionOptions(
+            id = "fn-id-slug",
+            name = "My function!",
+            triggers = arrayOf(FunctionTrigger(event = "user.signup"))
+        ),
+    ) { ctx, step ->
+        val x = 10
 
-            println("-> handler called")
+        println("-> handler called " + ctx.event.name)
 
-            var res: Int =
-                    step.run("step-1") { ->
-                        println("-> running step 1!! " + x)
-                        // throw Exception("An error!")
-                        x + 10
-                    }
-            var add: Int =
-                    step.run("step-abc") {
-                        println("-> running step 2 :) " + res)
-                        res + 100
-                    }
-            step.run("last-step") { res * add }
-            hashMapOf("message" to "cool - this finished running")
-        }
+        val y =
+            step.run<Int>("add-ten") { ->
+                x + 10
+            }
+
+        val res =
+            step.run<Result>("cast-to-type-add-ten") { ->
+                println("-> running step 1!! " + x)
+                // throw Exception("An error!")
+                Result(
+                    sum = y + 10,
+                )
+            }
+
+        println("res" + res)
+        val add: Int =
+            step.run<Int>("step-abc") {
+//                println("-> running step 2 :) " + res?.sum)
+//                res?.sum.plus(100)
+                99
+            }
+        step.run("last-step") { res.sum.times(add) ?: 0 }
+        hashMapOf("message" to "cool - this finished running")
+    }
 
 val comm = CommHandler(functions = hashMapOf("fn-id-slug" to fn))
 
 fun main() {
 
-    // println("config: " + comm.getFunctionConfigs())
+    var port = 8080
 
-    embeddedServer(Netty, port = 8080, module = Application::module).start(wait = true)
+    println("Test server running on port " + port)
+
+    embeddedServer(Netty, port, module = Application::module).start(wait = true)
 }
