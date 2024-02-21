@@ -1,0 +1,27 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  # TODO: build?
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      # TODO: install kotlin and ktlint
+
+      # - name: Lint
+      #   run: make lint
+
+
+  # note: do we need a separate fmt?
+  # ktlint seems to cover what we need
+  # fmt:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v3

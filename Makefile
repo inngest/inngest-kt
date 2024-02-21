@@ -5,3 +5,7 @@ dev:
 .PHONY: test
 test:
 	gradle test inngest-core:test
+
+.PHONY: lint
+lint:
+	ktlint --color
