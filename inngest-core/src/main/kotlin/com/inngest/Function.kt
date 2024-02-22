@@ -159,9 +159,10 @@ open class InngestFunction(
                             id = "step",
                             name = "step",
                             retries =
+                                // TODO - Pull from FunctionOptions
                                 mapOf(
                                     "attempts" to 3,
-                                ), // TODO - Pull from FunctionOptions
+                                ),
                             runtime =
                                 hashMapOf(
                                     "type" to "http",
