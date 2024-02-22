@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  test:
+    name: Test (Java ${{ matrix.java }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        java: ["8", "11", "17", "21"]
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ matrix.java }}
+          java-package: jdk
+          cache: gradle
+
+      - name: Test
+        run: make test
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: ktlint
+        uses: ScaCap/action-ktlint@master
+        with:
+          fail_on_error: true
+          github_token: ${{ secrets.github_token }}
+          reporter: github-pr-review
+
+  # TODO: run integration tests
+  # integration:

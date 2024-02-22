@@ -45,16 +45,20 @@ data class CommError(
 )
 
 class CommHandler(val functions: HashMap<String, InngestFunction>) {
-
     private fun getHeaders(): Map<String, String> {
         return mapOf(
             "Content-Type" to "application/json",
-            "x-inngest-sdk" to "inngest-kt:v0.0.1", // TODO - Get this from the build
-            "x-inngest-framework" to "ktor", // TODO - Pull this from options
+            // TODO - Get this from the build
+            "x-inngest-sdk" to "inngest-kt:v0.0.1",
+            // TODO - Pull this from options
+            "x-inngest-framework" to "ktor",
         )
     }
 
-    fun callFunction(functionId: String, requestBody: String): CommResponse {
+    fun callFunction(
+        functionId: String,
+        requestBody: String,
+    ): CommResponse {
         println(requestBody)
 
         try {
@@ -62,13 +66,14 @@ class CommHandler(val functions: HashMap<String, InngestFunction>) {
             // TODO - check that payload is not null and throw error
             val function = functions[functionId] ?: throw Exception("Function not found")
 
-            val ctx = FunctionContext(
-                event = payload!!.event,
-                events = payload.events,
-                runId = payload.ctx.runId,
-                fnId = payload.ctx.fnId,
-                attempt = payload.ctx.attempt,
-            )
+            val ctx =
+                FunctionContext(
+                    event = payload!!.event,
+                    events = payload.events,
+                    runId = payload.ctx.runId,
+                    fnId = payload.ctx.fnId,
+                    attempt = payload.ctx.attempt,
+                )
 
             val result =
                 function.call(
@@ -85,19 +90,19 @@ class CommHandler(val functions: HashMap<String, InngestFunction>) {
             return CommResponse(
                 body = Klaxon().toJsonString(body),
                 statusCode = result.statusCode,
-                headers = getHeaders()
+                headers = getHeaders(),
             )
         } catch (e: Exception) {
             val err =
                 CommError(
                     name = e.toString(),
                     message = e.message,
-                    stack = e.stackTrace.joinToString(separator = "\n")
+                    stack = e.stackTrace.joinToString(separator = "\n"),
                 )
             return CommResponse(
                 body = Klaxon().toJsonString(err),
                 statusCode = ResultStatusCode.Error,
-                headers = getHeaders()
+                headers = getHeaders(),
             )
         }
     }
@@ -118,7 +123,7 @@ class CommHandler(val functions: HashMap<String, InngestFunction>) {
                 sdk = "kotlin",
                 url = "http://localhost:8080/api/inngest",
                 v = "0.0.1",
-                functions = getFunctionConfigs()
+                functions = getFunctionConfigs(),
             )
         val requestBody = Klaxon().toJsonString(requestPayload)
 
@@ -145,7 +150,7 @@ class CommHandler(val functions: HashMap<String, InngestFunction>) {
                 sdk = "kotlin",
                 url = "http://localhost:8080/api/inngest",
                 v = "0.0.1",
-                functions = getFunctionConfigs()
+                functions = getFunctionConfigs(),
             )
         return Klaxon().toJsonString(requestPayload)
     }

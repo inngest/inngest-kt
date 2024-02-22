@@ -8,21 +8,21 @@ import kotlin.test.assertNotNull
 
 data class DummyClass(
     @JsonProperty("sum")
-    val sum: Int
+    val sum: Int,
 )
 
 internal class StateTest {
-
     @Test
-    fun testGetHashedId(): Unit {
+    fun testGetHashedId() {
         val state = State("{}")
         val hashedId = state.getHashFromId("add-ten")
         assertEquals("a5b1e458ee54a384e87fff1486df43e9b3e0c4b8", hashedId)
     }
 
     @Test
-    fun testNoExistingState(): Unit {
-        val json = """
+    fun testNoExistingState() {
+        val json =
+            """
             {
                 "steps": {
                     "a5b1e458ee54a384e87fff1486df43e9b3e0c4b8": {
@@ -30,7 +30,7 @@ internal class StateTest {
                     }
                 }
             }
-        """.trimIndent()
+            """.trimIndent()
         val state = State(json)
         val hashedId = state.getHashFromId("something-not-in-state")
         assertFailsWith<StateNotFound> {
@@ -39,8 +39,9 @@ internal class StateTest {
     }
 
     @Test
-    fun testGetIntState(): Unit {
-        val json = """
+    fun testGetIntState() {
+        val json =
+            """
             {
                 "steps": {
                     "a5b1e458ee54a384e87fff1486df43e9b3e0c4b8": {
@@ -48,7 +49,7 @@ internal class StateTest {
                     }
                 }
             }
-        """.trimIndent()
+            """.trimIndent()
         val state = State(json)
         val hashedId = state.getHashFromId("add-ten")
         val stepState = state.getState<Int>(hashedId)
@@ -56,8 +57,9 @@ internal class StateTest {
     }
 
     @Test
-    fun testGetStateAsClass(): Unit {
-        val json = """
+    fun testGetStateAsClass() {
+        val json =
+            """
             {
                 "steps": {
                     "a5b1e458ee54a384e87fff1486df43e9b3e0c4b8": {
@@ -65,7 +67,7 @@ internal class StateTest {
                     }
                 }
             }
-        """.trimIndent()
+            """.trimIndent()
         val state = State(json)
         val hashedId = state.getHashFromId("add-ten")
         val stepState = state.getState<DummyClass>(hashedId)
@@ -73,4 +75,3 @@ internal class StateTest {
         assertEquals(30, stepState.sum, "state value should be correctly deserialized")
     }
 }
-
