@@ -7,8 +7,8 @@ on:
   pull_request:
 
 jobs:
-  # TODO: build?
   test:
+    name: Test (Java ${{ matrix.java }})
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -30,15 +30,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      # TODO: install kotlin and ktlint
-
-      # - name: Lint
-      #   run: make lint
-
-
-  # note: do we need a separate fmt?
-  # ktlint seems to cover what we need
-  # fmt:
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - uses: actions/checkout@v3
+      - name: ktlint
+        uses: ScaCap/action-ktlint@master
+        with:
+          github_token: ${{ secrets.github_token }}
+          reporter: github-pr-review
