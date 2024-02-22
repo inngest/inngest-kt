@@ -20,4 +20,7 @@ tasks.named<Test>("test") {
 }
 
 // TODO - Move this to share conventions gradle file
-java { toolchain { languageVersion.set(JavaLanguageVersion.of(20)) } }
+java {
+    toolchain { languageVersion.set(JavaLanguageVersion.of(17)) }
+    sourceCompatibility = JavaVersion.VERSION_17
+}
