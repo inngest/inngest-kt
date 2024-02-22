@@ -159,8 +159,8 @@ open class InngestFunction(
                             id = "step",
                             name = "step",
                             retries =
-                                // TODO - Pull from FunctionOptions
                                 mapOf(
+                                    // TODO - Pull from FunctionOptions
                                     "attempts" to 3,
                                 ),
                             runtime =

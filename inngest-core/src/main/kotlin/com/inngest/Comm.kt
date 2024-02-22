@@ -48,8 +48,10 @@ class CommHandler(val functions: HashMap<String, InngestFunction>) {
     private fun getHeaders(): Map<String, String> {
         return mapOf(
             "Content-Type" to "application/json",
-            "x-inngest-sdk" to "inngest-kt:v0.0.1", // TODO - Get this from the build
-            "x-inngest-framework" to "ktor", // TODO - Pull this from options
+            // TODO - Get this from the build
+            "x-inngest-sdk" to "inngest-kt:v0.0.1",
+            // TODO - Pull this from options
+            "x-inngest-framework" to "ktor",
         )
     }
 
