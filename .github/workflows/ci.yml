@@ -37,3 +37,6 @@ jobs:
           fail_on_error: true
           github_token: ${{ secrets.github_token }}
           reporter: github-pr-review
+
+  # TODO: run integration tests
+  # integration:
