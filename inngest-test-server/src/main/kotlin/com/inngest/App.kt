@@ -1,5 +1,6 @@
 package com.inngest.testserver
 
+import com.fasterxml.jackson.annotation.JsonProperty
 import com.inngest.CommHandler
 import com.inngest.FunctionOptions
 import com.inngest.FunctionTrigger
@@ -11,7 +12,6 @@ import io.ktor.server.netty.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
-import com.fasterxml.jackson.annotation.JsonProperty
 import java.time.Duration
 
 data class IngestData(val message: String)
@@ -28,10 +28,10 @@ fun Application.module() {
                     val response = comm.callFunction(functionId, body)
                     call.response.header(
                         HttpHeaders.ContentType,
-                        ContentType.Application.Json.toString()
+                        ContentType.Application.Json.toString(),
                     )
                     call.response.status(
-                        HttpStatusCode(response.statusCode.code, response.statusCode.message)
+                        HttpStatusCode(response.statusCode.code, response.statusCode.message),
                     )
                     println("response: " + response.body)
                     call.respond(response.body)
@@ -61,7 +61,7 @@ val fn =
         FunctionOptions(
             id = "fn-id-slug",
             name = "My function!",
-            triggers = arrayOf(FunctionTrigger(event = "user.signup"))
+            triggers = arrayOf(FunctionTrigger(event = "user.signup")),
         ),
     ) { ctx, step ->
         val x = 10
@@ -98,7 +98,6 @@ val fn =
 val comm = CommHandler(functions = hashMapOf("fn-id-slug" to fn))
 
 fun main() {
-
     var port = 8080
 
     println("Test server running on port " + port)

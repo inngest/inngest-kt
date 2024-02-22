@@ -9,3 +9,7 @@ test:
 .PHONY: lint
 lint:
 	ktlint --color
+
+.PHONY: fmt
+fmt:
+	ktlint -F

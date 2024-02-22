@@ -6,26 +6,29 @@ typealias MemoizedRecord = HashMap<String, Any>
 typealias MemoizedState = HashMap<String, MemoizedRecord>
 
 class StepInvalidStateTypeException(val id: String, val hashedId: String) : Throwable("Step execution interrupted")
+
 class StepStateTypeMismatchException(val id: String, val hashedId: String) : Throwable("Step execution interrupted")
 
 open class StepInterruptException(val id: String, val hashedId: String, open val data: kotlin.Any?) :
-    Throwable("Interrupt $id") {}
+    Throwable("Interrupt $id")
 
 class StepInterruptSleepException(id: String, hashedId: String, override val data: String) :
-    StepInterruptException(id, hashedId, data) {}
+    StepInterruptException(id, hashedId, data)
 
 // TODO: Add name, stack, etc. if poss
 class StepError(message: String) : Exception(message)
 
 class Step(val state: State) {
-
     /**
      * Run a function
      *
      * @param id unique step id for memoization
      * @param fn the function to run
      */
-    inline fun <reified T> run(id: String, fn: () -> T): T {
+    inline fun <reified T> run(
+        id: String,
+        fn: () -> T,
+    ): T {
         val hashedId = state.getHashFromId(id)
 
         try {
@@ -50,7 +53,10 @@ class Step(val state: State) {
      * @param id unique step id for memoization
      * @param duration the duration of time to sleep for
      */
-    fun sleep(id: String, duration: Duration) {
+    fun sleep(
+        id: String,
+        duration: Duration,
+    ) {
         val hashedId = state.getHashFromId(id)
 
         try {
@@ -66,4 +72,3 @@ class Step(val state: State) {
         }
     }
 }
-

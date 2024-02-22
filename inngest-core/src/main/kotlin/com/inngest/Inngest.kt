@@ -1,16 +1,11 @@
 package com.inngest
 
-import com.beust.klaxon.Klaxon
-
-//import okhttp3.RequestBody.Companion.toRequestBody
-
+// import okhttp3.RequestBody.Companion.toRequestBody
 
 class Inngest {
-
     constructor(
         app_id: String,
-
-        ) {
+    ) {
         // TODO - Fetch INNGEST_EVENT_KEY env variable
     }
 

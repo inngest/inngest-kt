@@ -24,7 +24,6 @@ enum class OpCode {
     // FUTURE:
     WaitForEvent,
     StepNotFound,
-
 }
 
 enum class ResultStatusCode(val code: Int, val message: String) {
@@ -32,7 +31,6 @@ enum class ResultStatusCode(val code: Int, val message: String) {
     FunctionComplete(200, "Function Complete"),
     Error(500, "Function Error"),
 }
-
 
 abstract class StepOp(
     // The hashed ID of a step
@@ -69,7 +67,7 @@ data class FunctionConfig(
     val id: String,
     val name: String,
     val triggers: Array<FunctionTrigger>,
-    val steps: Map<String, StepConfig>
+    val steps: Map<String, StepConfig>,
 )
 
 /**
@@ -86,6 +84,7 @@ data class FunctionContext(
 )
 
 // TODO - Determine if we should merge config + trigger
+
 /**
  * A function that can be called by the Inngest system
  *
@@ -94,11 +93,14 @@ data class FunctionContext(
  */
 open class InngestFunction(
     val config: FunctionOptions,
-    val handler: (ctx: FunctionContext, step: Step) -> kotlin.Any?
+    val handler: (ctx: FunctionContext, step: Step) -> kotlin.Any?,
 ) {
     // TODO - Validate options and trigger
 
-    fun call(ctx: FunctionContext, requestBody: String): StepOp {
+    fun call(
+        ctx: FunctionContext,
+        requestBody: String,
+    ): StepOp {
         val state = State(requestBody)
         val step = Step(state)
 
@@ -112,16 +114,15 @@ open class InngestFunction(
                 id = "",
                 name = "",
                 op = OpCode.StepRun,
-                statusCode = ResultStatusCode.FunctionComplete
+                statusCode = ResultStatusCode.FunctionComplete,
             )
         } catch (e: StepInterruptSleepException) {
             return StepOptions(
                 opts = hashMapOf("duration" to e.data),
-
                 id = e.hashedId,
                 name = e.id,
                 op = OpCode.Sleep,
-                statusCode = ResultStatusCode.StepComplete
+                statusCode = ResultStatusCode.StepComplete,
             )
         } catch (e: StepInterruptException) {
             // NOTE - Currently this error could be caught in the user's own function
@@ -132,7 +133,7 @@ open class InngestFunction(
                 id = e.hashedId,
                 name = e.id,
                 op = OpCode.StepRun,
-                statusCode = ResultStatusCode.StepComplete
+                statusCode = ResultStatusCode.StepComplete,
             )
         } catch (e: StepInvalidStateTypeException) {
             // TODO - Handle this with the proper op code
@@ -141,7 +142,7 @@ open class InngestFunction(
                 id = e.hashedId,
                 name = e.id,
                 op = OpCode.StepStateFailed,
-                statusCode = ResultStatusCode.Error
+                statusCode = ResultStatusCode.Error,
             )
         }
     }
@@ -152,24 +153,24 @@ open class InngestFunction(
             name = config.name,
             triggers = config.triggers,
             steps =
-            mapOf(
-                "step" to
-                    StepConfig(
-                        id = "step",
-                        name = "step",
-                        retries =
-                        mapOf(
-                            "attempts" to 3
-                        ), // TODO - Pull from FunctionOptions
-                        runtime =
-                        hashMapOf(
-                            "type" to "http",
-                            // TODO - Create correct URL
-                            "url" to
-                                "http://localhost:8080/api/inngest?fnId=${config.id}&stepId=step"
-                        )
-                    )
-            )
+                mapOf(
+                    "step" to
+                        StepConfig(
+                            id = "step",
+                            name = "step",
+                            retries =
+                                mapOf(
+                                    "attempts" to 3,
+                                ), // TODO - Pull from FunctionOptions
+                            runtime =
+                                hashMapOf(
+                                    "type" to "http",
+                                    // TODO - Create correct URL
+                                    "url" to
+                                        "http://localhost:8080/api/inngest?fnId=${config.id}&stepId=step",
+                                ),
+                        ),
+                ),
         )
     }
 }
