@@ -9,6 +9,7 @@ dev-spring-boot:
 .PHONY: test
 test:
 	gradle test inngest-core:test
+	gradle inngest-spring-boot-demo:test
 
 .PHONY: lint
 lint:
