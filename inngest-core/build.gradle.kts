@@ -10,7 +10,10 @@ repositories {
 dependencies {
     implementation("com.beust:klaxon:5.5")
     implementation("com.fasterxml.jackson.core:jackson-core:2.16.1")
+
     implementation("com.fasterxml.jackson.core:jackson-databind:2.16.1")
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
+
     testImplementation(kotlin("test"))
 }
 
@@ -21,6 +24,5 @@ tasks.named<Test>("test") {
 
 // TODO - Move this to share conventions gradle file
 java {
-    toolchain { languageVersion.set(JavaLanguageVersion.of(17)) }
-    sourceCompatibility = JavaVersion.VERSION_17
+    toolchain { languageVersion.set(JavaLanguageVersion.of(8)) }
 }
