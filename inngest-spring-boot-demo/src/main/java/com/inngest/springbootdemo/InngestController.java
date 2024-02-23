@@ -1,4 +1,4 @@
-package com.inngest.springdemo;
+package com.inngest.springbootdemo;
 
 import com.inngest.CommResponse;
 import org.springframework.http.HttpHeaders;
@@ -20,14 +20,15 @@ public class InngestController {
 
     @GetMapping("/inngest")
     public ResponseEntity<String> index() {
-        String response = InngestTemporarySingleton.getInstance().introspect();
+        String response = InngestSingleton.getInstance().introspect();
 
         return ResponseEntity.ok().headers(commonHeaders).body(response);
     }
 
     @PutMapping("/inngest")
-    public String put() {
-        return InngestTemporarySingleton.getInstance().register();
+    public ResponseEntity<String> put() {
+        String response = InngestSingleton.getInstance().register();
+        return ResponseEntity.ok().headers(commonHeaders).body(response);
     }
 
     @PostMapping(value = "/inngest", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -36,7 +37,7 @@ public class InngestController {
         @RequestBody String body
     ) {
         try {
-            CommResponse response = InngestTemporarySingleton.getInstance().callFunction(functionId, body);
+            CommResponse response = InngestSingleton.getInstance().callFunction(functionId, body);
 
             return ResponseEntity.status(response.getStatusCode().getCode()).headers(commonHeaders)
                 .body(response.getBody());

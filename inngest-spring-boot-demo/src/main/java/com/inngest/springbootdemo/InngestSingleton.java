@@ -1,12 +1,10 @@
-package com.inngest.springdemo;
+package com.inngest.springbootdemo;
 
 import com.inngest.*;
 import kotlin.jvm.functions.Function2;
 
 import java.time.Duration;
 import java.util.HashMap;
-import java.util.function.BiFunction;
-import java.util.function.Function;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -24,7 +22,9 @@ class Result {
     }
 }
 
-public class InngestTemporarySingleton {
+// NOTE: We probably don't need this singleton anymore
+// when revisiting the SDK's interface.
+public class InngestSingleton {
     private static CommHandler instance;
 
     public static synchronized CommHandler getInstance() {
