@@ -55,3 +55,10 @@ gradle run inngest-test-server:run
 ```
 
 This runs a `ktor` web server to test the SDK against the dev server.
+
+
+To run the `spring-boot` test server:
+
+```
+gradle run inngest-spring-boot-demo:bootRun
+```
