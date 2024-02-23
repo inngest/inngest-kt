@@ -1,0 +1,4 @@
+server:
+  port: 8080 # We probably want to change this to 8081 to avoid port conflicts
+             # but I kept it for now because of the hardcoded URL that are sent
+             # to the inngest dev-server.

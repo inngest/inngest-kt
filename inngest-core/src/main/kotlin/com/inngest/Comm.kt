@@ -2,10 +2,11 @@ package com.inngest
 
 import com.beust.klaxon.Json
 import com.beust.klaxon.Klaxon
-import java.net.URI
-import java.net.http.HttpClient
-import java.net.http.HttpRequest
-import java.net.http.HttpResponse
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.RequestBody.Companion.toRequestBody
+import java.io.IOException
 
 data class ExecutionRequestPayload(
     val ctx: ExecutionContext,
@@ -125,17 +126,30 @@ class CommHandler(val functions: HashMap<String, InngestFunction>) {
                 v = "0.0.1",
                 functions = getFunctionConfigs(),
             )
-        val requestBody = Klaxon().toJsonString(requestPayload)
+        val jsonRequestBody = Klaxon().toJsonString(requestPayload)
 
-        val client = HttpClient.newBuilder().build()
+        val client = OkHttpClient()
+
+        val jsonMediaType = "application/json".toMediaType()
+        val requestBody = jsonRequestBody.toRequestBody(jsonMediaType)
+
         // TODO - Add headers?
         val request =
-            HttpRequest.newBuilder()
-                .uri(URI.create(registrationUrl))
-                .POST(HttpRequest.BodyPublishers.ofString(requestBody))
+            Request.Builder()
+                .url(registrationUrl).addHeader("Content-Type", "application/json")
+                .post(requestBody)
                 .build()
-        val response = client.send(request, HttpResponse.BodyHandlers.ofString())
-        // TODO - Decode response and relay any message
+
+        client.newCall(request).execute().use { response ->
+            if (!response.isSuccessful) throw IOException("Unexpected code $response")
+
+            // TODO - Decode response and relay any message
+//            for ((name, value) in response.headers) {
+//                println("$name: $value")
+//            }
+//
+//            println(response.body!!.string())
+        }
 
         // TODO - Add headers to output
         val body: Map<String, Any?> = mapOf()
