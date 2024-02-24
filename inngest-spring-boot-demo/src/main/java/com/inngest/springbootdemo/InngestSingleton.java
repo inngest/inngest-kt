@@ -6,22 +6,6 @@ import kotlin.jvm.functions.Function2;
 import java.time.Duration;
 import java.util.HashMap;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-
-// TODO: Fix the serialization yielding an empty object in `Klaxon().toJsonString(body)`
-class Result {
-    @JsonProperty("sum")
-    private final int sum;
-
-    public Result(@JsonProperty("sum") int sum) {
-        this.sum = sum;
-    }
-
-    public int getSum() {
-        return sum;
-    }
-}
-
 // NOTE: We probably don't need this singleton anymore
 // when revisiting the SDK's interface.
 public class InngestSingleton {
@@ -33,7 +17,7 @@ public class InngestSingleton {
             FunctionTrigger[] triggers = {fnTrigger};
             FunctionOptions fnConfig = new FunctionOptions("fn-id-slug", "My function!", triggers);
 
-            Function2<FunctionContext, Step, Void> handler = (ctx, step) -> {
+            Function2<FunctionContext, Step, HashMap<String, String>> handler = (ctx, step) -> {
                 int x = 10;
 
                 System.out.println("-> handler called " + ctx.getEvent().getName());
@@ -47,15 +31,17 @@ public class InngestSingleton {
 
                 System.out.println("res" + res);
                 int add = step.run("add-one-hundred", () -> {
-                    System.out.println("-> running step 2 :) " + (res != null ? res.getSum() : ""));
-                    return (res != null ? res.getSum() : 0) + 100;
+                    System.out.println("-> running step 2 :) " + (res != null ? res.sum : ""));
+                    return (res != null ? res.sum : 0) + 100;
                 }, Integer.class);
 
                 step.sleep("wait-one-sec", Duration.ofSeconds(2));
 
-                step.run("last-step", () -> (res != null ? res.getSum() : 0) * add, Integer.class);
+                step.run("last-step", () -> (res != null ? res.sum : 0) * add, Integer.class);
 
-                return null;
+                return new HashMap<String, String>() {{
+                    put("message", "cool - this finished running");
+                }};
             };
             InngestFunction function = new InngestFunction(fnConfig, handler);
 
