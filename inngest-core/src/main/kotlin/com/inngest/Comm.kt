@@ -50,7 +50,7 @@ class CommHandler(val functions: HashMap<String, InngestFunction>) {
         return mapOf(
             "Content-Type" to "application/json",
             // TODO - Get this from the build
-            "x-inngest-sdk" to "inngest-kt:${Version().getVersion()}",
+            "x-inngest-sdk" to "inngest-kt:${Version.getVersion()}",
             // TODO - Pull this from options
             "x-inngest-framework" to "ktor",
         )
@@ -123,7 +123,7 @@ class CommHandler(val functions: HashMap<String, InngestFunction>) {
                 framework = "ktor",
                 sdk = "kotlin",
                 url = "http://localhost:8080/api/inngest",
-                v = Version().getVersion(),
+                v = Version.getVersion(),
                 functions = getFunctionConfigs(),
             )
         val jsonRequestBody = Klaxon().toJsonString(requestPayload)
@@ -163,7 +163,7 @@ class CommHandler(val functions: HashMap<String, InngestFunction>) {
                 framework = "ktor",
                 sdk = "kotlin",
                 url = "http://localhost:8080/api/inngest",
-                v = Version().getVersion(),
+                v = Version.getVersion(),
                 functions = getFunctionConfigs(),
             )
         return Klaxon().toJsonString(requestPayload)

@@ -31,6 +31,17 @@ sourceSets {
     }
 }
 
+tasks.jar {
+    manifest {
+        attributes(
+            mapOf(
+                "Implementation-Title" to project.name,
+                "Implementation-Version" to project.version,
+            ),
+        )
+    }
+}
+
 tasks.register("generateVersionProperties") {
     doLast {
         val propertiesFile = file("$generatedVersionDir/version.properties")
