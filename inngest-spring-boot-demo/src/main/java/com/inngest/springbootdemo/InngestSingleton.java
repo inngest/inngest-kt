@@ -1,6 +1,12 @@
 package com.inngest.springbootdemo;
 
-import com.inngest.*;
+import com.inngest.CommHandler;
+import com.inngest.FunctionOptions;
+import com.inngest.FunctionTrigger;
+import com.inngest.InngestFunction;
+import com.inngest.FunctionContext;
+import com.inngest.Step;
+import com.inngest.InngestEvent;
 import kotlin.jvm.functions.Function2;
 
 import java.time.Duration;

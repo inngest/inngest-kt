@@ -1,7 +1,11 @@
 package com.inngest.testserver
 
 import com.fasterxml.jackson.annotation.JsonProperty
-import com.inngest.*
+import com.inngest.CommHandler
+import com.inngest.FunctionOptions
+import com.inngest.FunctionTrigger
+import com.inngest.InngestEvent
+import com.inngest.InngestFunction
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.engine.*
@@ -53,7 +57,7 @@ data class Result(
     val sum: Int,
 )
 
-const val followUpEvent = "user.signup.completed"
+const val FOLLOW_UP_EVENT_NAME = "user.signup.completed"
 
 val fn =
     InngestFunction(
@@ -92,7 +96,7 @@ val fn =
 
         step.run("last-step") { res.sum.times(add) ?: 0 }
 
-        step.sendEvent("followup-event-id", InngestEvent(followUpEvent, data = hashMapOf("hello" to "world")))
+        step.sendEvent("followup-event-id", InngestEvent(FOLLOW_UP_EVENT_NAME, data = hashMapOf("hello" to "world")))
 
         hashMapOf("message" to "cool - this finished running")
     }
@@ -101,7 +105,7 @@ val fn2 =
         FunctionOptions(
             id = "fn-follow-up",
             name = "Follow up function!",
-            triggers = arrayOf(FunctionTrigger(event = followUpEvent)),
+            triggers = arrayOf(FunctionTrigger(event = FOLLOW_UP_EVENT_NAME)),
         ),
     ) { ctx, _ ->
         println("-> followup fn called $ctx.event.name")
