@@ -22,6 +22,14 @@ dependencies {
     testImplementation("org.springframework.boot:spring-boot-starter-test")
 }
 
+dependencyManagement {
+    imports {
+        mavenBom("org.springframework.boot:spring-boot-dependencies:2.7.18") {
+            bomProperty("kotlin.version", "1.9.10")
+        }
+    }
+}
+
 tasks.withType<Test> {
     useJUnitPlatform()
 }
