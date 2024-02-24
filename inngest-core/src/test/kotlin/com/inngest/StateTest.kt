@@ -34,7 +34,7 @@ internal class StateTest {
         val state = State(json)
         val hashedId = state.getHashFromId("something-not-in-state")
         assertFailsWith<StateNotFound> {
-            state.getState<DummyClass>(hashedId)
+            state.getState<Int>(hashedId)
         }
     }
 

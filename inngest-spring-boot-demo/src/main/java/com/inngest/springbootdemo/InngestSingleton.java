@@ -8,7 +8,7 @@ import java.util.HashMap;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-
+// TODO: Fix the serialization yielding an empty object in `Klaxon().toJsonString(body)`
 class Result {
     @JsonProperty("sum")
     private final int sum;
@@ -38,26 +38,22 @@ public class InngestSingleton {
 
                 System.out.println("-> handler called " + ctx.getEvent().getName());
 
-                // Steps types are problematic for now as it's not possible to called
-                // reified types from Java.
+                int y = step.run("add-ten", () -> x + 10, Integer.class);
 
-//                int y = step.run("add-ten", () -> x + 10);
+                Result res = step.run("cast-to-type-add-ten", () -> {
+                    System.out.println("-> running step 1!! " + x);
+                    return new Result(y + 10);
+                }, Result.class);
 
-//                Result res = step.run("cast-to-type-add-ten", () -> {
-//                    System.out.println("-> running step 1!! " + x);
-//                    // throw new Exception("An error!");
-//                    return new Result(y + 10);
-//                });
-
-//                System.out.println("res" + res);
-//                int add = step.run("add-one-hundred", () -> {
-//                    System.out.println("-> running step 2 :) " + (res != null ? res.getSum() : ""));
-//                    return (res != null ? res.getSum() : 0) + 100;
-//                });
+                System.out.println("res" + res);
+                int add = step.run("add-one-hundred", () -> {
+                    System.out.println("-> running step 2 :) " + (res != null ? res.getSum() : ""));
+                    return (res != null ? res.getSum() : 0) + 100;
+                }, Integer.class);
 
                 step.sleep("wait-one-sec", Duration.ofSeconds(2));
 
-//                step.run("last-step", () -> (res != null ? res.getSum() : 0) * add);
+                step.run("last-step", () -> (res != null ? res.getSum() : 0) * add, Integer.class);
 
                 return null;
             };

@@ -25,15 +25,14 @@ class Step(val state: State) {
      * @param id unique step id for memoization
      * @param fn the function to run
      */
-    inline fun <reified T> run(
-        id: String,
-        fn: () -> T,
-    ): T {
+    inline fun <reified T> run(id: String, noinline fn: () -> T): T = run(id, fn, T::class.java)
+
+    fun <T> run(id: String, fn: () -> T, type: Class<T>): T {
         val hashedId = state.getHashFromId(id)
 
         try {
-            val stepResult = state.getState<T>(hashedId)
-            if (stepResult is T) {
+            val stepResult = state.getState(hashedId, type)
+            if (stepResult != null) {
                 return stepResult
             }
         } catch (e: StateNotFound) {
