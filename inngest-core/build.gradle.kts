@@ -1,4 +1,5 @@
 description = "Inngest SDK"
+version = "0.0.1-SNAPSHOT"
 
 plugins { id("org.jetbrains.kotlin.jvm") version "1.9.10" }
 
@@ -15,6 +16,17 @@ dependencies {
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
 
     testImplementation(kotlin("test"))
+}
+
+tasks.jar {
+    manifest {
+        attributes(
+            mapOf(
+                "Implementation-Title" to project.name,
+                "Implementation-Version" to project.version,
+            ),
+        )
+    }
 }
 
 tasks.named<Test>("test") {
