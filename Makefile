@@ -1,6 +1,10 @@
 .PHONY: dev
 dev:
-	gradle run inngest-test-server:run
+	gradle inngest-test-server:run
+
+.PHONY: dev-spring-boot
+dev-spring-boot:
+	gradle inngest-spring-boot-demo:bootRun
 
 .PHONY: test
 test:
