@@ -1,4 +1,8 @@
+import java.io.FileOutputStream
+import java.util.Properties
+
 description = "Inngest SDK"
+version = "0.0.1-SNAPSHOT"
 
 plugins { id("org.jetbrains.kotlin.jvm") version "1.9.10" }
 
@@ -15,6 +19,31 @@ dependencies {
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
 
     testImplementation(kotlin("test"))
+}
+
+val generatedVersionDir = "$buildDir/generated-version"
+
+sourceSets {
+    main {
+        kotlin {
+            output.dir(generatedVersionDir)
+        }
+    }
+}
+
+tasks.register("generateVersionProperties") {
+    doLast {
+        val propertiesFile = file("$generatedVersionDir/version.properties")
+        propertiesFile.parentFile.mkdirs()
+        val properties = Properties()
+        properties.setProperty("version", "$version")
+        val out = FileOutputStream(propertiesFile)
+        properties.store(out, null)
+    }
+}
+
+tasks.named("processResources") {
+    dependsOn("generateVersionProperties")
 }
 
 tasks.named<Test>("test") {
