@@ -51,7 +51,7 @@ val myFunction = InngestFunction(
 To build this in development, set up Java, Kotlin and Gradle locally and run the test server:
 
 ```
-gradle run inngest-test-server:run
+gradle inngest-test-server:run
 ```
 
 This runs a `ktor` web server to test the SDK against the dev server.
@@ -60,5 +60,5 @@ This runs a `ktor` web server to test the SDK against the dev server.
 To run the `spring-boot` test server:
 
 ```
-gradle run inngest-spring-boot-demo:bootRun
+gradle inngest-spring-boot-demo:bootRun
 ```
