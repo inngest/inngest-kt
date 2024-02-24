@@ -71,3 +71,7 @@ gradle-app.setting
 
 /.direnv
 .DS_Store
+
+# LSP generated
+**/.settings/
+**/bin/
