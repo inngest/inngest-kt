@@ -33,4 +33,3 @@ dependencyManagement {
 tasks.withType<Test> {
     useJUnitPlatform()
 }
-

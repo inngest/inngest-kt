@@ -27,13 +27,19 @@ class Step(val state: State) {
      */
     inline fun <reified T> run(
         id: String,
+        noinline fn: () -> T,
+    ): T = run(id, fn, T::class.java)
+
+    fun <T> run(
+        id: String,
         fn: () -> T,
+        type: Class<T>,
     ): T {
         val hashedId = state.getHashFromId(id)
 
         try {
-            val stepResult = state.getState<T>(hashedId)
-            if (stepResult is T) {
+            val stepResult = state.getState(hashedId, type)
+            if (stepResult != null) {
                 return stepResult
             }
         } catch (e: StateNotFound) {
