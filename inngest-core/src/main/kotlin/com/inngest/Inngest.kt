@@ -3,10 +3,17 @@ package com.inngest
 import com.beust.klaxon.Klaxon
 import java.io.IOException
 
-class Inngest(val appId: String) {
-    // TODO - Fetch INNGEST_EVENT_KEY env variable on instantiation
-
+class Inngest(
+    val appId: String,
+    baseUrl: String? = "https://inn.gs",
+    eventKey: String? = null,
+    env: String? = null,
+) {
     val headers: RequestHeaders = Environment.inngestHeaders()
+    val eventKey = Environment.eventKey(eventKey)
+    val baseUrl = Environment.baseUrl(baseUrl)
+    val env = Environment.env(env)
+
     internal val httpClient = HttpClient(RequestConfig(headers))
 
     internal inline fun <reified T> send(
