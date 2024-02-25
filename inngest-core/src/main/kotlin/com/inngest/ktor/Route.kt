@@ -1,8 +1,6 @@
 package com.inngest.ktor
 
-import com.inngest.CommHandler
-import com.inngest.Inngest
-import com.inngest.InngestFunction
+import com.inngest.*
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.request.*
