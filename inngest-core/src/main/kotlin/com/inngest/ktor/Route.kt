@@ -16,7 +16,7 @@ fun Route.serve(
     fnList: List<InngestFunction>,
 ) {
     val fnMap = fnList.associateBy { it.id() }
-    val comm = CommHandler(functions = fnMap)
+    val comm = CommHandler(functions = fnMap, client)
 
     route(path) {
         get("") {
