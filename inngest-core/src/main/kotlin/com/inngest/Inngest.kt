@@ -7,9 +7,9 @@ class Inngest(val appId: String) {
     // TODO - Fetch INNGEST_EVENT_KEY env variable on instantiation
 
     val headers: RequestHeaders = Environment.inngestHeaders()
-    val httpClient = HttpClient(RequestConfig(headers))
+    internal val httpClient = HttpClient(RequestConfig(headers))
 
-    inline fun <reified T> send(
+    internal inline fun <reified T> send(
         url: String,
         payload: Any,
     ): T? {
@@ -25,7 +25,7 @@ class Inngest(val appId: String) {
         }
     }
 
-    inline fun <reified T> sendEvent(payload: Any): T? {
+    internal inline fun <reified T> sendEvent(payload: Any): T? {
         val eventKey = "test"
         return send("http://localhost:8288/e/$eventKey", payload)
     }

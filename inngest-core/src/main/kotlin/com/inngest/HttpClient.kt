@@ -13,7 +13,7 @@ data class RequestConfig(val headers: RequestHeaders? = null)
 
 val jsonMediaType = "application/json".toMediaType()
 
-class HttpClient(private val clientConfig: RequestConfig) {
+internal class HttpClient(private val clientConfig: RequestConfig) {
     private val client = OkHttpClient()
 
     fun <T> send(
