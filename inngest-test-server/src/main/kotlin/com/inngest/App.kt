@@ -54,7 +54,7 @@ fun Application.module() {
             call.respond(HttpStatusCode.OK, response)
         }
 
-        inngestRoutes("/test")
+        inngestRoutes("/test", inngest)
     }
 }
 
