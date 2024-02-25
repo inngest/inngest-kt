@@ -113,9 +113,11 @@ class Step(val state: State) {
 
         try {
             // If this doesn't throw an error, it's null and that's what is expected
+            // TODO - Get the event_ids that were sent and return it from this method
+            // event_ids are not in the data field but it's actually a separate one.
             val stepState = state.getState<Any?>(hashedId)
             if (stepState != null) {
-                throw Exception("step state expected sleep, got something else")
+                throw Exception("step state expected sendEvent, got something else")
             }
             return
         } catch (e: StateNotFound) {

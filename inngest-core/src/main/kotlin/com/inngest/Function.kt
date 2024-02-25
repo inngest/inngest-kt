@@ -19,7 +19,7 @@ data class FunctionTrigger(
 enum class OpCode {
     StepRun,
     Sleep,
-    StepStateFailed,
+    StepStateFailed, // TODO
     Step,
 
     // FUTURE:
