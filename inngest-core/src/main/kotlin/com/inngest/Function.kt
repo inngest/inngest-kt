@@ -112,10 +112,11 @@ open class InngestFunction(
 
     fun call(
         ctx: FunctionContext,
+        client: Inngest,
         requestBody: String,
     ): StepOp {
         val state = State(requestBody)
-        val step = Step(state)
+        val step = Step(state, client)
 
         // DEBUG
         println(state)

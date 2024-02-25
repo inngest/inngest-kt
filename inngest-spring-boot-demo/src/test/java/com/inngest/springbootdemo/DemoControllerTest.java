@@ -1,5 +1,6 @@
 package com.inngest.springbootdemo;
 
+import com.inngest.InngestHeaderKey;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -21,6 +22,7 @@ public class DemoControllerTest {
         mockMvc.perform(get("/api/inngest"))
             .andExpect(status().isOk())
             .andExpect(content().contentType("application/json"))
+            .andExpect(header().string(InngestHeaderKey.Framework.getValue(), "springboot"))
             .andExpect(jsonPath("$.appName").value("my-app"))
             .andExpect(jsonPath("$.sdk").value("kotlin"));
     }
