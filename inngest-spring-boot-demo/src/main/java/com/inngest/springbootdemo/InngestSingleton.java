@@ -40,8 +40,10 @@ public class InngestSingleton {
                     System.out.println("-> running step 1!! " + x);
                     return new Result(y + 10);
                 }, Result.class);
-
                 System.out.println("res" + res);
+
+                step.waitForEvent("wait-for-hello", "hello", "10m", "event.data.hello == async.data.hello");
+
                 int add = step.run("add-one-hundred", () -> {
                     System.out.println("-> running step 2 :) " + (res != null ? res.sum : ""));
                     return (res != null ? res.sum : 0) + 100;

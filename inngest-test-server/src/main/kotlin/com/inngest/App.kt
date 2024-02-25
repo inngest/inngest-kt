@@ -84,8 +84,10 @@ val fn =
                     sum = y + 10,
                 )
             }
-
         println("res" + res)
+
+        step.waitForEvent("wait-for-hello", "hello", "10m", "event.data.hello == async.data.hello")
+
         val add: Int =
             step.run<Int>("add-one-hundred") {
                 println("-> running step 2 :) " + res?.sum)
