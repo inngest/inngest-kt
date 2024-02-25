@@ -4,7 +4,7 @@ import io.ktor.server.application.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 
-fun Route.inngest(path: String) {
+fun Route.inngestRoutes(path: String) {
     route(path) {
         get("") {
             call.respondText("Get server status")

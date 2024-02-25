@@ -7,7 +7,7 @@ import com.inngest.FunctionTrigger
 import com.inngest.Inngest
 import com.inngest.InngestEvent
 import com.inngest.InngestFunction
-import com.inngest.routing.inngest
+import com.inngest.routing.inngestRoutes
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.engine.*
@@ -20,6 +20,8 @@ import java.time.Duration
 data class IngestData(val message: String)
 
 fun Application.module() {
+    var inngest = Inngest(app_id = "ktor-dev")
+
     routing {
         post("/api/inngest") {
             val functionId = call.request.queryParameters["fnId"]
@@ -52,7 +54,7 @@ fun Application.module() {
             call.respond(HttpStatusCode.OK, response)
         }
 
-        inngest("/test")
+        inngestRoutes("/test")
     }
 }
 
@@ -123,8 +125,6 @@ val comm = CommHandler(functions = hashMapOf("fn-id-slug" to fn, "fn-follow-up" 
 
 fun main() {
     var port = 8080
-
-    var inngest = Inngest(app_id = "ktor-dev")
 
     println("Test server running on port " + port)
 
