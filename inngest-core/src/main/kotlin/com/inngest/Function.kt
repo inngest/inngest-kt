@@ -20,6 +20,7 @@ enum class OpCode {
     StepRun,
     Sleep,
     StepStateFailed, // TODO
+    Step,
 
     // FUTURE:
     WaitForEvent,
@@ -91,6 +92,9 @@ data class FunctionContext(
  * @param config The options for the function
  * @param handler The function to be called when the function is triggered
  */
+
+data class SendEventPayload(val event_ids: Array<String>)
+
 open class InngestFunction(
     val config: FunctionOptions,
     val handler: (ctx: FunctionContext, step: Step) -> kotlin.Any?,
@@ -115,6 +119,14 @@ open class InngestFunction(
                 name = "",
                 op = OpCode.StepRun,
                 statusCode = ResultStatusCode.FunctionComplete,
+            )
+        } catch (e: StepInterruptSendEventException) {
+            return StepResult(
+                id = e.hashedId,
+                name = e.id,
+                op = OpCode.Step,
+                statusCode = ResultStatusCode.StepComplete,
+                data = SendEventPayload(e.eventIds),
             )
         } catch (e: StepInterruptSleepException) {
             return StepOptions(

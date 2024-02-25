@@ -5,6 +5,10 @@ import java.time.Duration
 typealias MemoizedRecord = HashMap<String, Any>
 typealias MemoizedState = HashMap<String, MemoizedRecord>
 
+data class InngestEvent(val name: String, val data: Any)
+
+data class SendEventsResponse(val ids: Array<String>)
+
 class StepInvalidStateTypeException(val id: String, val hashedId: String) : Throwable("Step execution interrupted")
 
 class StepStateTypeMismatchException(val id: String, val hashedId: String) : Throwable("Step execution interrupted")
@@ -14,6 +18,9 @@ open class StepInterruptException(val id: String, val hashedId: String, open val
 
 class StepInterruptSleepException(id: String, hashedId: String, override val data: String) :
     StepInterruptException(id, hashedId, data)
+
+class StepInterruptSendEventException(id: String, hashedId: String, val eventIds: Array<String>) :
+    StepInterruptException(id, hashedId, eventIds)
 
 // TODO: Add name, stack, etc. if poss
 class StepError(message: String) : Exception(message)
@@ -75,6 +82,47 @@ class Step(val state: State) {
         } catch (e: StateNotFound) {
             val durationInSeconds = duration.getSeconds()
             throw StepInterruptSleepException(id, hashedId, "${durationInSeconds}s")
+        }
+    }
+
+    /**
+     * Sends multiple event to Inngest
+     *
+     * @param id Unique step id for memoization.
+     * @param event An event payload object.
+     *
+     */
+
+    fun sendEvent(
+        id: String,
+        event: InngestEvent,
+    ) = sendEvent(id, arrayOf(event))
+
+    /**
+     * Sends a single event to Inngest
+     *
+     * @param id Unique step id for memoization.
+     * @param events An array of event payload objects.
+     *
+     */
+    fun sendEvent(
+        id: String,
+        events: Array<InngestEvent>,
+    ) {
+        val hashedId = state.getHashFromId(id)
+
+        try {
+            // If this doesn't throw an error, it's null and that's what is expected
+            // TODO - Get the event_ids that were sent and return it from this method
+            // event_ids are not in the data field but it's actually a separate one.
+            val stepState = state.getState<Any?>(hashedId)
+            if (stepState != null) {
+                throw Exception("step state expected sendEvent, got something else")
+            }
+            return
+        } catch (e: StateNotFound) {
+            val response = CommHandler.sendEvent<SendEventsResponse>(events)
+            throw StepInterruptSendEventException(id, hashedId, response!!.ids)
         }
     }
 }

@@ -45,6 +45,8 @@ data class CommError(
     val __serialized: Boolean = true,
 )
 
+val jsonMediaType = "application/json".toMediaType()
+
 class CommHandler(val functions: HashMap<String, InngestFunction>) {
     private fun getHeaders(): Map<String, String> {
         return mapOf(
@@ -114,6 +116,39 @@ class CommHandler(val functions: HashMap<String, InngestFunction>) {
         return configs
     }
 
+    companion object Client {
+        inline fun <reified T> sendEvent(payload: Any): T? {
+            val eventKey = "test"
+            return send("http://localhost:8288/e/$eventKey", payload)
+        }
+
+        inline fun <reified T> send(
+            url: String,
+            payload: Any,
+        ): T? {
+            val jsonRequestBody = Klaxon().toJsonString(payload)
+            val requestBody = jsonRequestBody.toRequestBody(jsonMediaType)
+
+            val client = OkHttpClient()
+
+            // TODO - Add missing headers
+            val request =
+                Request.Builder()
+                    .url(url)
+                    .post(requestBody)
+                    .build()
+
+            client.newCall(request).execute().use { response ->
+                // TODO: Handle error case
+                if (!response.isSuccessful) throw IOException("Unexpected code $response")
+                if (Unit::class.java.isAssignableFrom(T::class.java)) {
+                    return Unit as T
+                }
+                return Klaxon().parse<T>(response.body!!.charStream())
+            }
+        }
+    }
+
     fun register(): String {
         // TODO - This should detect the dev server or use base url
         val registrationUrl = "http://localhost:8288/fn/register"
@@ -126,30 +161,8 @@ class CommHandler(val functions: HashMap<String, InngestFunction>) {
                 v = Version.getVersion(),
                 functions = getFunctionConfigs(),
             )
-        val jsonRequestBody = Klaxon().toJsonString(requestPayload)
 
-        val client = OkHttpClient()
-
-        val jsonMediaType = "application/json".toMediaType()
-        val requestBody = jsonRequestBody.toRequestBody(jsonMediaType)
-
-        // TODO - Add headers?
-        val request =
-            Request.Builder()
-                .url(registrationUrl).addHeader("Content-Type", "application/json")
-                .post(requestBody)
-                .build()
-
-        client.newCall(request).execute().use { response ->
-            if (!response.isSuccessful) throw IOException("Unexpected code $response")
-
-            // TODO - Decode response and relay any message
-//            for ((name, value) in response.headers) {
-//                println("$name: $value")
-//            }
-//
-//            println(response.body!!.string())
-        }
+        send<Unit>(registrationUrl, requestPayload)
 
         // TODO - Add headers to output
         val body: Map<String, Any?> = mapOf()
