@@ -1,6 +1,7 @@
 package com.inngest
 
 import com.beust.klaxon.Json
+import java.util.function.BiFunction
 
 // IDEA: Use data classes
 data class FunctionOptions(
@@ -104,8 +105,13 @@ interface Function {
 // TODO: make this implement the Function interface
 open class InngestFunction(
     val config: FunctionOptions,
-    val handler: (ctx: FunctionContext, step: Step) -> kotlin.Any?,
+    val handler: (ctx: FunctionContext, step: Step) -> Any?,
 ) {
+    constructor(config: FunctionOptions, handler: BiFunction<FunctionContext, Step, out Any>, a: Int) : this(
+        config,
+        handler.toKotlin(),
+    )
+
     fun id() = config.id
 
     // TODO - Validate options and trigger

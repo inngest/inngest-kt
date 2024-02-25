@@ -3,13 +3,12 @@ package com.inngest.springbootdemo;
 
 import com.inngest.*;
 import com.inngest.springboot.InngestConfiguration;
-import kotlin.jvm.functions.Function2;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import java.util.LinkedHashMap;
 import java.time.Duration;
 import java.util.HashMap;
+import java.util.function.BiFunction;
 
 @Configuration
 public class DemoConfiguration extends InngestConfiguration {
@@ -21,7 +20,7 @@ public class DemoConfiguration extends InngestConfiguration {
         FunctionTrigger[] triggers = {fnTrigger};
         FunctionOptions fnConfig = new FunctionOptions("fn-id-slug", "My function!", triggers);
 
-        Function2<FunctionContext, Step, HashMap<String, String>> handler = (ctx, step) -> {
+        BiFunction<FunctionContext, Step, HashMap<String, String>> handler = (ctx, step) -> {
             int x = 10;
 
             System.out.println("-> handler called " + ctx.getEvent().getName());
@@ -62,14 +61,14 @@ public class DemoConfiguration extends InngestConfiguration {
             "Follow up function!",
             new FunctionTrigger[]{followupFnTrigger}
         );
-        Function2<FunctionContext, Step, LinkedHashMap<String, Object>> followupHandler = (ctx, step) -> {
+        BiFunction<FunctionContext, Step, LinkedHashMap<String, Object>> followupHandler = (ctx, step) -> {
             System.out.println("-> follow up handler called " + ctx.getEvent().getName());
             return ctx.getEvent().getData();
         };
 
         HashMap<String, InngestFunction> functions = new HashMap<>();
-        functions.put("fn-id-slug", new InngestFunction(fnConfig, handler));
-        functions.put("fn-follow-up", new InngestFunction(followupFnConfig, followupHandler));
+        functions.put("fn-id-slug", new InngestFunction(fnConfig, handler,1));
+        functions.put("fn-follow-up", new InngestFunction(followupFnConfig, followupHandler,2));
 
         return functions;
     }
