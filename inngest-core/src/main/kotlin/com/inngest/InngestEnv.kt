@@ -7,6 +7,7 @@ enum class InngestSystem(val value: String) {
     Env("INNGEST_ENV"),
 
     // Optional variables
+    BaseUrl("INNGEST_BASE_URL"),
     LogLevel("INNGEST_LOG_LEVEL"),
     ApiOrigin("INNGEST_API_ORIGIN"),
     EventApiOrigin("INNGEST_EVENT_API_ORIGIN"),
@@ -14,7 +15,8 @@ enum class InngestSystem(val value: String) {
     ServePath("INNGEST_SERVE_PATH"),
 }
 
-enum class InngestEnv(val value: String) {
+enum class InngestEnv(var value: String) {
     Dev("dev"),
     Prod("prod"),
+    Other("other"),
 }

@@ -13,7 +13,7 @@ object Environment {
 
     fun eventKey(key: String? = null): String {
         if (key != null) return key
-        return System.getenv(InngestSystem.EventKey.value)
+        return System.getenv(InngestSystem.EventKey.value) ?: ""
     }
 
     fun baseUrl(url: String? = null): String {
@@ -21,7 +21,19 @@ object Environment {
         return "https://inn.gs"
     }
 
-    fun env(env: String? = null): String {
-        return "prod"
+    fun env(env: String? = null): InngestEnv {
+        if (env != null) {
+            when (env) {
+                "dev" -> return InngestEnv.Dev
+                "prod" -> return InngestEnv.Prod
+                else -> {
+                    var other = InngestEnv.Other
+                    other.value = env
+                    return other
+                }
+            }
+        }
+
+        return InngestEnv.Dev
     }
 }
