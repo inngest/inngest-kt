@@ -1,14 +1,19 @@
 package com.inngest.ktor
 
 import com.inngest.Inngest
+import com.inngest.InngestFunction
 import io.ktor.server.application.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 
-fun Route.inngestRoutes(
+fun Route.serve(
     path: String,
     client: Inngest,
+    // TODO: should be using List<Function> instead
+    fnList: List<InngestFunction>,
 ) {
+    val fnMap = fnList.associateBy { fn.id }
+
     route(path) {
         get("") {
             call.respondText("Get server status")
