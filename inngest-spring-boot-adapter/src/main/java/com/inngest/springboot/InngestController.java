@@ -13,26 +13,25 @@ public abstract class InngestController {
     @Autowired
     CommHandler commHandler;
 
-    private static final HttpHeaders commonHeaders = new HttpHeaders();
-
-    static {
-        String inngestSdk = "inngest-kt:v0.0.1";
-        commonHeaders.add("x-inngest-sdk", inngestSdk);
+    private HttpHeaders getHeaders() {
+        HttpHeaders headers = new HttpHeaders();
+        commHandler.getClient().getHeaders().forEach(headers::add);
+        return headers;
     }
 
-    @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
+    @GetMapping()
     public ResponseEntity<String> index() {
         String response = commHandler.introspect();
-        return ResponseEntity.ok().headers(commonHeaders).body(response);
+        return ResponseEntity.ok().headers(getHeaders()).body(response);
     }
 
-    @PutMapping(produces = MediaType.APPLICATION_JSON_VALUE)
+    @PutMapping()
     public ResponseEntity<String> put() {
         String response = commHandler.register();
-        return ResponseEntity.ok().headers(commonHeaders).body(response);
+        return ResponseEntity.ok().headers(getHeaders()).body(response);
     }
 
-    @PostMapping(produces = MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping()
     public ResponseEntity<String> handleRequest(
         @RequestParam(name = "fnId") String functionId,
         @RequestBody String body
@@ -40,7 +39,7 @@ public abstract class InngestController {
         try {
             CommResponse response = commHandler.callFunction(functionId, body);
 
-            return ResponseEntity.status(response.getStatusCode().getCode()).headers(commonHeaders)
+            return ResponseEntity.status(response.getStatusCode().getCode()).headers(getHeaders())
                 .body(response.getBody());
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
