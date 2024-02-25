@@ -12,7 +12,8 @@ fun Route.serve(
     // TODO: should be using List<Function> instead
     fnList: List<InngestFunction>,
 ) {
-    val fnMap = fnList.associateBy { fn.id }
+    val fnMap = fnList.associateBy { it.id() }
+    print(fnMap)
 
     route(path) {
         get("") {
