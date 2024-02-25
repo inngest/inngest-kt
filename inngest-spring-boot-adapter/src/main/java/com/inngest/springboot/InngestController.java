@@ -1,15 +1,17 @@
-package com.inngest.springbootdemo;
+package com.inngest.springboot;
 
+import com.inngest.CommHandler;
 import com.inngest.CommResponse;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-@RestController
-@RequestMapping(value = "/api", produces = MediaType.APPLICATION_JSON_VALUE)
-public class InngestController {
+public abstract class InngestController {
+    @Autowired
+    CommHandler commHandler;
 
     private static final HttpHeaders commonHeaders = new HttpHeaders();
 
@@ -18,26 +20,25 @@ public class InngestController {
         commonHeaders.add("x-inngest-sdk", inngestSdk);
     }
 
-    @GetMapping("/inngest")
+    @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<String> index() {
-        String response = InngestSingleton.getInstance().introspect();
-
+        String response = commHandler.introspect();
         return ResponseEntity.ok().headers(commonHeaders).body(response);
     }
 
-    @PutMapping("/inngest")
+    @PutMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<String> put() {
-        String response = InngestSingleton.getInstance().register();
+        String response = commHandler.register();
         return ResponseEntity.ok().headers(commonHeaders).body(response);
     }
 
-    @PostMapping(value = "/inngest", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<String> handleRequest(
         @RequestParam(name = "fnId") String functionId,
         @RequestBody String body
     ) {
         try {
-            CommResponse response = InngestSingleton.getInstance().callFunction(functionId, body);
+            CommResponse response = commHandler.callFunction(functionId, body);
 
             return ResponseEntity.status(response.getStatusCode().getCode()).headers(commonHeaders)
                 .body(response.getBody());
