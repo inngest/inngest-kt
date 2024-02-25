@@ -95,10 +95,19 @@ data class FunctionContext(
 
 data class SendEventPayload(val event_ids: Array<String>)
 
+interface Function {
+    fun id(): String
+
+    fun config(): FunctionConfig
+}
+
+// TODO: make this implement the Function interface
 open class InngestFunction(
     val config: FunctionOptions,
     val handler: (ctx: FunctionContext, step: Step) -> kotlin.Any?,
 ) {
+    fun id() = config.id
+
     // TODO - Validate options and trigger
 
     fun call(

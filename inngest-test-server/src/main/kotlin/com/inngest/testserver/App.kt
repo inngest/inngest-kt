@@ -1,56 +1,13 @@
 package com.inngest.testserver
 
 import com.fasterxml.jackson.annotation.JsonProperty
-import com.inngest.CommHandler
-import com.inngest.FunctionOptions
-import com.inngest.FunctionTrigger
-import com.inngest.InngestEvent
-import com.inngest.InngestFunction
-import io.ktor.http.*
+import com.inngest.*
+import com.inngest.ktor.*
 import io.ktor.server.application.*
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
-import io.ktor.server.request.*
-import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import java.time.Duration
-
-data class IngestData(val message: String)
-
-fun Application.module() {
-    routing {
-        post("/api/inngest") {
-            val functionId = call.request.queryParameters["fnId"]
-            if (functionId == null) {
-                call.respond(HttpStatusCode.BadRequest, "Missing fnId parameter")
-            } else {
-                val body = call.receiveText()
-                try {
-                    val response = comm.callFunction(functionId, body)
-                    call.response.header(
-                        HttpHeaders.ContentType,
-                        ContentType.Application.Json.toString(),
-                    )
-                    call.response.status(
-                        HttpStatusCode(response.statusCode.code, response.statusCode.message),
-                    )
-                    println("response: " + response.body)
-                    call.respond(response.body)
-                } catch (e: Exception) {
-                    call.respond(HttpStatusCode.InternalServerError, e.toString())
-                }
-            }
-        }
-        put("/api/inngest") {
-            val response = comm.register()
-            call.respond(HttpStatusCode.OK, response)
-        }
-        get("/api/inngest") {
-            val response = comm.introspect()
-            call.respond(HttpStatusCode.OK, response)
-        }
-    }
-}
 
 data class Result(
     @JsonProperty("sum")
@@ -115,12 +72,24 @@ val fn2 =
         ctx.event.data
     }
 
-val comm = CommHandler(functions = hashMapOf("fn-id-slug" to fn, "fn-follow-up" to fn2))
+data class IngestData(val message: String)
+
+fun Application.module() {
+    val inngest = Inngest(appId = "ktor-dev")
+
+    routing {
+        serve("/api/inngest", inngest, listOf(fn, fn2))
+    }
+}
 
 fun main() {
     var port = 8080
 
     println("Test server running on port " + port)
 
-    embeddedServer(Netty, port, module = Application::module).start(wait = true)
+    embeddedServer(
+        Netty,
+        port,
+        module = Application::module,
+    ).start(wait = true)
 }

@@ -1,11 +1,7 @@
 package com.inngest
 
-class Inngest {
-    constructor(
-        app_id: String,
-    ) {
-        // TODO - Fetch INNGEST_EVENT_KEY env variable
-    }
+class Inngest(val appId: String) {
+    // TODO - Fetch INNGEST_EVENT_KEY env variable on instantiation
 
 //    fun send(event: Event): EventAPIResponse {
 //        val requestBody = Klaxon().toJsonString(event)
