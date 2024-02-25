@@ -76,7 +76,7 @@ public class DemoConfiguration extends InngestConfiguration {
 
     @Override
     public Inngest inngestClient() {
-        return new Inngest("spring_demo");
+        return new Inngest("spring_demo", "springboot");
     }
 }
 

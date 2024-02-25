@@ -15,6 +15,6 @@ public class DemoTestConfiguration extends InngestConfiguration {
 
     @Override
     protected Inngest inngestClient() {
-        return new Inngest("spring_test_demo");
+        return new Inngest("spring_test_demo", "springboot");
     }
 }
