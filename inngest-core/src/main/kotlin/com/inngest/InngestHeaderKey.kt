@@ -2,6 +2,7 @@ package com.inngest
 
 enum class InngestHeaderKey(val value: String) {
     ContentType("content-type"),
+    UserAgent("user-agent"),
     Sdk("x-inngest-sdk"),
     Framework("x-inngest-framework"),
     Environment("x-inngest-env"),

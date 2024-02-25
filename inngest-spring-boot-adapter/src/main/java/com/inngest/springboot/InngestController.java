@@ -15,7 +15,7 @@ public abstract class InngestController {
 
     private HttpHeaders getHeaders() {
         HttpHeaders headers = new HttpHeaders();
-        commHandler.getClient().getHeaders().forEach(headers::add);
+        commHandler.getHeaders().forEach(headers::add);
         return headers;
     }
 

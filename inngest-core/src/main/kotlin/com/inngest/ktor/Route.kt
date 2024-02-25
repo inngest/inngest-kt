@@ -14,7 +14,12 @@ fun Route.serve(
     fnList: List<InngestFunction>,
 ) {
     val fnMap = fnList.associateBy { it.id() }
-    val comm = CommHandler(functions = fnMap, client)
+    val comm =
+        CommHandler(
+            functions = fnMap,
+            client = client,
+            framework = SupportedFrameworkName.Ktor,
+        )
 
     route(path) {
         get("") {

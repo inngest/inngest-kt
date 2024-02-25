@@ -40,16 +40,12 @@ data class CommError(
     val __serialized: Boolean = true,
 )
 
-class CommHandler(val functions: Map<String, InngestFunction>, val client: Inngest) {
-    private fun getHeaders(): Map<String, String> {
-        return mapOf(
-            "Content-Type" to "application/json",
-            // TODO - Get this from the build
-            "x-inngest-sdk" to "inngest-kt:${Version.getVersion()}",
-            // TODO - Pull this from options
-            "x-inngest-framework" to "ktor",
-        )
-    }
+class CommHandler(
+    val functions: Map<String, InngestFunction>,
+    val client: Inngest,
+    private val framework: SupportedFrameworkName,
+) {
+    val headers = Environment.inngestHeaders(framework).plus(client.headers)
 
     fun callFunction(
         functionId: String,
@@ -82,7 +78,7 @@ class CommHandler(val functions: Map<String, InngestFunction>, val client: Innge
             return CommResponse(
                 body = Klaxon().toJsonString(body),
                 statusCode = result.statusCode,
-                headers = getHeaders(),
+                headers = headers,
             )
         } catch (e: Exception) {
             val err =
@@ -94,7 +90,7 @@ class CommHandler(val functions: Map<String, InngestFunction>, val client: Innge
             return CommResponse(
                 body = Klaxon().toJsonString(err),
                 statusCode = ResultStatusCode.Error,
-                headers = getHeaders(),
+                headers = headers,
             )
         }
     }
