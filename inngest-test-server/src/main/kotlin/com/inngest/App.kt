@@ -75,7 +75,7 @@ val fn2 =
 data class IngestData(val message: String)
 
 fun Application.module() {
-    var inngest = Inngest(appId = "ktor-dev")
+    val inngest = Inngest(appId = "ktor-dev")
 
     routing {
         serve("/api/inngest", inngest, listOf(fn, fn2))
