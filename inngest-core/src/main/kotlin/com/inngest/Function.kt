@@ -21,9 +21,9 @@ enum class OpCode {
     Sleep,
     StepStateFailed, // TODO
     Step,
+    WaitForEvent,
 
     // FUTURE:
-    WaitForEvent,
     StepNotFound,
 }
 
@@ -54,7 +54,7 @@ data class StepOptions(
     override val name: String,
     override val op: OpCode,
     override val statusCode: ResultStatusCode,
-    val opts: HashMap<String, String>? = null,
+    val opts: Map<String, String>?,
 ) : StepOp(id, name, op, statusCode)
 
 data class StepConfig(
@@ -127,6 +127,21 @@ open class InngestFunction(
                 op = OpCode.Step,
                 statusCode = ResultStatusCode.StepComplete,
                 data = SendEventPayload(e.eventIds),
+            )
+        } catch (e: StepInterruptWaitForEventException) {
+            return StepOptions(
+                id = e.hashedId,
+                name = e.id,
+                op = OpCode.WaitForEvent,
+                statusCode = ResultStatusCode.StepComplete,
+                opts =
+                    buildMap {
+                        put("event", e.waitEvent)
+                        put("timeout", e.timeout)
+                        if (e.ifExpression != null) {
+                            put("if", e.ifExpression)
+                        }
+                    },
             )
         } catch (e: StepInterruptSleepException) {
             return StepOptions(
