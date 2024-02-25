@@ -1,6 +1,5 @@
 plugins {
-    java
-    id("org.springframework.boot") version "2.7.18"
+    `java-library`
     id("io.spring.dependency-management") version "1.1.4"
 }
 
@@ -16,7 +15,7 @@ repositories {
 }
 
 dependencies {
-    implementation(project(":inngest-spring-boot-adapter"))
+    api(project(":inngest-core"))
 
     implementation("org.springframework.boot:spring-boot-starter-web")
     testImplementation("org.springframework.boot:spring-boot-starter-test")

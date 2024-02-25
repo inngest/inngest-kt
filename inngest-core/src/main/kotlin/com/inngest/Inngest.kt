@@ -1,7 +1,5 @@
 package com.inngest
 
-// import okhttp3.RequestBody.Companion.toRequestBody
-
 class Inngest {
     constructor(
         app_id: String,
