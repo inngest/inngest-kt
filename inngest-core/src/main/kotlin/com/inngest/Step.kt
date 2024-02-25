@@ -34,7 +34,7 @@ class StepInterruptWaitForEventException(
 // TODO: Add name, stack, etc. if poss
 class StepError(message: String) : Exception(message)
 
-class Step(val state: State) {
+class Step(val state: State, val client: Inngest) {
     /**
      * Run a function
      *
@@ -130,7 +130,7 @@ class Step(val state: State) {
             }
             return
         } catch (e: StateNotFound) {
-            val response = CommHandler.sendEvent<SendEventsResponse>(events)
+            val response = client.sendEvent<SendEventsResponse>(events)
             throw StepInterruptSendEventException(id, hashedId, response!!.ids)
         }
     }

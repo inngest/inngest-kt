@@ -2,11 +2,6 @@ package com.inngest
 
 import com.beust.klaxon.Json
 import com.beust.klaxon.Klaxon
-import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import okhttp3.RequestBody.Companion.toRequestBody
-import java.io.IOException
 
 data class ExecutionRequestPayload(
     val ctx: ExecutionContext,
@@ -45,9 +40,7 @@ data class CommError(
     val __serialized: Boolean = true,
 )
 
-val jsonMediaType = "application/json".toMediaType()
-
-class CommHandler(val functions: Map<String, InngestFunction>, val client: Inngest? = null) {
+class CommHandler(val functions: Map<String, InngestFunction>, val client: Inngest) {
     private fun getHeaders(): Map<String, String> {
         return mapOf(
             "Content-Type" to "application/json",
@@ -78,11 +71,7 @@ class CommHandler(val functions: Map<String, InngestFunction>, val client: Innge
                     attempt = payload.ctx.attempt,
                 )
 
-            val result =
-                function.call(
-                    ctx = ctx,
-                    requestBody,
-                )
+            val result = function.call(ctx = ctx, client = client, requestBody)
             var body: Any? = null
             if (result.statusCode == ResultStatusCode.StepComplete || result is StepOptions) {
                 body = listOf(result)
@@ -110,43 +99,10 @@ class CommHandler(val functions: Map<String, InngestFunction>, val client: Innge
         }
     }
 
-    fun getFunctionConfigs(): List<FunctionConfig> {
+    private fun getFunctionConfigs(): List<FunctionConfig> {
         val configs: MutableList<FunctionConfig> = mutableListOf()
         functions.forEach { entry -> configs.add(entry.value.getConfig()) }
         return configs
-    }
-
-    companion object Client {
-        inline fun <reified T> sendEvent(payload: Any): T? {
-            val eventKey = "test"
-            return send("http://localhost:8288/e/$eventKey", payload)
-        }
-
-        inline fun <reified T> send(
-            url: String,
-            payload: Any,
-        ): T? {
-            val jsonRequestBody = Klaxon().toJsonString(payload)
-            val requestBody = jsonRequestBody.toRequestBody(jsonMediaType)
-
-            val client = OkHttpClient()
-
-            // TODO - Add missing headers
-            val request =
-                Request.Builder()
-                    .url(url)
-                    .post(requestBody)
-                    .build()
-
-            client.newCall(request).execute().use { response ->
-                // TODO: Handle error case
-                if (!response.isSuccessful) throw IOException("Unexpected code $response")
-                if (Unit::class.java.isAssignableFrom(T::class.java)) {
-                    return Unit as T
-                }
-                return Klaxon().parse<T>(response.body!!.charStream())
-            }
-        }
     }
 
     fun register(): String {
@@ -162,7 +118,7 @@ class CommHandler(val functions: Map<String, InngestFunction>, val client: Innge
                 functions = getFunctionConfigs(),
             )
 
-        send<Unit>(registrationUrl, requestPayload)
+        client.send<Unit>(registrationUrl, requestPayload)
 
         // TODO - Add headers to output
         val body: Map<String, Any?> = mapOf()
