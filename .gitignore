@@ -75,3 +75,6 @@ gradle-app.setting
 # LSP generated
 **/.settings/
 **/bin/
+
+# Intellij
+.idea/
