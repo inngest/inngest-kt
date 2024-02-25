@@ -1,9 +1,12 @@
 package com.inngest
 
 class Inngest {
+    val appId: String,
+
     constructor(
-        app_id: String,
+        appId: String,
     ) {
+        this.appId = appId
         // TODO - Fetch INNGEST_EVENT_KEY env variable
     }
 

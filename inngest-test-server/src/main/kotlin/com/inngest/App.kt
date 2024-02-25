@@ -7,7 +7,7 @@ import com.inngest.FunctionTrigger
 import com.inngest.Inngest
 import com.inngest.InngestEvent
 import com.inngest.InngestFunction
-import com.inngest.routing.inngestRoutes
+import com.inngest.ktor.*
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.engine.*
@@ -20,7 +20,7 @@ import java.time.Duration
 data class IngestData(val message: String)
 
 fun Application.module() {
-    var inngest = Inngest(app_id = "ktor-dev")
+    var inngest = Inngest(appId = "ktor-dev")
 
     routing {
         post("/api/inngest") {

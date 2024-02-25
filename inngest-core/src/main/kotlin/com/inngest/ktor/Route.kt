@@ -1,4 +1,4 @@
-package com.inngest.routing
+package com.inngest.ktor
 
 import io.ktor.server.application.*
 import io.ktor.server.response.*
