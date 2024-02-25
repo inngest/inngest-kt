@@ -15,6 +15,8 @@ dependencies {
     implementation("com.fasterxml.jackson.core:jackson-databind:2.16.1")
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
 
+    implementation("io.ktor:ktor-server-core:2.3.5")
+
     testImplementation(kotlin("test"))
 }
 

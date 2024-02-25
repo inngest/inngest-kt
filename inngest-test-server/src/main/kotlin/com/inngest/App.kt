@@ -4,8 +4,10 @@ import com.fasterxml.jackson.annotation.JsonProperty
 import com.inngest.CommHandler
 import com.inngest.FunctionOptions
 import com.inngest.FunctionTrigger
+import com.inngest.Inngest
 import com.inngest.InngestEvent
 import com.inngest.InngestFunction
+import com.inngest.routing.inngest
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.engine.*
@@ -49,6 +51,8 @@ fun Application.module() {
             val response = comm.introspect()
             call.respond(HttpStatusCode.OK, response)
         }
+
+        inngest("/test")
     }
 }
 
@@ -120,7 +124,13 @@ val comm = CommHandler(functions = hashMapOf("fn-id-slug" to fn, "fn-follow-up" 
 fun main() {
     var port = 8080
 
+    var inngest = Inngest(app_id = "ktor-dev")
+
     println("Test server running on port " + port)
 
-    embeddedServer(Netty, port, module = Application::module).start(wait = true)
+    embeddedServer(
+        Netty,
+        port,
+        module = Application::module,
+    ).start(wait = true)
 }
