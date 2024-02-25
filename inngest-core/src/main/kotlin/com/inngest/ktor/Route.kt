@@ -1,8 +1,11 @@
 package com.inngest.ktor
 
+import com.inngest.CommHandler
 import com.inngest.Inngest
 import com.inngest.InngestFunction
+import io.ktor.http.*
 import io.ktor.server.application.*
+import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 
@@ -13,19 +16,42 @@ fun Route.serve(
     fnList: List<InngestFunction>,
 ) {
     val fnMap = fnList.associateBy { it.id() }
-    print(fnMap)
+    val comm = CommHandler(functions = fnMap)
 
     route(path) {
         get("") {
-            call.respondText("Get server status")
+            val resp = comm.introspect()
+            call.respond(HttpStatusCode.OK, resp)
         }
 
         post("") {
+            val fnId = call.request.queryParameters["fnId"]
+            if (fnId == null) {
+                call.respond(HttpStatusCode.BadRequest, "Missing fnId parameter")
+            } else {
+                val body = call.receiveText()
+                try {
+                    val response = comm.callFunction(fnId, body)
+                    call.response.header(
+                        HttpHeaders.ContentType,
+                        ContentType.Application.Json.toString(),
+                    )
+                    call.response.status(
+                        HttpStatusCode(response.statusCode.code, response.statusCode.message),
+                    )
+                    println("response: " + response.body)
+                    call.respond(response.body)
+                } catch (e: Exception) {
+                    call.respond(HttpStatusCode.InternalServerError, e.toString())
+                }
+            }
+
             call.respondText("Invoke functions")
         }
 
         put("") {
-            call.respondText("Register app")
+            val resp = comm.register()
+            call.respond(HttpStatusCode.OK, resp)
         }
     }
 }

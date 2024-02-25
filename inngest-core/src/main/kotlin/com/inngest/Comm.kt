@@ -47,7 +47,7 @@ data class CommError(
 
 val jsonMediaType = "application/json".toMediaType()
 
-class CommHandler(val functions: HashMap<String, InngestFunction>, val client: Inngest? = null) {
+class CommHandler(val functions: Map<String, InngestFunction>, val client: Inngest? = null) {
     private fun getHeaders(): Map<String, String> {
         return mapOf(
             "Content-Type" to "application/json",
