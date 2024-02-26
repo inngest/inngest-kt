@@ -1,6 +1,8 @@
 package com.inngest
 
 import com.beust.klaxon.Klaxon
+import com.fasterxml.jackson.databind.ObjectMapper
+import okhttp3.Response
 import java.io.IOException
 
 class Inngest
@@ -19,13 +21,8 @@ class Inngest
 
         internal val httpClient = HttpClient(RequestConfig(headers))
 
-        internal inline fun <reified T> send(
-            url: String,
-            payload: Any,
-        ): T? {
-            val request = httpClient.build(url, payload)
-
-            return httpClient.send(request) lambda@{ response ->
+        inline fun <reified T> send(payload: Any): T? =
+            sendEvent<T>(payload) lambda@{ response ->
                 // TODO: Handle error case
                 if (!response.isSuccessful) throw IOException("Unexpected code $response")
                 if (Unit::class.java.isAssignableFrom(T::class.java)) {
@@ -33,9 +30,28 @@ class Inngest
                 }
                 return@lambda Klaxon().parse<T>(response.body!!.charStream())
             }
+
+        fun <T> send(
+            payload: Any,
+            type: Class<T>,
+        ): T? {
+            return sendEvent<T>(payload) lambda@{ response ->
+                if (!response.isSuccessful) throw IOException("Unexpected code $response")
+
+                if (Unit::class.java.isAssignableFrom(type)) {
+                    return@lambda null
+                }
+
+                val mapper = ObjectMapper()
+                return@lambda mapper.readValue(response.body!!.charStream(), type)
+            }
         }
 
-        internal inline fun <reified T> sendEvent(payload: Any): T? {
-            return send("$baseUrl/e/$eventKey", payload)
+        fun <T> sendEvent(
+            payload: Any,
+            handler: (response: Response) -> T?,
+        ): T? {
+            val request = httpClient.build("$baseUrl/e/$eventKey", payload)
+            return httpClient.send(request, handler)
         }
     }

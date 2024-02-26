@@ -2,6 +2,7 @@ package com.inngest
 
 import com.beust.klaxon.Json
 import com.beust.klaxon.Klaxon
+import java.io.IOException
 
 data class ExecutionRequestPayload(
     val ctx: ExecutionContext,
@@ -119,7 +120,12 @@ class CommHandler(
                 functions = getFunctionConfigs(),
             )
 
-        client.send<Unit>(registrationUrl, requestPayload)
+        val httpClient = client.httpClient
+        val request = httpClient.build(registrationUrl, requestPayload)
+
+        httpClient.send(request) { response ->
+            if (!response.isSuccessful) throw IOException("Unexpected code $response")
+        }
 
         // TODO - Add headers to output
         val body: Map<String, Any?> = mapOf()
