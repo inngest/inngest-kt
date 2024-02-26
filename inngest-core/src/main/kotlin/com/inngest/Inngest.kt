@@ -10,9 +10,9 @@ class Inngest(
     env: String? = null,
 ) {
     val headers: RequestHeaders = Environment.inngestHeaders()
-    val eventKey = Environment.eventKey(eventKey)
-    val baseUrl = Environment.baseUrl(baseUrl)
-    val env = Environment.env(env)
+    val eventKey = Environment.inngestEventKey(eventKey)
+    val baseUrl = Environment.inngestBaseUrl(baseUrl, env)
+    val env = Environment.inngestEnv(env)
 
     internal val httpClient = HttpClient(RequestConfig(headers))
 
