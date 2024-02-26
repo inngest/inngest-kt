@@ -6,13 +6,13 @@ import kotlin.test.*
 internal class EnvironmentTest {
     // AppId
     @Test
-    fun testInngestAppIdWithoutServeId() {
+    fun `test inngestAppId`() {
         val clientId = "hello"
         assertEquals(clientId, Environment.inngestAppId(clientId))
     }
 
     @Test
-    fun testInngestAppIdWithServeId() {
+    fun `test inngestAppId with serveId`() {
         val clientId = "hello"
         val serveId = "world"
         assertEquals(serveId, Environment.inngestAppId(clientId, serveId))
@@ -20,53 +20,53 @@ internal class EnvironmentTest {
 
     // EventKey
     @Test
-    fun testInngestEventKeyWithKey() {
+    fun `test inngestEventKey`() {
+        assertEquals("", Environment.inngestEventKey())
+    }
+
+    @Test
+    fun `test inngestEventKey with key value`() {
         val key = "event"
         assertEquals(key, Environment.inngestEventKey(key))
     }
 
-    @Test
-    fun testInngestEventKeyWithoutKey() {
-        assertEquals("", Environment.inngestEventKey())
-    }
-
     // @Test
-    // fun testInngestEventKeyWithEnvVar() {}
+    // fun `test inngestEventKey with INNGEST_EVENT_KEY value`() {}
 
     // Signing key
     @Test
-    fun testInngestSigningKeyWithKey() {
+    fun `test inngestSigningKey - dev`() {
+        assertEquals("test", Environment.inngestSigningKey(InngestEnv.Dev))
+    }
+
+    @Test
+    fun `test inngestSigningKey with key value`() {
         val key = "signing key"
         assertEquals(key, Environment.inngestSigningKey(InngestEnv.Dev, key))
     }
 
     @Test
-    fun testInngestSigningKeyWithoutKeyDev() {
-        assertEquals("test", Environment.inngestSigningKey(InngestEnv.Dev))
-    }
-
-    // @Test
-    // fun testInngestSigningKeyWithEnvVarProd() {}
-
-    @Test
-    fun testInngestSigningKeyWithoutKeyOrEnvVarProd() {
+    fun `test inngestSigningKey - prod`() {
         assertFails(
             "signing key is required",
             { Environment.inngestSigningKey(InngestEnv.Prod) },
         )
     }
 
+    // @Test
+    // fun `test inngestSigningKey with INNGEST_SIGNING_KEY value - prod`() {}
+
     // EventAPI URL
     @Test
-    fun testInngestEventApiBaseUrlDefaultDev() {
+    fun `test inngestEventApiBaseUrl - dev`() {
         assertEquals("http://127.0.0.1:8288", Environment.inngestEventApiBaseUrl(env = InngestEnv.Dev))
     }
 
-    fun testInngestEventApiBaseUrlDefaultProd() {
+    fun `test inngestEventApiBaseUrl - prod`() {
         assertEquals("https://inn.gs", Environment.inngestEventApiBaseUrl(env = InngestEnv.Prod))
     }
 
-    fun testInngestEventApiBaseUrlWithUrl() {
+    fun `test inngestEventApiBaseUrl with url value`() {
         assertEquals(
             "https://yolo.com",
             Environment.inngestEventApiBaseUrl(env = InngestEnv.Prod, url = "https://yolo.com"),
@@ -75,21 +75,21 @@ internal class EnvironmentTest {
 
     // TODO: Test with env `INNGEST_BASE_URL`
     // @Test
-    // fun testInngestEventApiBaseUrlEnvVarProd() { }
+    // fun `test inngestEventApiBaseUrl with INNGEST_BASE_URL value`() { }
 
     // API URL
     @Test
-    fun testInngestApiBaseUrlDefaultDev() {
+    fun `test inngestApiBaseUrl - dev`() {
         assertEquals("http://127.0.0.1:8288", Environment.inngestApiBaseUrl(InngestEnv.Dev))
     }
 
     @Test
-    fun testInngestApiBaseUrlDefaultProd() {
+    fun `test inngestApiBaseUrl - prod`() {
         assertEquals("https://api.inngest.com", Environment.inngestApiBaseUrl(env = InngestEnv.Prod))
     }
 
     @Test
-    fun testInngestApiBaseUrlWithUrl() {
+    fun `test inngestApiBaseUrl with url value`() {
         assertEquals(
             "https://api.yolo.com",
             Environment.inngestApiBaseUrl(env = InngestEnv.Prod, url = "https://api.yolo.com"),
@@ -98,37 +98,37 @@ internal class EnvironmentTest {
 
     // TODO: Test with env `INNGEST_API_BASE_URL`
     // @Test
-    // fun testInngestApiBaseUrlEnvVarProd() { }
+    // fun `test inngestApiBaseUrl with INNGEST_API_BASE_URL value - prod`() { }
 
     // Serve Origin
     @Test
-    fun testInngestServeOriginNothing() {
+    fun `test inngestServeOrigin`() {
         assertNull(Environment.inngestServeOrigin())
     }
 
     @Test
-    fun testInngestServeOriginWithValue() {
-        val host = "yolo.com"
-        assertEquals(host, Environment.inngestServeOrigin(host))
+    fun `test inngestServeOrigin with origin value`() {
+        val origin = "yolo.com"
+        assertEquals(origin, Environment.inngestServeOrigin(origin))
     }
 
     // @Test
-    // fun testInngestServeOriginWithEnvVar() {}
+    // fun `test inngestServeOrigin with INNGEST_SERVE_ORIGIN value`() {}
 
     // Serve Path
     @Test
-    fun testInngestServePathNothing() {
+    fun `test inngestServePath`() {
         assertNull(Environment.inngestServePath())
     }
 
     @Test
-    fun testInngestServePathWithValue() {
+    fun `test inngestServePath with path value`() {
         val path = "/api/inngest"
         assertEquals(path, Environment.inngestServePath(path))
     }
 
     // @Test
-    // fun testInngestServePathWithEnvVar() {}
+    // fun `test inngestServePath with INNGEST_SERVE_PATH value`() {}
 
     // Env
     @Test
@@ -156,12 +156,12 @@ internal class EnvironmentTest {
 
     // Log Level
     @Test
-    fun testInngestLogLevelDefault() {
+    fun `test inngestLogLevel default value`() {
         assertEquals("info", Environment.inngestLogLevel())
     }
 
     @Test
-    fun testInngestLogLevelWithLevel() {
+    fun `test inngestLogLevel with level value`() {
         assertEquals("error", Environment.inngestLogLevel("error"))
     }
 }
