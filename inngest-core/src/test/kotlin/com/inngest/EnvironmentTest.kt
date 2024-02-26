@@ -131,6 +131,29 @@ internal class EnvironmentTest {
     // fun testInngestServePathWithEnvVar() {}
 
     // Env
+    @Test
+    fun `test inngestEnv with no params`() {
+        assertEquals(InngestEnv.Dev, Environment.inngestEnv())
+    }
+
+    @Test
+    fun `test inngestEnv with env value`() {
+        assertEquals(InngestEnv.Dev, Environment.inngestEnv(env = "dev"))
+        assertEquals(InngestEnv.Dev, Environment.inngestEnv(env = "development"))
+        assertEquals(InngestEnv.Prod, Environment.inngestEnv(env = "prod"))
+        assertEquals(InngestEnv.Prod, Environment.inngestEnv(env = "production"))
+        assertEquals(InngestEnv.Other, Environment.inngestEnv(env = "yolo"))
+    }
+
+    @Test
+    fun `test inngestEnv with isDev value`() {
+        assertEquals(InngestEnv.Dev, Environment.inngestEnv(isDev = true))
+        assertEquals(InngestEnv.Prod, Environment.inngestEnv(isDev = false))
+    }
+
+    // @Test
+    // fun `test inngestEnv with INNGEST_DEV value`() { }
+
     // Log Level
     @Test
     fun testInngestLogLevelDefault() {
