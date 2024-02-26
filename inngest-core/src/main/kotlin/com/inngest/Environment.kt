@@ -12,11 +12,11 @@ object Environment {
     }
 
     fun inngestAppId(
-        client: String,
-        serve: String? = null,
+        clientId: String,
+        serveId: String? = null,
     ): String {
-        if (serve != null) return serve
-        return client
+        if (serveId != null) return serveId
+        return clientId
     }
 
     fun inngestEventKey(key: String? = null): String {
@@ -28,7 +28,18 @@ object Environment {
         env: InngestEnv,
         key: String? = null,
     ): String {
-        return ""
+        if (key != null) return key
+
+        return when (env) {
+            InngestEnv.Dev -> "test"
+            else -> {
+                val signingKey = System.getenv(InngestSystem.SigningKey.value)
+                if (signingKey == null) {
+                    throw Exception("signing key is required")
+                }
+                signingKey
+            }
+        }
     }
 
     fun inngestEventApiBaseUrl(
@@ -36,6 +47,11 @@ object Environment {
         url: String? = null,
     ): String {
         if (url != null) return url
+
+        val baseUrl = System.getenv(InngestSystem.EventApiBaseUrl.value)
+        if (baseUrl != null) {
+            return baseUrl
+        }
 
         return when (inngestEnv(env)) {
             InngestEnv.Dev -> "http://127.0.0.1:8288"
@@ -48,21 +64,27 @@ object Environment {
         env: InngestEnv,
         url: String? = null,
     ): String {
-        return ""
+        if (url != null) return url
+
+        val baseUrl = System.getenv(InngestSystem.ApiBaseUrl.value)
+        if (baseUrl != null) {
+            return baseUrl
+        }
+
+        return when (env) {
+            InngestEnv.Dev -> "http://127.0.0.1:8288"
+            else -> "https://inngest"
+        }
     }
 
-    fun inngestServeHost(
-        env: InngestEnv,
-        host: String? = null,
-    ): String {
-        return ""
+    fun inngestServeHost(host: String? = null): String? {
+        if (host != null) return host
+        return System.getenv(InngestSystem.ServeHost.value)
     }
 
-    fun inngestServePath(
-        env: InngestEnv,
-        path: String? = null,
-    ): String {
-        return ""
+    fun inngestServePath(path: String? = null): String? {
+        if (path != null) return path
+        return System.getenv(InngestSystem.ServePath.value)
     }
 
     fun inngestEnv(env: String? = null): InngestEnv {

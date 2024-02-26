@@ -20,11 +20,11 @@ fun Route.serve(
     logLevel: String? = null,
     baseUrl: String? = null,
 ) {
-    val appId = Environment.inngestAppId(client.appId, id)
+    val appId = Environment.inngestAppId(clientId = client.appId, serveId = id)
     val signingKey = Environment.inngestSigningKey(env = client.env, key = signingKey)
     val baseUrl = Environment.inngestApiBaseUrl(env = client.env, url = baseUrl)
-    val serveHost = Environment.inngestServeHost(env = client.env, host = serveHost)
-    val servePath = Environment.inngestServePath(env = client.env, path = servePath)
+    val serveHost = Environment.inngestServeHost(serveHost)
+    val servePath = Environment.inngestServePath(servePath)
     val logLevel = Environment.inngestLogLevel(logLevel)
 
     val fnMap = fnList.associateBy { it.id() }

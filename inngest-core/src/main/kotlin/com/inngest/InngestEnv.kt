@@ -7,11 +7,12 @@ enum class InngestSystem(val value: String) {
     Env("INNGEST_ENV"),
 
     // Optional variables
-    BaseUrl("INNGEST_BASE_URL"),
+    EventApiBaseUrl("INNGEST_BASE_URL"),
+    ApiBaseUrl("INNGEST_API_BASE_URL"),
     LogLevel("INNGEST_LOG_LEVEL"),
     ApiOrigin("INNGEST_API_ORIGIN"),
     EventApiOrigin("INNGEST_EVENT_API_ORIGIN"),
-    ServeOrigin("INNGEST_SERVE_ORIGIN"),
+    ServeHost("INNGEST_SERVE_HOST"),
     ServePath("INNGEST_SERVE_PATH"),
 }
 
