@@ -107,7 +107,7 @@ open class InngestFunction(
     val config: FunctionOptions,
     val handler: (ctx: FunctionContext, step: Step) -> Any?,
 ) {
-    constructor(config: FunctionOptions, handler: BiFunction<FunctionContext, Step, out Any>, a: Int) : this(
+    constructor(config: FunctionOptions, handler: BiFunction<FunctionContext, Step, out Any>) : this(
         config,
         handler.toKotlin(),
     )
