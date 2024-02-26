@@ -82,9 +82,11 @@ tasks.named<Test>("test") {
         afterSuite(
             KotlinClosure2({ desc: TestDescriptor, result: TestResult ->
                 if (desc.parent == null) { // will match the outermost suite
-                    println("Results: ${result.resultType} (${result.testCount} tests, ${result.successfulTestCount} successes, ${result.failedTestCount} failures, ${result.skippedTestCount} skipped)")
+                    println(
+                        "Results: ${result.resultType} (${result.testCount} tests, ${result.successfulTestCount} successes, ${result.failedTestCount} failures, ${result.skippedTestCount} skipped)",
+                    )
                 }
-            })
+            }),
         )
     }
 }
