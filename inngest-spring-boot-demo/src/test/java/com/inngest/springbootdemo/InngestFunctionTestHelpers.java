@@ -18,7 +18,7 @@ public class InngestFunctionTestHelpers {
     }
 
     static InngestFunction emptyStepFunction() {
-        FunctionTrigger fnTrigger = new FunctionTrigger("test/no-step", null, null);
+        FunctionTrigger fnTrigger = new FunctionTrigger("test/no-step");
         FunctionTrigger[] triggers = {fnTrigger};
         FunctionOptions fnConfig = new FunctionOptions("no-step-fn", "No Step Function", triggers);
 
@@ -28,7 +28,7 @@ public class InngestFunctionTestHelpers {
     }
 
     static InngestFunction sleepStepFunction() {
-        FunctionTrigger fnTrigger = new FunctionTrigger("test/sleep", null, null);
+        FunctionTrigger fnTrigger = new FunctionTrigger("test/sleep");
         FunctionTrigger[] triggers = {fnTrigger};
         FunctionOptions fnConfig = new FunctionOptions("sleep-fn", "Sleep Function", triggers);
 
@@ -43,7 +43,7 @@ public class InngestFunctionTestHelpers {
     }
 
     static InngestFunction twoStepsFunction() {
-        FunctionTrigger fnTrigger = new FunctionTrigger("test/two.steps", null, null);
+        FunctionTrigger fnTrigger = new FunctionTrigger("test/two.steps");
         FunctionTrigger[] triggers = {fnTrigger};
         FunctionOptions fnConfig = new FunctionOptions("two-steps-fn", "Two Steps Function", triggers);
 
