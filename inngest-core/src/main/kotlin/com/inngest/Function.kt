@@ -10,11 +10,13 @@ data class FunctionOptions(
     val triggers: Array<FunctionTrigger>,
 )
 
-data class FunctionTrigger @JvmOverloads constructor(
-    @Json(serializeNull = false) val event: String? = null,
-    @Json(serializeNull = false) val `if`: String? = null,
-    @Json(serializeNull = false) val cron: String? = null,
-)
+data class FunctionTrigger
+    @JvmOverloads
+    constructor(
+        @Json(serializeNull = false) val event: String? = null,
+        @Json(serializeNull = false) val `if`: String? = null,
+        @Json(serializeNull = false) val cron: String? = null,
+    )
 
 // TODO - Add an abstraction layer between the Function call response and the comm handler response
 enum class OpCode {
@@ -151,13 +153,13 @@ open class InngestFunction(
                 op = OpCode.WaitForEvent,
                 statusCode = ResultStatusCode.StepComplete,
                 opts =
-                buildMap {
-                    put("event", e.waitEvent)
-                    put("timeout", e.timeout)
-                    if (e.ifExpression != null) {
-                        put("if", e.ifExpression)
-                    }
-                },
+                    buildMap {
+                        put("event", e.waitEvent)
+                        put("timeout", e.timeout)
+                        if (e.ifExpression != null) {
+                            put("if", e.ifExpression)
+                        }
+                    },
             )
         } catch (e: StepInterruptSleepException) {
             return StepOptions(
@@ -196,25 +198,25 @@ open class InngestFunction(
             name = config.name,
             triggers = config.triggers,
             steps =
-            mapOf(
-                "step" to
-                    StepConfig(
-                        id = "step",
-                        name = "step",
-                        retries =
-                        mapOf(
-                            // TODO - Pull from FunctionOptions
-                            "attempts" to 3,
+                mapOf(
+                    "step" to
+                        StepConfig(
+                            id = "step",
+                            name = "step",
+                            retries =
+                                mapOf(
+                                    // TODO - Pull from FunctionOptions
+                                    "attempts" to 3,
+                                ),
+                            runtime =
+                                hashMapOf(
+                                    "type" to "http",
+                                    // TODO - Create correct URL
+                                    "url" to
+                                        "http://localhost:8080/api/inngest?fnId=${config.id}&stepId=step",
+                                ),
                         ),
-                        runtime =
-                        hashMapOf(
-                            "type" to "http",
-                            // TODO - Create correct URL
-                            "url" to
-                                "http://localhost:8080/api/inngest?fnId=${config.id}&stepId=step",
-                        ),
-                    ),
-            ),
+                ),
         )
     }
 }

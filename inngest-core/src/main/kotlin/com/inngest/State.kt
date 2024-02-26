@@ -18,8 +18,10 @@ class State(val payloadJson: String) {
         return sb.toString()
     }
 
-    inline fun <reified T> getState(hashedId: String, fieldName: String = "data"): T? =
-        getState(hashedId, T::class.java, fieldName)
+    inline fun <reified T> getState(
+        hashedId: String,
+        fieldName: String = "data",
+    ): T? = getState(hashedId, T::class.java, fieldName)
 
     fun <T> getState(
         hashedId: String,

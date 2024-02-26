@@ -127,7 +127,6 @@ class Step(val state: State, val client: Inngest) {
                 return SendEventsResponse(stepState)
             }
             throw Exception("step state expected sendEvent, got something else")
-
         } catch (e: StateNotFound) {
             val response = client.send<SendEventsResponse>(events)
             throw StepInterruptSendEventException(id, hashedId, response!!.ids)
