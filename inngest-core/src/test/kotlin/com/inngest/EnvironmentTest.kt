@@ -63,15 +63,4 @@ internal class EnvironmentTest {
 
     // @Test
     // fun `test inngestEnv with INNGEST_DEV value`() { }
-
-    // Log Level
-    @Test
-    fun `test inngestLogLevel default value`() {
-        assertEquals("info", Environment.inngestLogLevel())
-    }
-
-    @Test
-    fun `test inngestLogLevel with level value`() {
-        assertEquals("error", Environment.inngestLogLevel("error"))
-    }
 }

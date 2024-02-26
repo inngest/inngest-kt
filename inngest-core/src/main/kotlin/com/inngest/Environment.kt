@@ -87,9 +87,4 @@ object Environment {
             }
         }
     }
-
-    fun inngestLogLevel(level: String? = null): String {
-        if (level != null) return level
-        return System.getenv(InngestSystem.LogLevel.value) ?: "info"
-    }
 }

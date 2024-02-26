@@ -1,6 +1,7 @@
 package com.inngest
 
 import kotlin.test.*
+import com.inngest.ServeConfig
 
 internal class ServeConfigTest {
     val client = Inngest(appId = "test")
@@ -104,4 +105,15 @@ internal class ServeConfigTest {
     // fun `should return INNGEST_SERVE_PATH value`() {}
 
     // logLevel()
+    @Test
+    fun `should return default value - info`() {
+        val config = ServeConfig(client = client)
+        assertEquals("info", config.logLevel())
+    }
+
+    @Test
+    fun `should return passed in value - logLevel`() {
+        val config = ServeConfig(client = client, logLevel = "error")
+        assertEquals("error", config.logLevel())
+    }
 }
