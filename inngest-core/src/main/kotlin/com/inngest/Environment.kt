@@ -21,7 +21,7 @@ object Environment {
 
     fun inngestEventKey(key: String? = null): String {
         if (key != null) return key
-        return System.getenv(InngestSystem.EventKey.value) ?: ""
+        return System.getenv(InngestSystem.EventKey.value) ?: "NO_EVENT_KEY_SET"
     }
 
     fun inngestSigningKey(

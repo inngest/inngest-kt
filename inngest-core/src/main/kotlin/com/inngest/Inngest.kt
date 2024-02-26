@@ -36,7 +36,6 @@ class Inngest
         }
 
         internal inline fun <reified T> sendEvent(payload: Any): T? {
-            val eventKey = "test"
-            return send("http://localhost:8288/e/$eventKey", payload)
+            return send("$baseUrl/e/$eventKey", payload)
         }
     }

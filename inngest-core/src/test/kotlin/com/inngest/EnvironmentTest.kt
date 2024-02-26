@@ -21,7 +21,7 @@ internal class EnvironmentTest {
     // EventKey
     @Test
     fun `test inngestEventKey`() {
-        assertEquals("", Environment.inngestEventKey())
+        assertEquals("NO_EVENT_KEY_SET", Environment.inngestEventKey())
     }
 
     @Test
