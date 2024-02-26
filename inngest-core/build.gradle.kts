@@ -1,10 +1,11 @@
+import org.gradle.api.tasks.testing.logging.TestExceptionFormat
+import org.gradle.api.tasks.testing.logging.TestLogEvent
+
 description = "Inngest SDK"
 version = "0.0.1-SNAPSHOT"
 
 plugins {
     id("org.jetbrains.kotlin.jvm") version "1.9.10"
-    // NOTE: should make this only apply for tests
-    id("com.adarshr.test-logger") version "4.0.0"
 }
 
 repositories {
@@ -39,7 +40,51 @@ tasks.named<Test>("test") {
     // Use JUnit Platform for unit tests.
     useJUnitPlatform()
 
-    // testlogger {}
+    testLogging {
+        events =
+            setOf(
+                TestLogEvent.STARTED,
+                TestLogEvent.FAILED,
+                TestLogEvent.PASSED,
+                TestLogEvent.SKIPPED,
+                TestLogEvent.STANDARD_ERROR,
+                TestLogEvent.STANDARD_OUT,
+            )
+
+        exceptionFormat = TestExceptionFormat.FULL
+        showStandardStreams = true
+        showExceptions = true
+        showCauses = true
+        showStackTraces = true
+
+        // set options for log level DEBUG and INFO
+        debug {
+            events =
+                setOf(
+                    TestLogEvent.STARTED,
+                    TestLogEvent.FAILED,
+                    TestLogEvent.PASSED,
+                    TestLogEvent.SKIPPED,
+                    TestLogEvent.STANDARD_ERROR,
+                    TestLogEvent.STANDARD_OUT,
+                )
+
+            exceptionFormat = TestExceptionFormat.FULL
+        }
+
+        info.events = debug.events
+        info.exceptionFormat = debug.exceptionFormat
+
+        afterSuite(
+            KotlinClosure2({ desc: TestDescriptor, result: TestResult ->
+                if (desc.parent == null) { // will match the outermost suite
+                    println(
+                        "Results: ${result.resultType} (${result.testCount} tests, ${result.successfulTestCount} successes, ${result.failedTestCount} failures, ${result.skippedTestCount} skipped)",
+                    )
+                }
+            }),
+        )
+    }
 }
 
 // TODO - Move this to share conventions gradle file

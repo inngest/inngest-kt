@@ -9,11 +9,15 @@ dev-spring-boot:
 	gradle inngest-spring-boot-demo:bootRun
 
 .PHONY: test
-test: test-core test-springboot-demo
+test: test-core test-ktor test-springboot-demo
 
 .PHONY: test-core
 test-core:
 	gradle test $(TEST_ARGS) -p inngest-core
+
+.PHONY: test-ktor
+test-ktor:
+	gradle test $(TEST_ARGS) -p inngest-test-server
 
 .PHONY: test-springboot-demo
 test-springboot-demo:

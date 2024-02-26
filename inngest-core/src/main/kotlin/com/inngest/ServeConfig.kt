@@ -2,13 +2,13 @@ package com.inngest
 
 class ServeConfig(
     val client: Inngest,
-    internal val id: String? = null,
-    internal val signingKey: String? = null,
-    internal val serveOrigin: String? = null,
-    internal val servePath: String? = null,
+    private val id: String? = null,
+    private val signingKey: String? = null,
+    private val serveOrigin: String? = null,
+    private val servePath: String? = null,
     // streaming: String = "false" // probably can't stream yet
-    internal val logLevel: String? = null,
-    internal val baseUrl: String? = null,
+    private val logLevel: String? = null,
+    private val baseUrl: String? = null,
 ) {
     fun appId(): String {
         if (id != null) return id
@@ -17,7 +17,17 @@ class ServeConfig(
 
     fun signingKey(): String {
         if (signingKey != null) return signingKey
-        return System.getenv(InngestSystem.EventKey.value) ?: ""
+
+        return when (client.env) {
+            InngestEnv.Dev -> "test"
+            else -> {
+                val signingKey = System.getenv(InngestSystem.SigningKey.value)
+                if (signingKey == null) {
+                    throw Exception("signing key is required")
+                }
+                signingKey
+            }
+        }
     }
 
     fun baseUrl(): String {
@@ -30,8 +40,7 @@ class ServeConfig(
 
         return when (client.env) {
             InngestEnv.Dev -> "http://127.0.0.1:8288"
-            InngestEnv.Prod -> "https://inn.gs"
-            InngestEnv.Other -> "https://inn.gs"
+            else -> "https://api.inngest.com"
         }
     }
 

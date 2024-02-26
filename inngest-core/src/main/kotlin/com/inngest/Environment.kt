@@ -11,35 +11,9 @@ object Environment {
         ).filterValues { (it is String) }.entries.associate { (k, v) -> k to v!! }
     }
 
-    fun inngestAppId(
-        clientId: String,
-        serveId: String? = null,
-    ): String {
-        if (serveId != null) return serveId
-        return clientId
-    }
-
     fun inngestEventKey(key: String? = null): String {
         if (key != null) return key
         return System.getenv(InngestSystem.EventKey.value) ?: "NO_EVENT_KEY_SET"
-    }
-
-    fun inngestSigningKey(
-        env: InngestEnv,
-        key: String? = null,
-    ): String {
-        if (key != null) return key
-
-        return when (env) {
-            InngestEnv.Dev -> "test"
-            else -> {
-                val signingKey = System.getenv(InngestSystem.SigningKey.value)
-                if (signingKey == null) {
-                    throw Exception("signing key is required")
-                }
-                signingKey
-            }
-        }
     }
 
     fun inngestEventApiBaseUrl(
@@ -58,33 +32,6 @@ object Environment {
             InngestEnv.Prod -> "https://inn.gs"
             InngestEnv.Other -> "https://inn.gs"
         }
-    }
-
-    fun inngestApiBaseUrl(
-        env: InngestEnv,
-        url: String? = null,
-    ): String {
-        if (url != null) return url
-
-        val baseUrl = System.getenv(InngestSystem.ApiBaseUrl.value)
-        if (baseUrl != null) {
-            return baseUrl
-        }
-
-        return when (env) {
-            InngestEnv.Dev -> "http://127.0.0.1:8288"
-            else -> "https://api.inngest.com"
-        }
-    }
-
-    fun inngestServeOrigin(origin: String? = null): String? {
-        if (origin != null) return origin
-        return System.getenv(InngestSystem.ServeOrigin.value)
-    }
-
-    fun inngestServePath(path: String? = null): String? {
-        if (path != null) return path
-        return System.getenv(InngestSystem.ServePath.value)
     }
 
     fun inngestEnv(
@@ -139,10 +86,5 @@ object Environment {
                 other
             }
         }
-    }
-
-    fun inngestLogLevel(level: String? = null): String {
-        if (level != null) return level
-        return System.getenv(InngestSystem.LogLevel.value) ?: "info"
     }
 }

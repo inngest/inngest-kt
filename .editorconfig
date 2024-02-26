@@ -13,6 +13,8 @@ tab_width = 2
 indent_size = 4
 tab_width = 4
 ktlint_standard_no-wildcard-imports = disabled
+ktlint_standard_argument-list-wrapping = disabled
+ktlint_standard_max-line-length = disabled
 
 [Makefile]
 indent_style = tab
