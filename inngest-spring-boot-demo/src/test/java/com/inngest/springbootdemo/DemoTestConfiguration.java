@@ -15,6 +15,7 @@ public class DemoTestConfiguration extends InngestConfiguration {
         functions.put("sleep-fn", InngestFunctionTestHelpers.sleepStepFunction());
         functions.put("two-steps-fn", InngestFunctionTestHelpers.twoStepsFunction());
         functions.put("wait-for-event-fn", InngestFunctionTestHelpers.waitForEventFunction());
+        functions.put("send-fn", InngestFunctionTestHelpers.sendEventFunction());
 
         return functions;
     }

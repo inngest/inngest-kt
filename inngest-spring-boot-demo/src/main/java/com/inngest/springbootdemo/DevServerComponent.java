@@ -41,11 +41,14 @@ public class DevServerComponent {
         }
     }
 
-    <T> EventRunsResponse<T> runsByEvent(String eventId) throws Exception {
+    // TODO: Figure out how to make this generic.
+    // The issue is that deserialization will fail on the `output` generic
+    // type and return either `LinkedHashMap` or `ArrayList`.
+    EventRunsResponse<Object> runsByEvent(String eventId) throws Exception {
         Request request = new Request.Builder()
             .url(String.format("%s/v1/events/%s/runs", baseUrl, eventId))
             .build();
-        return makeRequest(request, new TypeReference<EventRunsResponse<T>>() {
+        return makeRequest(request, new TypeReference<EventRunsResponse<Object>>() {
         });
     }
 

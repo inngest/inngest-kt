@@ -76,4 +76,18 @@ public class InngestFunctionTestHelpers {
         return new InngestFunction(fnConfig, handler);
     }
 
+    static InngestFunction sendEventFunction() {
+        FunctionTrigger fnTrigger = new FunctionTrigger("test/send");
+        FunctionTrigger[] triggers = {fnTrigger};
+        FunctionOptions fnConfig = new FunctionOptions("send-fn", "Send Function", triggers);
+
+        BiFunction<FunctionContext, Step, SendEventsResponse> handler = (ctx, step) ->
+            step.sendEvent("send-test", new InngestEvent(
+                "test/no-match",
+                new HashMap<String, String>()));
+
+        return new InngestFunction(fnConfig, handler);
+    }
+
+
 }
