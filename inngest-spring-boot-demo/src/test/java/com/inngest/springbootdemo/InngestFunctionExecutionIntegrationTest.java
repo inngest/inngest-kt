@@ -66,4 +66,19 @@ class InngestFunctionExecutionIntegrationTest {
         assertEquals(updatedRun.getStatus(), "Completed");
         assertEquals(updatedRun.getOutput(), 42);
     }
+
+
+    @Test
+    void testTwoStepsFunctionRunningValidResult() throws Exception {
+        String eventId = InngestFunctionTestHelpers.sendEvent(client, "test/two.steps").first();
+
+        Thread.sleep(sleepTime);
+
+        RunEntry<Integer> run = devServer.<Integer>runsByEvent(eventId).first();
+
+        assertEquals(run.getStatus(), "Completed");
+        assertEquals(run.getOutput(), 5);
+    }
+
+
 }

@@ -41,4 +41,24 @@ public class InngestFunctionTestHelpers {
 
         return new InngestFunction(fnConfig, handler);
     }
+
+    static InngestFunction twoStepsFunction() {
+        FunctionTrigger fnTrigger = new FunctionTrigger("test/two.steps", null, null);
+        FunctionTrigger[] triggers = {fnTrigger};
+        FunctionOptions fnConfig = new FunctionOptions("two-steps-fn", "Two Steps Function", triggers);
+
+        int count = 0;
+
+        BiFunction<FunctionContext, Step, Integer> handler = (ctx, step) -> {
+            int step1 = step.run("step1", () -> count + 1, Integer.class);
+            int tmp1 = step1 + 1;
+
+            int step2 = step.run("step2", () -> tmp1 + 1, Integer.class);
+            int tmp2 = step2 + 1;
+
+            return tmp2 + 1;
+        };
+
+        return new InngestFunction(fnConfig, handler);
+    }
 }
