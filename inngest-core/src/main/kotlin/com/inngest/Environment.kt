@@ -16,24 +16,6 @@ object Environment {
         return System.getenv(InngestSystem.EventKey.value) ?: "NO_EVENT_KEY_SET"
     }
 
-    fun inngestSigningKey(
-        env: InngestEnv,
-        key: String? = null,
-    ): String {
-        if (key != null) return key
-
-        return when (env) {
-            InngestEnv.Dev -> "test"
-            else -> {
-                val signingKey = System.getenv(InngestSystem.SigningKey.value)
-                if (signingKey == null) {
-                    throw Exception("signing key is required")
-                }
-                signingKey
-            }
-        }
-    }
-
     fun inngestEventApiBaseUrl(
         env: InngestEnv,
         url: String? = null,

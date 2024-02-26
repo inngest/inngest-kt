@@ -19,29 +19,6 @@ internal class EnvironmentTest {
     // @Test
     // fun `test inngestEventKey with INNGEST_EVENT_KEY value`() {}
 
-    // Signing key
-    @Test
-    fun `test inngestSigningKey - dev`() {
-        assertEquals("test", Environment.inngestSigningKey(InngestEnv.Dev))
-    }
-
-    @Test
-    fun `test inngestSigningKey with key value`() {
-        val key = "signing key"
-        assertEquals(key, Environment.inngestSigningKey(InngestEnv.Dev, key))
-    }
-
-    @Test
-    fun `test inngestSigningKey - prod`() {
-        assertFails(
-            "signing key is required",
-            { Environment.inngestSigningKey(InngestEnv.Prod) },
-        )
-    }
-
-    // @Test
-    // fun `test inngestSigningKey with INNGEST_SIGNING_KEY value - prod`() {}
-
     // EventAPI URL
     @Test
     fun `test inngestEventApiBaseUrl - dev`() {

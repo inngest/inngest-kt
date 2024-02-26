@@ -17,7 +17,17 @@ class ServeConfig(
 
     fun signingKey(): String {
         if (signingKey != null) return signingKey
-        return System.getenv(InngestSystem.EventKey.value) ?: ""
+
+        return when (client.env) {
+            InngestEnv.Dev -> "test"
+            else -> {
+                val signingKey = System.getenv(InngestSystem.SigningKey.value)
+                if (signingKey == null) {
+                    throw Exception("signing key is required")
+                }
+                signingKey
+            }
+        }
     }
 
     fun baseUrl(): String {
