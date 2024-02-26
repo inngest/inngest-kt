@@ -87,5 +87,21 @@ internal class ServeConfigTest {
     // fun `should return INNGEST_SERVE_ORIGIN value`() {}
 
     // servePath()
+    @Test
+    fun `should return null - servePath`() {
+        val config = ServeConfig(client = client)
+        assertNull(config.servePath())
+    }
+
+    @Test
+    fun `should return passed in value - servePath`() {
+        val path = "/api/inngest"
+        val config = ServeConfig(client = client, servePath = path)
+        assertEquals(path, config.servePath())
+    }
+
+    // @Test
+    // fun `should return INNGEST_SERVE_PATH value`() {}
+
     // logLevel()
 }

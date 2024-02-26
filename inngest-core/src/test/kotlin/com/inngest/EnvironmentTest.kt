@@ -40,21 +40,6 @@ internal class EnvironmentTest {
     // @Test
     // fun `test inngestEventApiBaseUrl with INNGEST_BASE_URL value`() { }
 
-    // Serve Path
-    @Test
-    fun `test inngestServePath`() {
-        assertNull(Environment.inngestServePath())
-    }
-
-    @Test
-    fun `test inngestServePath with path value`() {
-        val path = "/api/inngest"
-        assertEquals(path, Environment.inngestServePath(path))
-    }
-
-    // @Test
-    // fun `test inngestServePath with INNGEST_SERVE_PATH value`() {}
-
     // Env
     @Test
     fun `test inngestEnv with no params`() {

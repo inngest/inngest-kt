@@ -34,11 +34,6 @@ object Environment {
         }
     }
 
-    fun inngestServePath(path: String? = null): String? {
-        if (path != null) return path
-        return System.getenv(InngestSystem.ServePath.value)
-    }
-
     fun inngestEnv(
         env: String? = null,
         isDev: Boolean? = null,
