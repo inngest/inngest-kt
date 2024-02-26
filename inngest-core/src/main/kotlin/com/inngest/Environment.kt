@@ -11,14 +11,6 @@ object Environment {
         ).filterValues { (it is String) }.entries.associate { (k, v) -> k to v!! }
     }
 
-    fun inngestAppId(
-        clientId: String,
-        serveId: String? = null,
-    ): String {
-        if (serveId != null) return serveId
-        return clientId
-    }
-
     fun inngestEventKey(key: String? = null): String {
         if (key != null) return key
         return System.getenv(InngestSystem.EventKey.value) ?: "NO_EVENT_KEY_SET"

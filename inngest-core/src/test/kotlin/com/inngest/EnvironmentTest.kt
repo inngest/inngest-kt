@@ -4,20 +4,6 @@ import kotlin.test.*
 
 // NOTE: not sure how to test values using environment variables
 internal class EnvironmentTest {
-    // AppId
-    @Test
-    fun `test inngestAppId`() {
-        val clientId = "hello"
-        assertEquals(clientId, Environment.inngestAppId(clientId))
-    }
-
-    @Test
-    fun `test inngestAppId with serveId`() {
-        val clientId = "hello"
-        val serveId = "world"
-        assertEquals(serveId, Environment.inngestAppId(clientId, serveId))
-    }
-
     // EventKey
     @Test
     fun `test inngestEventKey`() {
