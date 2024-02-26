@@ -11,14 +11,29 @@ object Environment {
         ).filterValues { (it is String) }.entries.associate { (k, v) -> k to v!! }
     }
 
+    fun inngestAppId(
+        client: String,
+        serve: String? = null,
+    ): String {
+        if (serve != null) return serve
+        return client
+    }
+
     fun inngestEventKey(key: String? = null): String {
         if (key != null) return key
         return System.getenv(InngestSystem.EventKey.value) ?: ""
     }
 
-    fun inngestBaseUrl(
-        url: String? = null,
+    fun inngestSigningKey(
+        env: InngestEnv,
+        key: String? = null,
+    ): String {
+        return ""
+    }
+
+    fun inngestEventApiBaseUrl(
         env: String? = null,
+        url: String? = null,
     ): String {
         if (url != null) return url
 
@@ -27,6 +42,27 @@ object Environment {
             InngestEnv.Prod -> "https://inn.gs"
             InngestEnv.Other -> "https://inn.gs"
         }
+    }
+
+    fun inngestApiBaseUrl(
+        env: InngestEnv,
+        url: String? = null,
+    ): String {
+        return ""
+    }
+
+    fun inngestServeHost(
+        env: InngestEnv,
+        host: String? = null,
+    ): String {
+        return ""
+    }
+
+    fun inngestServePath(
+        env: InngestEnv,
+        path: String? = null,
+    ): String {
+        return ""
     }
 
     fun inngestEnv(env: String? = null): InngestEnv {
@@ -59,5 +95,10 @@ object Environment {
                 other
             }
         }
+    }
+
+    fun inngestLogLevel(level: String? = null): String {
+        if (level != null) return level
+        return System.getenv(InngestSystem.LogLevel.value) ?: "info"
     }
 }

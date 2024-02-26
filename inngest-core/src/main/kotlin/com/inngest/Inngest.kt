@@ -5,13 +5,13 @@ import java.io.IOException
 
 class Inngest(
     val appId: String,
-    baseUrl: String? = "https://inn.gs",
+    baseUrl: String? = null,
     eventKey: String? = null,
     env: String? = null,
 ) {
     val headers: RequestHeaders = Environment.inngestHeaders()
     val eventKey = Environment.inngestEventKey(eventKey)
-    val baseUrl = Environment.inngestBaseUrl(baseUrl, env)
+    val baseUrl = Environment.inngestEventApiBaseUrl(env = env, url = baseUrl)
     val env = Environment.inngestEnv(env)
 
     internal val httpClient = HttpClient(RequestConfig(headers))

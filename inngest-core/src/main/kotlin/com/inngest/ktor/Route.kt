@@ -12,7 +12,21 @@ fun Route.serve(
     client: Inngest,
     // TODO: should be using List<Function> instead
     fnList: List<InngestFunction>,
+    id: String? = null,
+    signingKey: String? = null,
+    serveHost: String? = null,
+    servePath: String? = null,
+    // streaming: String = "false" // probably can't stream yet
+    logLevel: String? = null,
+    baseUrl: String? = null,
 ) {
+    val appId = Environment.inngestAppId(client.appId, id)
+    val signingKey = Environment.inngestSigningKey(env = client.env, key = signingKey)
+    val baseUrl = Environment.inngestApiBaseUrl(env = client.env, url = baseUrl)
+    val serveHost = Environment.inngestServeHost(env = client.env, host = serveHost)
+    val servePath = Environment.inngestServePath(env = client.env, path = servePath)
+    val logLevel = Environment.inngestLogLevel(logLevel)
+
     val fnMap = fnList.associateBy { it.id() }
     val comm =
         CommHandler(
