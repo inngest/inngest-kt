@@ -9,10 +9,10 @@ import org.junit.jupiter.api.parallel.ExecutionMode;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
-import org.springframework.test.annotation.IfProfileValue;
 
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 
 @IntegrationTest
@@ -28,7 +28,7 @@ class InngestFunctionExecutionIntegrationTest {
     }
 
     @Autowired
-    private DevServerComponent devServerComponent;
+    private DevServerComponent devServer;
 
     static int sleepTime = 5000;
 
@@ -37,14 +37,33 @@ class InngestFunctionExecutionIntegrationTest {
 
     @Test
     void testNoStepFunctionRunningSuccessfully() throws Exception {
-        SendEventResponse response = InngestFunctionTestHelpers.sendEvent(client, "test/no-step");
+        String eventId = InngestFunctionTestHelpers.sendEvent(client, "test/no-step").first();
 
         Thread.sleep(sleepTime);
 
-        assert response.ids.length > 0;
+        RunEntry<String> run = devServer.<String>runsByEvent(eventId).first();
+        assertEquals(run.getStatus(), "Completed");
+        assertEquals(run.getOutput(), "hello world");
+    }
 
-        RunIdsResponse runId = devServerComponent.runIds(response.ids[0]);
-        assertEquals(runId.first().getStatus(), "Completed");
-        assertEquals(runId.first().getOutput(), "hello world");
+
+    @Test
+    void testSleepFunctionRunningSuccessfully() throws Exception {
+        String eventId = InngestFunctionTestHelpers.sendEvent(client, "test/sleep").first();
+
+        Thread.sleep(5000);
+
+        RunEntry<Integer> run = devServer.<Integer>runsByEvent(eventId).first();
+
+        assertEquals(run.getStatus(), "Running");
+        assertNull(run.getEnded_at());
+
+        Thread.sleep(10000);
+
+        RunEntry<Integer> updatedRun = devServer.<Integer>runById(run.getRun_id()).getData();
+
+        assertEquals(updatedRun.getEvent_id(), eventId);
+        assertEquals(updatedRun.getStatus(), "Completed");
+        assertEquals(updatedRun.getOutput(), 42);
     }
 }

@@ -12,6 +12,7 @@ public class DemoTestConfiguration extends InngestConfiguration {
     protected HashMap<String, InngestFunction> functions() {
         HashMap<String, InngestFunction> functions = new HashMap<>();
         functions.put("no-step-fn", InngestFunctionTestHelpers.emptyStepFunction());
+        functions.put("sleep-fn", InngestFunctionTestHelpers.sleepStepFunction());
 
         return functions;
     }
