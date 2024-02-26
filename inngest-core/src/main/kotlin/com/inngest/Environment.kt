@@ -77,9 +77,9 @@ object Environment {
         }
     }
 
-    fun inngestServeHost(host: String? = null): String? {
-        if (host != null) return host
-        return System.getenv(InngestSystem.ServeHost.value)
+    fun inngestServeOrigin(origin: String? = null): String? {
+        if (origin != null) return origin
+        return System.getenv(InngestSystem.ServeOrigin.value)
     }
 
     fun inngestServePath(path: String? = null): String? {
@@ -125,7 +125,8 @@ object Environment {
         }
 
         // Read from environment variable
-        return when (System.getenv(InngestSystem.Env.value)) {
+        val inngestEnv = System.getenv(InngestSystem.Env.value)
+        return when (inngestEnv) {
             null -> InngestEnv.Dev
             "dev" -> InngestEnv.Dev
             "development" -> InngestEnv.Dev

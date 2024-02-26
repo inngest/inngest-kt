@@ -11,7 +11,7 @@ enum class InngestSystem(val value: String) {
     ApiBaseUrl("INNGEST_API_BASE_URL"),
     LogLevel("INNGEST_LOG_LEVEL"),
     ApiOrigin("INNGEST_API_ORIGIN"),
-    ServeHost("INNGEST_SERVE_HOST"),
+    ServeOrigin("INNGEST_SERVE_ORIGIN"),
     ServePath("INNGEST_SERVE_PATH"),
     Streaming("INNGEST_STREAMING"),
     Dev("INNGEST_DEV"),

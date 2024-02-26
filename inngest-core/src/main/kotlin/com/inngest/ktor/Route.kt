@@ -14,7 +14,7 @@ fun Route.serve(
     fnList: List<InngestFunction>,
     id: String? = null,
     signingKey: String? = null,
-    serveHost: String? = null,
+    serveOrigin: String? = null,
     servePath: String? = null,
     // streaming: String = "false" // probably can't stream yet
     logLevel: String? = null,
@@ -23,7 +23,7 @@ fun Route.serve(
     val appId = Environment.inngestAppId(clientId = client.appId, serveId = id)
     val signingKey = Environment.inngestSigningKey(env = client.env, key = signingKey)
     val baseUrl = Environment.inngestApiBaseUrl(env = client.env, url = baseUrl)
-    val serveHost = Environment.inngestServeHost(serveHost)
+    val serveOrigin = Environment.inngestServeOrigin(serveOrigin)
     val servePath = Environment.inngestServePath(servePath)
     val logLevel = Environment.inngestLogLevel(logLevel)
 

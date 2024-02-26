@@ -100,20 +100,20 @@ internal class EnvironmentTest {
     // @Test
     // fun testInngestApiBaseUrlEnvVarProd() { }
 
-    // Serve Host
+    // Serve Origin
     @Test
-    fun testInngestServeHostNothing() {
-        assertNull(Environment.inngestServeHost())
+    fun testInngestServeOriginNothing() {
+        assertNull(Environment.inngestServeOrigin())
     }
 
     @Test
-    fun testInngestServeHostWithValue() {
+    fun testInngestServeOriginWithValue() {
         val host = "yolo.com"
-        assertEquals(host, Environment.inngestServeHost(host))
+        assertEquals(host, Environment.inngestServeOrigin(host))
     }
 
     // @Test
-    // fun testInngestServeHostWithEnvVar() {}
+    // fun testInngestServeOriginWithEnvVar() {}
 
     // Serve Path
     @Test
