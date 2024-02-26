@@ -11,6 +11,10 @@ dev-spring-boot:
 .PHONY: test
 test: test-core test-ktor test-springboot-demo
 
+.PHONY: itest
+itest:
+	gradle inngest-spring-boot-demo:integrationTest
+
 .PHONY: test-core
 test-core:
 	gradle test $(TEST_ARGS) -p inngest-core

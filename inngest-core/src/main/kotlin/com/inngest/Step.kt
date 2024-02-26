@@ -130,7 +130,7 @@ class Step(val state: State, val client: Inngest) {
             }
             return
         } catch (e: StateNotFound) {
-            val response = client.sendEvent<SendEventsResponse>(events)
+            val response = client.send<SendEventsResponse>(events)
             throw StepInterruptSendEventException(id, hashedId, response!!.ids)
         }
     }

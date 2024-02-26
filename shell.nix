@@ -14,6 +14,9 @@ in pkgs.mkShell {
     pkgs.ktfmt
     pkgs.ktlint
 
+    # Node.js for integration tests
+    pkgs.nodejs
+
     # LSPs
     pkgs.kotlin-language-server
   ];
