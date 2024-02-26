@@ -1,7 +1,6 @@
 package com.inngest
 
 import kotlin.test.*
-import com.inngest.ServeConfig
 
 internal class ServeConfigTest {
     val client = Inngest(appId = "test")
