@@ -36,6 +36,7 @@ fun Route.serve(
         CommHandler(
             functions = fnMap,
             client = client,
+            config = config,
             framework = SupportedFrameworkName.Ktor,
         )
 

@@ -47,6 +47,7 @@ data class CommError(
 class CommHandler(
     val functions: Map<String, InngestFunction>,
     val client: Inngest,
+    val config: ServeConfig,
     private val framework: SupportedFrameworkName,
 ) {
     val headers = Environment.inngestHeaders(framework).plus(client.headers)
