@@ -67,8 +67,8 @@ public class DemoConfiguration extends InngestConfiguration {
         };
 
         HashMap<String, InngestFunction> functions = new HashMap<>();
-        functions.put("fn-id-slug", new InngestFunction(fnConfig, handler,1));
-        functions.put("fn-follow-up", new InngestFunction(followupFnConfig, followupHandler,2));
+        functions.put("fn-id-slug", new InngestFunction(fnConfig, handler));
+        functions.put("fn-follow-up", new InngestFunction(followupFnConfig, followupHandler));
 
         return functions;
     }

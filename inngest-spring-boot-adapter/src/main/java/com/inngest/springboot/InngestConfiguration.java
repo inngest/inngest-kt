@@ -1,9 +1,6 @@
 package com.inngest.springboot;
 
-import com.inngest.CommHandler;
-import com.inngest.Inngest;
-import com.inngest.InngestFunction;
-import com.inngest.SupportedFrameworkName;
+import com.inngest.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 
@@ -19,6 +16,8 @@ public abstract class InngestConfiguration {
 
     @Bean
     protected CommHandler commHandler(@Autowired Inngest inngestClient) {
-        return new CommHandler(functions(), inngestClient, frameworkName);
+        // TODO: Add missing configuration
+        ServeConfig serveConfig = new ServeConfig(inngestClient);
+        return new CommHandler(functions(), inngestClient, serveConfig, frameworkName);
     }
 }
