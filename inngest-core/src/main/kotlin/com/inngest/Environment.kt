@@ -34,11 +34,6 @@ object Environment {
         }
     }
 
-    fun inngestServeOrigin(origin: String? = null): String? {
-        if (origin != null) return origin
-        return System.getenv(InngestSystem.ServeOrigin.value)
-    }
-
     fun inngestServePath(path: String? = null): String? {
         if (path != null) return path
         return System.getenv(InngestSystem.ServePath.value)

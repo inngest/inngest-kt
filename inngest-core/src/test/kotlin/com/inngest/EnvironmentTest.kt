@@ -40,21 +40,6 @@ internal class EnvironmentTest {
     // @Test
     // fun `test inngestEventApiBaseUrl with INNGEST_BASE_URL value`() { }
 
-    // Serve Origin
-    @Test
-    fun `test inngestServeOrigin`() {
-        assertNull(Environment.inngestServeOrigin())
-    }
-
-    @Test
-    fun `test inngestServeOrigin with origin value`() {
-        val origin = "yolo.com"
-        assertEquals(origin, Environment.inngestServeOrigin(origin))
-    }
-
-    // @Test
-    // fun `test inngestServeOrigin with INNGEST_SERVE_ORIGIN value`() {}
-
     // Serve Path
     @Test
     fun `test inngestServePath`() {

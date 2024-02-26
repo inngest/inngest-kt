@@ -69,7 +69,23 @@ internal class ServeConfigTest {
     // @Test
     // fun `should return INNGEST_API_BASE_URL value`() {}
 
-    // SERVEORIGIN()
+    // serveOrigin()
+    @Test
+    fun `should return null - serveOrigin`() {
+        val config = ServeConfig(client = client)
+        assertNull(config.serveOrigin())
+    }
+
+    @Test
+    fun `should return passed in value - serveOrigin`() {
+        val origin = "yolo.com"
+        val config = ServeConfig(client = client, serveOrigin = origin)
+        assertEquals(origin, config.serveOrigin())
+    }
+
+    // @Test
+    // fun `should return INNGEST_SERVE_ORIGIN value`() {}
+
     // servePath()
     // logLevel()
 }
