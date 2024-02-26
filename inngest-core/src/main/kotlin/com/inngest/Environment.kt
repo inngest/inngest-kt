@@ -87,7 +87,29 @@ object Environment {
         return System.getenv(InngestSystem.ServePath.value)
     }
 
-    fun inngestEnv(env: String? = null): InngestEnv {
+    fun inngestEnv(
+        env: String? = null,
+        isDev: Boolean? = null,
+    ): InngestEnv {
+        if (isDev != null) {
+            return when (isDev) {
+                true -> InngestEnv.Dev
+                false -> InngestEnv.Prod
+            }
+        }
+        val sysDev = System.getenv(InngestSystem.Dev.value)
+        if (sysDev != null) {
+            return when (sysDev) {
+                "0" -> InngestEnv.Prod
+                "1" -> InngestEnv.Dev
+                else -> {
+                    var other = InngestEnv.Other
+                    other.value = sysDev
+                    other
+                }
+            }
+        }
+
         if (env != null) {
             return when (env) {
                 "dev" -> InngestEnv.Dev
