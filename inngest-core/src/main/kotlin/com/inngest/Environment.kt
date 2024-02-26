@@ -125,8 +125,7 @@ object Environment {
         }
 
         // Read from environment variable
-        val inngestEnv = System.getenv("INNGEST_ENV")
-        return when (inngestEnv) {
+        return when (System.getenv(InngestSystem.Env.value)) {
             null -> InngestEnv.Dev
             "dev" -> InngestEnv.Dev
             "development" -> InngestEnv.Dev
