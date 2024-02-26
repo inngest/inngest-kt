@@ -1,7 +1,11 @@
 description = "Inngest SDK"
 version = "0.0.1-SNAPSHOT"
 
-plugins { id("org.jetbrains.kotlin.jvm") version "1.9.10" }
+plugins {
+    id("org.jetbrains.kotlin.jvm") version "1.9.10"
+    // NOTE: should make this only apply for tests
+    id("com.adarshr.test-logger") version "4.0.0"
+}
 
 repositories {
     // Use Maven Central for resolving dependencies.
@@ -34,6 +38,8 @@ tasks.jar {
 tasks.named<Test>("test") {
     // Use JUnit Platform for unit tests.
     useJUnitPlatform()
+
+    // testlogger {}
 }
 
 // TODO - Move this to share conventions gradle file

@@ -27,6 +27,10 @@ data class RegistrationRequestPayload(
     val v: String,
 )
 
+enum class InngestSyncResult {
+    None,
+}
+
 data class CommResponse(
     val body: String,
     val statusCode: ResultStatusCode,
@@ -119,6 +123,10 @@ class CommHandler(
         // TODO - Add headers to output
         val body: Map<String, Any?> = mapOf()
         return Klaxon().toJsonString(body)
+    }
+
+    fun sync(): Result<InngestSyncResult> {
+        return Result.success(InngestSyncResult.None)
     }
 
     fun introspect(): String {
