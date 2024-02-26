@@ -34,23 +34,6 @@ object Environment {
         }
     }
 
-    fun inngestApiBaseUrl(
-        env: InngestEnv,
-        url: String? = null,
-    ): String {
-        if (url != null) return url
-
-        val baseUrl = System.getenv(InngestSystem.ApiBaseUrl.value)
-        if (baseUrl != null) {
-            return baseUrl
-        }
-
-        return when (env) {
-            InngestEnv.Dev -> "http://127.0.0.1:8288"
-            else -> "https://api.inngest.com"
-        }
-    }
-
     fun inngestServeOrigin(origin: String? = null): String? {
         if (origin != null) return origin
         return System.getenv(InngestSystem.ServeOrigin.value)

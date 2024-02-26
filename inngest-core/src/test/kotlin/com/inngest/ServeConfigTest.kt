@@ -39,14 +39,37 @@ internal class ServeConfigTest {
     // fun `should return INNGEST_SIGNING_KEY value - prod`() {}
 
     @Test
-    fun `should return passed in value`() {
+    fun `should return passed in value - sigingKey`() {
         val key = "sigingkey"
         val config = ServeConfig(client = client, signingKey = key)
         assertEquals(key, config.signingKey())
     }
 
     // baseUrl()
-    // serveOrigin()
+    @Test
+    fun `should return dev server url - dev`() {
+        val config = ServeConfig(client = client)
+        assertEquals("http://127.0.0.1:8288", config.baseUrl())
+    }
+
+    @Test
+    fun `should return inngest api - prod`() {
+        val prodClient = Inngest(appId = client.appId, env = "prod")
+        val config = ServeConfig(client = prodClient)
+        assertEquals("https://api.inngest.com", config.baseUrl())
+    }
+
+    @Test
+    fun `should return passed in value - baseUrl`() {
+        val url = "https://api.yolo.com"
+        val config = ServeConfig(client = client, baseUrl = url)
+        assertEquals(url, config.baseUrl())
+    }
+
+    // @Test
+    // fun `should return INNGEST_API_BASE_URL value`() {}
+
+    // SERVEORIGIN()
     // servePath()
     // logLevel()
 }

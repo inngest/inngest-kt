@@ -40,8 +40,7 @@ class ServeConfig(
 
         return when (client.env) {
             InngestEnv.Dev -> "http://127.0.0.1:8288"
-            InngestEnv.Prod -> "https://inn.gs"
-            InngestEnv.Other -> "https://inn.gs"
+            else -> "https://api.inngest.com"
         }
     }
 

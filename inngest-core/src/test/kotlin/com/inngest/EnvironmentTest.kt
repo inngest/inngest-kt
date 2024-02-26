@@ -40,29 +40,6 @@ internal class EnvironmentTest {
     // @Test
     // fun `test inngestEventApiBaseUrl with INNGEST_BASE_URL value`() { }
 
-    // API URL
-    @Test
-    fun `test inngestApiBaseUrl - dev`() {
-        assertEquals("http://127.0.0.1:8288", Environment.inngestApiBaseUrl(InngestEnv.Dev))
-    }
-
-    @Test
-    fun `test inngestApiBaseUrl - prod`() {
-        assertEquals("https://api.inngest.com", Environment.inngestApiBaseUrl(env = InngestEnv.Prod))
-    }
-
-    @Test
-    fun `test inngestApiBaseUrl with url value`() {
-        assertEquals(
-            "https://api.yolo.com",
-            Environment.inngestApiBaseUrl(env = InngestEnv.Prod, url = "https://api.yolo.com"),
-        )
-    }
-
-    // TODO: Test with env `INNGEST_API_BASE_URL`
-    // @Test
-    // fun `test inngestApiBaseUrl with INNGEST_API_BASE_URL value - prod`() { }
-
     // Serve Origin
     @Test
     fun `test inngestServeOrigin`() {
