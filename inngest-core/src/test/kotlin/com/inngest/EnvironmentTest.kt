@@ -55,4 +55,90 @@ internal class EnvironmentTest {
             { Environment.inngestSigningKey(InngestEnv.Prod) },
         )
     }
+
+    // EventAPI URL
+    @Test
+    fun testInngestEventApiBaseUrlDefaultDev() {
+        assertEquals("http://127.0.0.1:8288", Environment.inngestEventApiBaseUrl(env = InngestEnv.Dev))
+    }
+
+    fun testInngestEventApiBaseUrlDefaultProd() {
+        assertEquals("https://inn.gs", Environment.inngestEventApiBaseUrl(env = InngestEnv.Prod))
+    }
+
+    fun testInngestEventApiBaseUrlWithUrl() {
+        assertEquals(
+            "https://yolo.com",
+            Environment.inngestEventApiBaseUrl(env = InngestEnv.Prod, url = "https://yolo.com"),
+        )
+    }
+
+    // TODO: Test with env `INNGEST_BASE_URL`
+    // @Test
+    // fun testInngestEventApiBaseUrlEnvVarProd() { }
+
+    // API URL
+    @Test
+    fun testInngestApiBaseUrlDefaultDev() {
+        assertEquals("http://127.0.0.1:8288", Environment.inngestApiBaseUrl(InngestEnv.Dev))
+    }
+
+    @Test
+    fun testInngestApiBaseUrlDefaultProd() {
+        assertEquals("https://api.inngest.com", Environment.inngestApiBaseUrl(env = InngestEnv.Prod))
+    }
+
+    @Test
+    fun testInngestApiBaseUrlWithUrl() {
+        assertEquals(
+            "https://api.yolo.com",
+            Environment.inngestApiBaseUrl(env = InngestEnv.Prod, url = "https://api.yolo.com"),
+        )
+    }
+
+    // TODO: Test with env `INNGEST_API_BASE_URL`
+    // @Test
+    // fun testInngestApiBaseUrlEnvVarProd() { }
+
+    // Serve Host
+    @Test
+    fun testInngestServeHostNothing() {
+        assertNull(Environment.inngestServeHost())
+    }
+
+    @Test
+    fun testInngestServeHostWithValue() {
+        val host = "yolo.com"
+        assertEquals(host, Environment.inngestServeHost(host))
+    }
+
+    // @Test
+    // fun testInngestServeHostWithEnvVar() {}
+
+    // Serve Path
+    @Test
+    fun testInngestServePathNothing() {
+        assertNull(Environment.inngestServePath())
+    }
+
+    @Test
+    fun testInngestServePathWithValue() {
+        val path = "/api/inngest"
+        assertEquals(path, Environment.inngestServePath(path))
+    }
+
+    // @Test
+    // fun testInngestServePathWithEnvVar() {}
+
+    // Env
+    // Log Level
+    @Test
+    fun testInngestLogLevelDefault() {
+        assertEquals("info", Environment.inngestLogLevel())
+    }
+
+    @Test
+    fun testInngestLogLevelWithLevel() {
+        assertEquals("error", Environment.inngestLogLevel("error"))
+    }
 }

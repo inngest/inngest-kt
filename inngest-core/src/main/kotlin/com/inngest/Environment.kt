@@ -43,7 +43,7 @@ object Environment {
     }
 
     fun inngestEventApiBaseUrl(
-        env: String? = null,
+        env: InngestEnv,
         url: String? = null,
     ): String {
         if (url != null) return url
@@ -53,7 +53,7 @@ object Environment {
             return baseUrl
         }
 
-        return when (inngestEnv(env)) {
+        return when (env) {
             InngestEnv.Dev -> "http://127.0.0.1:8288"
             InngestEnv.Prod -> "https://inn.gs"
             InngestEnv.Other -> "https://inn.gs"
@@ -73,7 +73,7 @@ object Environment {
 
         return when (env) {
             InngestEnv.Dev -> "http://127.0.0.1:8288"
-            else -> "https://inngest"
+            else -> "https://api.inngest.com"
         }
     }
 
