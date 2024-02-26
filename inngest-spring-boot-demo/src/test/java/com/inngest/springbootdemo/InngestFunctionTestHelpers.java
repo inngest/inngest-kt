@@ -61,4 +61,19 @@ public class InngestFunctionTestHelpers {
 
         return new InngestFunction(fnConfig, handler);
     }
+
+    static InngestFunction waitForEventFunction() {
+        FunctionTrigger fnTrigger = new FunctionTrigger("test/wait-for-event");
+        FunctionTrigger[] triggers = {fnTrigger};
+        FunctionOptions fnConfig = new FunctionOptions("wait-for-event-fn", "Wait for Event Function", triggers);
+
+        BiFunction<FunctionContext, Step, String> handler = (ctx, step) -> {
+            Object event = step.waitForEvent("wait-test", "test/yolo.wait", "8s", null);
+
+            return event == null ? "empty" : "fullfilled";
+        };
+
+        return new InngestFunction(fnConfig, handler);
+    }
+
 }

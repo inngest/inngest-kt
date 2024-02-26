@@ -67,7 +67,6 @@ class InngestFunctionExecutionIntegrationTest {
         assertEquals(updatedRun.getOutput(), 42);
     }
 
-
     @Test
     void testTwoStepsFunctionRunningValidResult() throws Exception {
         String eventId = InngestFunctionTestHelpers.sendEvent(client, "test/two.steps").first();
@@ -78,6 +77,52 @@ class InngestFunctionExecutionIntegrationTest {
 
         assertEquals(run.getStatus(), "Completed");
         assertEquals(run.getOutput(), 5);
+    }
+
+    @Test
+    void testWaitForEventFunctionWhenFullFilled() throws Exception {
+        String eventId = InngestFunctionTestHelpers.sendEvent(client, "test/wait-for-event").first();
+
+        Thread.sleep(sleepTime);
+
+        RunEntry<Integer> run = devServer.<Integer>runsByEvent(eventId).first();
+
+        // It should still be waiting for the expected event.
+        assertEquals(run.getStatus(), "Running");
+        assertNull(run.getEnded_at());
+
+        InngestFunctionTestHelpers.sendEvent(client, "test/yolo.wait").first();
+
+        Thread.sleep(sleepTime);
+
+        RunEntry<String> updatedRun = devServer.<String>runById(run.getRun_id()).getData();
+
+        assertEquals(updatedRun.getEvent_id(), eventId);
+        assertEquals(updatedRun.getRun_id(), run.getRun_id());
+        assertEquals(updatedRun.getStatus(), "Completed");
+        assertEquals(updatedRun.getOutput(), "fullfilled");
+    }
+
+    @Test
+    void testWaitForEventFunctionWhenTimeOut() throws Exception {
+        String eventId = InngestFunctionTestHelpers.sendEvent(client, "test/wait-for-event").first();
+
+        Thread.sleep(sleepTime);
+
+        RunEntry<Integer> run = devServer.<Integer>runsByEvent(eventId).first();
+
+        // It should still be waiting for the expected event.
+        assertEquals(run.getStatus(), "Running");
+        assertNull(run.getEnded_at());
+
+        Thread.sleep(sleepTime);
+
+        RunEntry<String> updatedRun = devServer.<String>runById(run.getRun_id()).getData();
+
+        assertEquals(updatedRun.getEvent_id(), eventId);
+        assertEquals(updatedRun.getRun_id(), run.getRun_id());
+        assertEquals(updatedRun.getStatus(), "Completed");
+        assertEquals(updatedRun.getOutput(), "empty");
     }
 
 
