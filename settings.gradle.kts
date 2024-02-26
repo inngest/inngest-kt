@@ -12,4 +12,9 @@ plugins {
 
 rootProject.name = "inngest-sdk"
 
-include("inngest-core", "inngest-test-server", "inngest-spring-boot-adapter", "inngest-spring-boot-demo")
+include(
+    "inngest-core",
+    "inngest-test-server",
+    "inngest-spring-boot-adapter",
+    "inngest-spring-boot-demo",
+)

@@ -1,3 +1,5 @@
+TEST_ARGS=--console=rich --warning-mode=all
+
 .PHONY: dev-ktor
 dev-ktor:
 	gradle inngest-test-server:run
@@ -7,9 +9,15 @@ dev-spring-boot:
 	gradle inngest-spring-boot-demo:bootRun
 
 .PHONY: test
-test:
-	gradle test inngest-core:test
-	gradle inngest-spring-boot-demo:test
+test: test-core test-springboot-demo
+
+.PHONY: test-core
+test-core:
+	gradle test $(TEST_ARGS) -p inngest-core
+
+.PHONY: test-springboot-demo
+test-springboot-demo:
+	gradle test $(TEST_ARGS) -p inngest-spring-boot-demo
 
 .PHONY: lint
 lint:
