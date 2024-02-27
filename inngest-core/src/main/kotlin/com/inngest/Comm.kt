@@ -87,6 +87,9 @@ class CommHandler(
                 headers = headers,
             )
         } catch (e: Exception) {
+            val retryDecision = RetryDecision.fromException(e)
+            val statusCode = if (retryDecision.shouldRetry) ResultStatusCode.Error else ResultStatusCode.BadRequest
+
             val err =
                 CommError(
                     name = e.toString(),
@@ -95,8 +98,8 @@ class CommHandler(
                 )
             return CommResponse(
                 body = Klaxon().toJsonString(err),
-                statusCode = ResultStatusCode.Error,
-                headers = headers,
+                statusCode = statusCode,
+                headers = headers.plus(retryDecision.headers),
             )
         }
     }

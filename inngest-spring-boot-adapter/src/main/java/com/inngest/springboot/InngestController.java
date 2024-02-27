@@ -39,7 +39,10 @@ public abstract class InngestController {
         try {
             CommResponse response = commHandler.callFunction(functionId, body);
 
-            return ResponseEntity.status(response.getStatusCode().getCode()).headers(getHeaders())
+            HttpHeaders headers = new HttpHeaders();
+            response.getHeaders().forEach(headers::add);
+
+            return ResponseEntity.status(response.getStatusCode().getCode()).headers(headers)
                 .body(response.getBody());
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)

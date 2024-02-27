@@ -33,6 +33,7 @@ enum class OpCode {
 enum class ResultStatusCode(val code: Int, val message: String) {
     StepComplete(206, "Step Complete"),
     FunctionComplete(200, "Function Complete"),
+    BadRequest(400, "Bad Request"),
     Error(500, "Function Error"),
 }
 
