@@ -11,13 +11,21 @@ public class DemoTestConfiguration extends InngestConfiguration {
     @Override
     protected HashMap<String, InngestFunction> functions() {
         HashMap<String, InngestFunction> functions = new HashMap<>();
-        functions.put("no-step-fn", InngestFunctionTestHelpers.emptyStepFunction());
-        functions.put("sleep-fn", InngestFunctionTestHelpers.sleepStepFunction());
-        functions.put("two-steps-fn", InngestFunctionTestHelpers.twoStepsFunction());
-        functions.put("wait-for-event-fn", InngestFunctionTestHelpers.waitForEventFunction());
-        functions.put("send-fn", InngestFunctionTestHelpers.sendEventFunction());
+        addInngestFunction(functions, InngestFunctionTestHelpers.emptyStepFunction());
+        addInngestFunction(functions, InngestFunctionTestHelpers.sleepStepFunction());
+        addInngestFunction(functions, InngestFunctionTestHelpers.twoStepsFunction());
+        addInngestFunction(functions, InngestFunctionTestHelpers.waitForEventFunction());
+        addInngestFunction(functions, InngestFunctionTestHelpers.sendEventFunction());
+        addInngestFunction(functions, InngestFunctionTestHelpers.nonRetriableErrorFunction());
+        addInngestFunction(functions, InngestFunctionTestHelpers.retriableErrorFunction());
 
         return functions;
+    }
+
+    private static void addInngestFunction(
+        HashMap<String, InngestFunction> functions,
+        InngestFunction function) {
+        functions.put(function.getConfig().getId(), function);
     }
 
     @Override
