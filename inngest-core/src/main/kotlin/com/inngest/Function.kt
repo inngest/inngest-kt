@@ -192,7 +192,7 @@ open class InngestFunction(
         }
     }
 
-    fun getConfig(): FunctionConfig {
+    fun getFunctionConfig(): FunctionConfig {
         return FunctionConfig(
             id = config.id,
             name = config.name,

@@ -103,7 +103,7 @@ class CommHandler(
 
     private fun getFunctionConfigs(): List<FunctionConfig> {
         val configs: MutableList<FunctionConfig> = mutableListOf()
-        functions.forEach { entry -> configs.add(entry.value.getConfig()) }
+        functions.forEach { entry -> configs.add(entry.value.getFunctionConfig()) }
         return configs
     }
 
