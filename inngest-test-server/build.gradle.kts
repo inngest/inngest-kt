@@ -18,6 +18,11 @@ repositories {
 
 dependencies {
     api(project(":inngest-core"))
+    runtimeOnly(project(":inngest-core")) {
+        capabilities {
+            requireCapability("com.inngest:inngest-core-ktor")
+        }
+    }
 
     // Use the Kotlin JUnit 5 integration.
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
