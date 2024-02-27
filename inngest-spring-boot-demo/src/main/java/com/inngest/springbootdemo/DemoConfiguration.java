@@ -16,7 +16,7 @@ public class DemoConfiguration extends InngestConfiguration {
     @Override
     public HashMap<String, InngestFunction> functions() {
         String followUpEvent = "user.signup.completed";
-        FunctionTrigger fnTrigger = new FunctionTrigger("user-signup", null, null);
+        FunctionTrigger fnTrigger = new FunctionTrigger("user-signup");
         FunctionTrigger[] triggers = {fnTrigger};
         FunctionOptions fnConfig = new FunctionOptions("fn-id-slug", "My function!", triggers);
 
@@ -55,7 +55,7 @@ public class DemoConfiguration extends InngestConfiguration {
             }};
         };
 
-        FunctionTrigger followupFnTrigger = new FunctionTrigger(followUpEvent, null, null);
+        FunctionTrigger followupFnTrigger = new FunctionTrigger(followUpEvent);
         FunctionOptions followupFnConfig = new FunctionOptions(
             "fn-follow-up",
             "Follow up function!",

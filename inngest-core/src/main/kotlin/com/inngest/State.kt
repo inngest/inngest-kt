@@ -18,17 +18,22 @@ class State(val payloadJson: String) {
         return sb.toString()
     }
 
-    inline fun <reified T> getState(hashedId: String): T? = getState(hashedId, T::class.java)
+    inline fun <reified T> getState(
+        hashedId: String,
+        fieldName: String = "data",
+    ): T? = getState(hashedId, T::class.java, fieldName)
 
     fun <T> getState(
         hashedId: String,
         type: Class<T>,
+        fieldName: String = "data",
     ): T? {
         val mapper = ObjectMapper()
         val node: JsonNode = mapper.readTree(payloadJson)
         val stepResult = node.path("steps").get(hashedId) ?: throw StateNotFound()
-        if (stepResult.has("data")) {
-            val dataNode = stepResult.get("data")
+
+        if (stepResult.has(fieldName)) {
+            val dataNode = stepResult.get(fieldName)
             return mapper.treeToValue(dataNode, type)
         } else if (stepResult.has("error")) {
             // TODO - Parse the error and throw it

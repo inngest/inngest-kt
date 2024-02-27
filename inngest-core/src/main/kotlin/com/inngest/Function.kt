@@ -10,11 +10,13 @@ data class FunctionOptions(
     val triggers: Array<FunctionTrigger>,
 )
 
-data class FunctionTrigger(
-    @Json(serializeNull = false) val event: String? = null,
-    @Json(serializeNull = false) val `if`: String? = null,
-    @Json(serializeNull = false) val cron: String? = null,
-)
+data class FunctionTrigger
+    @JvmOverloads
+    constructor(
+        @Json(serializeNull = false) val event: String? = null,
+        @Json(serializeNull = false) val `if`: String? = null,
+        @Json(serializeNull = false) val cron: String? = null,
+    )
 
 // TODO - Add an abstraction layer between the Function call response and the comm handler response
 enum class OpCode {

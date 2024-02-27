@@ -95,7 +95,7 @@ class Step(val state: State, val client: Inngest) {
     }
 
     /**
-     * Sends multiple event to Inngest
+     * Sends multiple events to Inngest
      *
      * @param id Unique step id for memoization.
      * @param event An event payload object.
@@ -117,18 +117,16 @@ class Step(val state: State, val client: Inngest) {
     fun sendEvent(
         id: String,
         events: Array<InngestEvent>,
-    ) {
+    ): SendEventsResponse {
         val hashedId = state.getHashFromId(id)
 
         try {
-            // If this doesn't throw an error, it's null and that's what is expected
-            // TODO - Get the event_ids that were sent and return it from this method
-            // event_ids are not in the data field but it's actually a separate one.
-            val stepState = state.getState<Any?>(hashedId)
+            val stepState = state.getState<Array<String>>(hashedId, "event_ids")
+
             if (stepState != null) {
-                throw Exception("step state expected sendEvent, got something else")
+                return SendEventsResponse(stepState)
             }
-            return
+            throw Exception("step state expected sendEvent, got something else")
         } catch (e: StateNotFound) {
             val response = client.send<SendEventsResponse>(events)
             throw StepInterruptSendEventException(id, hashedId, response!!.ids)

@@ -10,4 +10,8 @@ import lombok.Setter;
 class SendEventResponse {
     String status;
     String[] ids;
+
+    String first() {
+        return ids[0];
+    }
 }

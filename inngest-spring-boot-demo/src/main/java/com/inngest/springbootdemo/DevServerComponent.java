@@ -1,5 +1,6 @@
 package com.inngest.springbootdemo;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import okhttp3.Request;
 
@@ -40,22 +41,38 @@ public class DevServerComponent {
         }
     }
 
-    RunIdsResponse runIds(String runId) throws Exception {
+    // TODO: Figure out how to make this generic.
+    // The issue is that deserialization will fail on the `output` generic
+    // type and return either `LinkedHashMap` or `ArrayList`.
+    EventRunsResponse<Object> runsByEvent(String eventId) throws Exception {
         Request request = new Request.Builder()
-            .url(String.format("%s/v1/events/%s/runs", baseUrl, runId))
+            .url(String.format("%s/v1/events/%s/runs", baseUrl, eventId))
             .build();
+        return makeRequest(request, new TypeReference<EventRunsResponse<Object>>() {
+        });
+    }
 
+    <T> RunResponse<T> runById(String eventId) throws Exception {
+        Request request = new Request.Builder()
+            .url(String.format("%s/v1/runs/%S", baseUrl, eventId))
+            .build();
+        return makeRequest(request, new TypeReference<RunResponse<T>>() {
+        });
+    }
+
+    private <T> T makeRequest(Request request, TypeReference<T> typeReference) throws Exception {
         try (Response response = httpClient.newCall(request).execute()) {
             if (response.code() == 200) {
                 assert response.body() != null;
 
                 String strResponse = response.body().string();
                 ObjectMapper mapper = new ObjectMapper();
-                return mapper.readValue(strResponse, RunIdsResponse.class);
+                return mapper.readValue(strResponse, typeReference);
             }
         }
         return null;
     }
+
 
     @PreDestroy
     public void stop() throws Exception {
