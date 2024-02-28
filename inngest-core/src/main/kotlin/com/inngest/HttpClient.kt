@@ -29,11 +29,13 @@ internal class HttpClient(private val clientConfig: RequestConfig) {
         val jsonRequestBody = Klaxon().toJsonString(payload)
         val body = jsonRequestBody.toRequestBody(jsonMediaType)
 
+        val clientHeaders = clientConfig.headers ?: emptyMap()
+        val requestHeaders = config?.headers ?: emptyMap()
+
         return okhttp3.Request.Builder()
             .url(url)
             .post(body)
-            .headers(toOkHttpHeaders(clientConfig.headers))
-            .apply { config?.headers?.forEach { (k, v) -> addHeader(k, v) } }
+            .headers(toOkHttpHeaders(clientHeaders + requestHeaders))
             .build()
     }
 }
