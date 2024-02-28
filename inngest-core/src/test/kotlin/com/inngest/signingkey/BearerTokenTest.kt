@@ -1,13 +1,13 @@
 package com.inngest.signingkey
 
-import org.junit.jupiter.api.Assertions.*
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.assertThrows
+import kotlin.test.assertEquals
+import kotlin.test.Test
+import kotlin.test.assertFailsWith
 
 class BearerTokenKtTest {
     @Test
     fun `test invalid signing key format`() {
-        assertThrows<InvalidSigningKeyException> {
+        assertFailsWith<InvalidSigningKeyException> {
             getAuthorizationHeader("signke-prod-blah")
         }
     }

@@ -2,6 +2,7 @@ package com.inngest
 
 import com.beust.klaxon.Json
 import com.beust.klaxon.Klaxon
+import com.inngest.signingkey.getAuthorizationHeader
 import java.io.IOException
 
 data class ExecutionRequestPayload(
@@ -108,20 +109,28 @@ class CommHandler(
     }
 
     fun register(): String {
-        // TODO - This should detect the dev server or use base url
-        val registrationUrl = "http://localhost:8288/fn/register"
+        val registrationUrl = "${config.baseUrl()}/fn/register"
         val requestPayload =
             RegistrationRequestPayload(
-                appName = "my-app",
-                framework = "ktor",
-                sdk = "kotlin",
-                url = "http://localhost:8080/api/inngest",
+                appName = "my-app", // TODO use name from ServeConfig
+                framework = "ktor", // TODO use framework from adapter
+                sdk = "inngest-kt",
+                url = "http://localhost:8080/api/inngest", // TODO use ServeConfig.serveOrigin?
                 v = Version.getVersion(),
                 functions = getFunctionConfigs(),
             )
 
         val httpClient = client.httpClient
-        val request = httpClient.build(registrationUrl, requestPayload)
+
+        val signingKey = config.signingKey()
+        val authorizationHeaderRequestConfig =
+            if (config.client.env != InngestEnv.Dev) {
+                RequestConfig(getAuthorizationHeader(signingKey))
+            } else {
+                null
+            }
+
+        val request = httpClient.build(registrationUrl, requestPayload, authorizationHeaderRequestConfig)
 
         httpClient.send(request) { response ->
             if (!response.isSuccessful) throw IOException("Unexpected code $response")

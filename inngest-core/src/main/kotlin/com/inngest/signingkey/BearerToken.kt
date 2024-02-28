@@ -5,10 +5,9 @@ import java.security.MessageDigest
 
 val SIGNING_KEY_REGEX = Regex("""(?<prefix>^signkey-[\w]+-)(?<key>.*)""")
 
-// https://www.baeldung.com/sha-256-hashing-java
-
 /**
  * Takes a signing key in the form "signkey-<env>-<key>" and returns "signkey-<env>-<hex-encoded sha256 of key>"
+ * Inspired by https://www.baeldung.com/sha-256-hashing-java
  *
  * @param signingKey signing key in the form "signkey-<env>-<key>"
  * @return the hashed signing key in the form "signkey-<env>-<hex-encoded sha256 of key>"
