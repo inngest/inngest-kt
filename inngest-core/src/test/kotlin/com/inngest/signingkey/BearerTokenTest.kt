@@ -13,27 +13,34 @@ class BearerTokenKtTest {
     }
 
     @Test
+    fun `test signing key is not a valid hex string`() {
+        assertFailsWith<InvalidSigningKeyException> {
+            getAuthorizationHeader("signkey-prod-8fjau3mn")
+        }
+    }
+
+    @Test
     fun `builds authorization header with bearer token for prod environment`() {
-        val authorizationHeader = getAuthorizationHeader("signkey-prod-8fjau3mn")
+        val authorizationHeader = getAuthorizationHeader("signkey-prod-12345678")
         assertEquals(
             "Authorization",
             authorizationHeader.keys.first(),
         )
         assertEquals(
-            "Bearer signkey-prod-3c8335d113497a3a0b3e6bc18c12bf59e3db1c964c9f66765f374f5f7b473ac7",
+            "Bearer signkey-prod-b2ed992186a5cb19f6668aade821f502c1d00970dfd0e35128d51bac4649916c",
             authorizationHeader.values.first(),
         )
     }
 
     @Test
     fun `builds authorization header with bearer token for non prod environment`() {
-        val authorizationHeader = getAuthorizationHeader("signkey-staging-8fjau3mn")
+        val authorizationHeader = getAuthorizationHeader("signkey-test-12345678")
         assertEquals(
             "Authorization",
             authorizationHeader.keys.first(),
         )
         assertEquals(
-            "Bearer signkey-staging-3c8335d113497a3a0b3e6bc18c12bf59e3db1c964c9f66765f374f5f7b473ac7",
+            "Bearer signkey-test-b2ed992186a5cb19f6668aade821f502c1d00970dfd0e35128d51bac4649916c",
             authorizationHeader.values.first(),
         )
     }
