@@ -90,4 +90,43 @@ public class InngestFunctionTestHelpers {
     }
 
 
+    static InngestFunction nonRetriableErrorFunction() {
+        FunctionTrigger fnTrigger = new FunctionTrigger("test/non.retriable");
+        FunctionTrigger[] triggers = {fnTrigger};
+        FunctionOptions fnConfig = new FunctionOptions("non-retriable-fn", "NonRetriable Function", triggers);
+
+        BiFunction<FunctionContext, Step, String> handler = (ctx, step) -> {
+            step.run("fail-step", () -> {
+                throw new NonRetriableError("something fatally went wrong");
+            }, String.class);
+
+            return "Success";
+        };
+
+        return new InngestFunction(fnConfig, handler);
+    }
+
+    static int retryCount = 0;
+
+    static InngestFunction retriableErrorFunction() {
+        FunctionTrigger fnTrigger = new FunctionTrigger("test/retriable");
+        FunctionTrigger[] triggers = {fnTrigger};
+        FunctionOptions fnConfig = new FunctionOptions("retriable-fn", "Retriable Function", triggers);
+
+        BiFunction<FunctionContext, Step, String> handler = (ctx, step) -> {
+            retryCount++;
+            step.run("retriable-step", () -> {
+                if (retryCount < 2) {
+                    throw new RetryAfterError("something went wrong", 10000);
+                }
+                return "Success";
+            }, String.class);
+
+            return "Success";
+        };
+
+        return new InngestFunction(fnConfig, handler);
+    }
+
+
 }

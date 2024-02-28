@@ -33,7 +33,8 @@ enum class OpCode {
 enum class ResultStatusCode(val code: Int, val message: String) {
     StepComplete(206, "Step Complete"),
     FunctionComplete(200, "Function Complete"),
-    Error(500, "Function Error"),
+    NonRetriableError(400, "Bad Request"),
+    RetriableError(500, "Function Error"),
 }
 
 abstract class StepOp(
@@ -187,12 +188,12 @@ open class InngestFunction(
                 id = e.hashedId,
                 name = e.id,
                 op = OpCode.StepStateFailed,
-                statusCode = ResultStatusCode.Error,
+                statusCode = ResultStatusCode.RetriableError,
             )
         }
     }
 
-    fun getConfig(): FunctionConfig {
+    fun getFunctionConfig(): FunctionConfig {
         return FunctionConfig(
             id = config.id,
             name = config.name,
