@@ -8,12 +8,11 @@ import org.junit.jupiter.api.parallel.Execution;
 import org.junit.jupiter.api.parallel.ExecutionMode;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @IntegrationTest
 @Execution(ExecutionMode.CONCURRENT)
-class SleepFunctionIntegrationTest {
-
+class CustomStepResultIntegrationTest {
     @BeforeAll
     static void setup(@Autowired CommHandler handler) {
         handler.register();
@@ -22,26 +21,22 @@ class SleepFunctionIntegrationTest {
     @Autowired
     private DevServerComponent devServer;
 
+    static int sleepTime = 5000;
+
     @Autowired
     private Inngest client;
 
-    @Test
-    void testSleepFunctionRunningSuccessfully() throws Exception {
-        String eventId = InngestFunctionTestHelpers.sendEvent(client, "test/sleep").first();
 
-        Thread.sleep(5000);
+    @Test
+    void testMultiStepsFunctionWithClassResultStep() throws Exception {
+        String eventId = InngestFunctionTestHelpers.sendEvent(client, "test/custom.result.step").first();
+
+        Thread.sleep(sleepTime);
 
         RunEntry<Object> run = devServer.runsByEvent(eventId).first();
+        RunEntry<Result> runWithOutput = devServer.runById(run.getRun_id(), Result.class).getData();
 
-        assertEquals(run.getStatus(), "Running");
-        assertNull(run.getEnded_at());
-
-        Thread.sleep(10000);
-
-        RunEntry<Integer> updatedRun = devServer.runById(run.getRun_id(), Integer.class).getData();
-
-        assertEquals(updatedRun.getEvent_id(), eventId);
-        assertEquals(updatedRun.getStatus(), "Completed");
-        assertEquals(updatedRun.getOutput(), 42);
+        assertEquals(runWithOutput.getStatus(), "Completed");
+        assertEquals(runWithOutput.getOutput().getSum(), (new Result(5).getSum()));
     }
 }
