@@ -1,12 +1,18 @@
 package com.inngest.springbootdemo;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
-public class Result {
-    @JsonProperty("sum")
-    public final int sum;
+@Getter
+@Setter
+@JsonIgnoreProperties(ignoreUnknown = true)
+@NoArgsConstructor
+class Result {
+    int sum;
 
-    public Result(@JsonProperty("sum") int sum) {
+    Result(int sum) {
         this.sum = sum;
     }
 }

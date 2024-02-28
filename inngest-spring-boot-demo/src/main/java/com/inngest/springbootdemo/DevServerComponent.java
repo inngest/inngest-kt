@@ -1,6 +1,7 @@
 package com.inngest.springbootdemo;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import okhttp3.Request;
 
@@ -52,12 +53,28 @@ public class DevServerComponent {
         });
     }
 
-    <T> RunResponse<T> runById(String eventId) throws Exception {
+    <T> RunResponse<T> runById(String eventId, Class<T> outputType) throws Exception {
         Request request = new Request.Builder()
             .url(String.format("%s/v1/runs/%S", baseUrl, eventId))
             .build();
-        return makeRequest(request, new TypeReference<RunResponse<T>>() {
-        });
+        try (Response response = httpClient.newCall(request).execute()) {
+            if (response.code() == 200) {
+                assert response.body() != null;
+
+                String strResponse = response.body().string();
+                ObjectMapper mapper = new ObjectMapper();
+
+                JsonNode node = mapper.readTree(strResponse);
+                JsonNode dataResult = node.path("data").path("output");
+
+                T output = mapper.treeToValue(dataResult, outputType);
+                RunResponse<T> result = mapper.readValue(strResponse, new TypeReference<RunResponse<T>>() {
+                });
+                result.getData().setOutput(output);
+                return result;
+            }
+        }
+        return null;
     }
 
     private <T> T makeRequest(Request request, TypeReference<T> typeReference) throws Exception {

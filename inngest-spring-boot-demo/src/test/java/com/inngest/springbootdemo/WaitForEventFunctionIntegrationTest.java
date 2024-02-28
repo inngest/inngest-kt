@@ -43,7 +43,7 @@ class WaitForEventFunctionIntegrationTest {
 
         Thread.sleep(sleepTime);
 
-        RunEntry<Object> updatedRun = devServer.runById(run.getRun_id()).getData();
+        RunEntry<Object> updatedRun = devServer.runById(run.getRun_id(), Object.class).getData();
 
         assertEquals(updatedRun.getEvent_id(), eventId);
         assertEquals(updatedRun.getRun_id(), run.getRun_id());
@@ -65,7 +65,7 @@ class WaitForEventFunctionIntegrationTest {
 
         Thread.sleep(sleepTime);
 
-        RunEntry<String> updatedRun = devServer.<String>runById(run.getRun_id()).getData();
+        RunEntry<String> updatedRun = devServer.runById(run.getRun_id(), String.class).getData();
 
         assertEquals(updatedRun.getEvent_id(), eventId);
         assertEquals(updatedRun.getRun_id(), run.getRun_id());

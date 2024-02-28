@@ -3,6 +3,7 @@ package com.inngest
 import com.beust.klaxon.Json
 import com.beust.klaxon.Klaxon
 import com.inngest.signingkey.getAuthorizationHeader
+import com.fasterxml.jackson.databind.ObjectMapper
 import java.io.IOException
 
 data class ExecutionRequestPayload(
@@ -83,7 +84,7 @@ class CommHandler(
                 body = result.data
             }
             return CommResponse(
-                body = Klaxon().toJsonString(body),
+                body = parseRequestBody(body),
                 statusCode = result.statusCode,
                 headers = headers,
             )
@@ -98,11 +99,16 @@ class CommHandler(
                     stack = e.stackTrace.joinToString(separator = "\n"),
                 )
             return CommResponse(
-                body = Klaxon().toJsonString(err),
+                body = parseRequestBody(err),
                 statusCode = statusCode,
                 headers = headers.plus(retryDecision.headers),
             )
         }
+    }
+
+    private fun parseRequestBody(requestBody: Any?): String {
+        val mapper = ObjectMapper()
+        return mapper.writeValueAsString(requestBody)
     }
 
     private fun getFunctionConfigs(): List<FunctionConfig> {
@@ -133,7 +139,7 @@ class CommHandler(
 
         // TODO - Add headers to output
         val body: Map<String, Any?> = mapOf()
-        return Klaxon().toJsonString(body)
+        return parseRequestBody(body)
     }
 
     fun sync(): Result<InngestSyncResult> {
@@ -142,7 +148,7 @@ class CommHandler(
 
     fun introspect(): String {
         val requestPayload = getRegistrationRequestPayload()
-        return Klaxon().toJsonString(requestPayload)
+        return parseRequestBody(requestPayload)
     }
 
     private fun getRegistrationRequestPayload(): RegistrationRequestPayload {

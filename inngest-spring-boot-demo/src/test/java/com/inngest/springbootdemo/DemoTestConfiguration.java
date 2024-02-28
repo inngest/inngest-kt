@@ -14,6 +14,7 @@ public class DemoTestConfiguration extends InngestConfiguration {
         addInngestFunction(functions, InngestFunctionTestHelpers.emptyStepFunction());
         addInngestFunction(functions, InngestFunctionTestHelpers.sleepStepFunction());
         addInngestFunction(functions, InngestFunctionTestHelpers.twoStepsFunction());
+        addInngestFunction(functions, InngestFunctionTestHelpers.customStepResultFunction());
         addInngestFunction(functions, InngestFunctionTestHelpers.waitForEventFunction());
         addInngestFunction(functions, InngestFunctionTestHelpers.sendEventFunction());
         addInngestFunction(functions, InngestFunctionTestHelpers.nonRetriableErrorFunction());
