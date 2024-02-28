@@ -2,6 +2,7 @@ package com.inngest.springboot;
 
 import com.inngest.CommHandler;
 import com.inngest.CommResponse;
+import com.inngest.signingkey.SignatureVerificationKt;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -33,10 +34,14 @@ public abstract class InngestController {
 
     @PostMapping()
     public ResponseEntity<String> handleRequest(
+        @RequestHeader(name = "X-Inngest-Signature", required = false) String signature,
+        @RequestHeader(name = "X-Inngest-Server-Kind", required = false) String serverKind,
         @RequestParam(name = "fnId") String functionId,
         @RequestBody String body
     ) {
         try {
+            SignatureVerificationKt.checkHeadersAndValidateSignature(signature, body, serverKind, commHandler.getConfig());
+
             CommResponse response = commHandler.callFunction(functionId, body);
 
             HttpHeaders headers = new HttpHeaders();
