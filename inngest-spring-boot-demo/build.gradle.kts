@@ -1,7 +1,6 @@
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.gradle.api.tasks.testing.logging.TestLogEvent
 
-
 plugins {
     java
     id("org.springframework.boot") version "2.7.18"
@@ -21,7 +20,9 @@ repositories {
 }
 
 dependencies {
-    implementation(project(":inngest-spring-boot-adapter"))
+    // implementation(project(":inngest-spring-boot-adapter"))
+    // implementation("com.inngest:inngest-sdk:inngest-core")
+    implementation("com.inngest:inngest-spring-boot-adapter:0.0.1-SNAPSHOT")
 
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
