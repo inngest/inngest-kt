@@ -42,7 +42,7 @@ class ErrorsInStepsIntegrationTest {
         assertEquals(run.getStatus(), "Failed");
         assertNotNull(run.getEnded_at());
         assert output.get("name").contains("NonRetriableError");
-        assert output.get("stack").contains("lambda$nonRetriableErrorFunction");
+        assert output.get("stack").contains("NonRetriableErrorFunction.lambda$execute");
         assertEquals(output.get("message"), "something fatally went wrong");
     }
 

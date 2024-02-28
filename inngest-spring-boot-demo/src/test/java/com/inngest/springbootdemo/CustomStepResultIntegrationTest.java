@@ -2,6 +2,7 @@ package com.inngest.springbootdemo;
 
 import com.inngest.CommHandler;
 import com.inngest.Inngest;
+import com.inngest.springbootdemo.testfunctions.TestFuncResult;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.parallel.Execution;
@@ -34,7 +35,7 @@ class CustomStepResultIntegrationTest {
         Thread.sleep(sleepTime);
 
         RunEntry<Object> run = devServer.runsByEvent(eventId).first();
-        RunEntry<Result> runWithOutput = devServer.runById(run.getRun_id(), Result.class).getData();
+        RunEntry<TestFuncResult> runWithOutput = devServer.runById(run.getRun_id(), TestFuncResult.class).getData();
 
         assertEquals(runWithOutput.getStatus(), "Completed");
         assertEquals(runWithOutput.getOutput().getSum(), (new Result(5).getSum()));

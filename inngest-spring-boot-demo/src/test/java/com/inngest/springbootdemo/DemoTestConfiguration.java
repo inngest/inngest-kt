@@ -2,6 +2,7 @@ package com.inngest.springbootdemo;
 
 import com.inngest.*;
 import com.inngest.springboot.InngestConfiguration;
+import com.inngest.springbootdemo.testfunctions.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 
@@ -11,14 +12,14 @@ public class DemoTestConfiguration extends InngestConfiguration {
     @Override
     protected HashMap<String, InngestFunction> functions() {
         HashMap<String, InngestFunction> functions = new HashMap<>();
-        addInngestFunction(functions, InngestFunctionTestHelpers.emptyStepFunction());
-        addInngestFunction(functions, InngestFunctionTestHelpers.sleepStepFunction());
-        addInngestFunction(functions, InngestFunctionTestHelpers.twoStepsFunction());
-        addInngestFunction(functions, InngestFunctionTestHelpers.customStepResultFunction());
-        addInngestFunction(functions, InngestFunctionTestHelpers.waitForEventFunction());
-        addInngestFunction(functions, InngestFunctionTestHelpers.sendEventFunction());
-        addInngestFunction(functions, InngestFunctionTestHelpers.nonRetriableErrorFunction());
-        addInngestFunction(functions, InngestFunctionTestHelpers.retriableErrorFunction());
+        addInngestFunction(functions, new EmptyStepFunction());
+        addInngestFunction(functions, new SleepStepFunction());
+        addInngestFunction(functions, new TwoStepsFunction());
+        addInngestFunction(functions, new CustomStepFunction());
+        addInngestFunction(functions, new WaitForEventFunction());
+        addInngestFunction(functions, new SendEventFunction());
+        addInngestFunction(functions, new NonRetriableErrorFunction());
+        addInngestFunction(functions, new RetriableErrorFunction());
 
         return functions;
     }
@@ -26,7 +27,7 @@ public class DemoTestConfiguration extends InngestConfiguration {
     private static void addInngestFunction(
         HashMap<String, InngestFunction> functions,
         InngestFunction function) {
-        functions.put(function.getConfig().getId(), function);
+        functions.put(function.id(), function);
     }
 
     @Override

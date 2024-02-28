@@ -2,8 +2,8 @@ package com.inngest
 
 import com.beust.klaxon.Json
 import com.beust.klaxon.Klaxon
-import com.inngest.signingkey.getAuthorizationHeader
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.inngest.signingkey.getAuthorizationHeader
 import java.io.IOException
 
 data class ExecutionRequestPayload(
@@ -20,11 +20,11 @@ data class ExecutionContext(
     val env: String,
 )
 
-data class RegistrationRequestPayload(
+internal data class RegistrationRequestPayload(
     val appName: String,
     val deployType: String = "ping",
     val framework: String,
-    val functions: List<FunctionConfig> = listOf(),
+    val functions: List<InternalFunctionConfig> = listOf(),
     val sdk: String,
     val url: String,
     val v: String,
@@ -48,12 +48,13 @@ data class CommError(
 )
 
 class CommHandler(
-    val functions: Map<String, InngestFunction>,
+    functions: Map<String, InngestFunction>,
     val client: Inngest,
     val config: ServeConfig,
     private val framework: SupportedFrameworkName,
 ) {
     val headers = Environment.inngestHeaders(framework).plus(client.headers)
+    internal val functions = functions.mapValues { (_, fn) -> fn.toInngestFunction() }
 
     fun callFunction(
         functionId: String,
@@ -111,8 +112,8 @@ class CommHandler(
         return mapper.writeValueAsString(requestBody)
     }
 
-    private fun getFunctionConfigs(): List<FunctionConfig> {
-        val configs: MutableList<FunctionConfig> = mutableListOf()
+    private fun getFunctionConfigs(): List<InternalFunctionConfig> {
+        val configs: MutableList<InternalFunctionConfig> = mutableListOf()
         functions.forEach { entry -> configs.add(entry.value.getFunctionConfig(getServeUrl())) }
         return configs
     }

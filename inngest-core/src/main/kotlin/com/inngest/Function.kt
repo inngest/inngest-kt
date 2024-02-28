@@ -4,13 +4,13 @@ import com.beust.klaxon.Json
 import java.util.function.BiFunction
 
 // IDEA: Use data classes
-data class FunctionOptions(
+internal data class InternalFunctionOptions(
     val id: String,
     val name: String,
-    val triggers: Array<FunctionTrigger>,
+    val triggers: Array<InternalFunctionTrigger>,
 )
 
-data class FunctionTrigger
+internal data class InternalFunctionTrigger
     @JvmOverloads
     constructor(
         @Json(serializeNull = false) val event: String? = null,
@@ -68,10 +68,10 @@ data class StepConfig(
     val runtime: HashMap<String, String> = hashMapOf("type" to "http"),
 )
 
-data class FunctionConfig(
+internal data class InternalFunctionConfig(
     val id: String,
     val name: String,
-    val triggers: Array<FunctionTrigger>,
+    val triggers: Array<InternalFunctionTrigger>,
     val steps: Map<String, StepConfig>,
 )
 
@@ -99,18 +99,18 @@ data class FunctionContext(
 
 data class SendEventPayload(val event_ids: Array<String>)
 
-interface Function {
+internal interface Function {
     fun id(): String
 
-    fun config(): FunctionConfig
+    fun config(): InternalFunctionConfig
 }
 
 // TODO: make this implement the Function interface
-open class InngestFunction(
-    val config: FunctionOptions,
+internal open class InternalInngestFunction(
+    val config: InternalFunctionOptions,
     val handler: (ctx: FunctionContext, step: Step) -> Any?,
 ) {
-    constructor(config: FunctionOptions, handler: BiFunction<FunctionContext, Step, out Any>) : this(
+    constructor(config: InternalFunctionOptions, handler: BiFunction<FunctionContext, Step, out Any>) : this(
         config,
         handler.toKotlin(),
     )
@@ -193,10 +193,10 @@ open class InngestFunction(
         }
     }
 
-    fun getFunctionConfig(serveUrl: String): FunctionConfig {
+    fun getFunctionConfig(serveUrl: String): InternalFunctionConfig {
         // TODO use URL objects instead of strings so we can fetch things like scheme
         val scheme = serveUrl.split("://")[0]
-        return FunctionConfig(
+        return InternalFunctionConfig(
             id = config.id,
             name = config.name,
             triggers = config.triggers,
