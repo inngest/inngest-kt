@@ -17,8 +17,7 @@ repositories {
 }
 
 dependencies {
-    api(project(":inngest-core"))
-    runtimeOnly(project(":inngest-core")) {
+    api(project(":inngest-core")) {
         capabilities {
             requireCapability("com.inngest:inngest-core-ktor")
         }
