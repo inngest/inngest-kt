@@ -24,6 +24,6 @@ public class DemoControllerTest {
             .andExpect(content().contentType("application/json"))
             .andExpect(header().string(InngestHeaderKey.Framework.getValue(), "springboot"))
             .andExpect(jsonPath("$.appName").value("my-app"))
-            .andExpect(jsonPath("$.sdk").value("kotlin"));
+            .andExpect(jsonPath("$.sdk").value("inngest-kt"));
     }
 }

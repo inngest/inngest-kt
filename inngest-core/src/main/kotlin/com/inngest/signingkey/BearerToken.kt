@@ -24,11 +24,12 @@ private fun hashedSigningKey(signingKey: String): String {
     val key = matchResult.groups["key"]!!.value
 
     val sha256MessageDigest = MessageDigest.getInstance("SHA-256") // not thread safe, get new instance every time
-    val hashedKey = try {
-        sha256MessageDigest.digest(key.hexToByteArray())
-    } catch (e: NumberFormatException) {
-        throw InvalidSigningKeyException()
-    }
+    val hashedKey =
+        try {
+            sha256MessageDigest.digest(key.hexToByteArray())
+        } catch (e: NumberFormatException) {
+            throw InvalidSigningKeyException()
+        }
     val hexEncodedHashedKey = hashedKey.toHexString()
 
     return "$prefix$hexEncodedHashedKey"

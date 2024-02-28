@@ -110,12 +110,13 @@ class CommHandler(
 
     fun register(): String {
         val registrationUrl = "${config.baseUrl()}/fn/register"
+        // TODO use name from ServeConfig, framework from adapter, serveOrigin from ServeConfig
         val requestPayload =
             RegistrationRequestPayload(
-                appName = "my-app", // TODO use name from ServeConfig
-                framework = "ktor", // TODO use framework from adapter
+                appName = "my-app",
+                framework = "ktor",
                 sdk = "inngest-kt",
-                url = "http://localhost:8080/api/inngest", // TODO use ServeConfig.serveOrigin?
+                url = "http://localhost:8080/api/inngest",
                 v = Version.getVersion(),
                 functions = getFunctionConfigs(),
             )
@@ -150,7 +151,7 @@ class CommHandler(
             RegistrationRequestPayload(
                 appName = "my-app",
                 framework = "ktor",
-                sdk = "kotlin",
+                sdk = "inngest-kt",
                 url = "http://localhost:8080/api/inngest",
                 v = Version.getVersion(),
                 functions = getFunctionConfigs(),

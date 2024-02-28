@@ -1,7 +1,7 @@
 package com.inngest.signingkey
 
-import kotlin.test.assertEquals
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 
 class BearerTokenKtTest {
