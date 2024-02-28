@@ -16,7 +16,7 @@ repositories {
 
 dependencies {
     // api(project(":inngest-core"))
-    implementation("com.inngest:inngest:0.0.2-SNAPSHOT")
+    implementation("com.inngest:inngest:0.0.2-SNAPSHOT2")
 
     implementation("org.springframework.boot:spring-boot-starter-web")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
