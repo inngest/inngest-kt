@@ -1,5 +1,7 @@
 package com.inngest.signingkey
 
+import com.inngest.InngestEnv
+import com.inngest.ServeConfig
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import java.time.Instant
 import javax.crypto.Mac
@@ -46,11 +48,11 @@ class ExpiredSignatureHeaderException : Throwable("signature header has expired"
 
 const val FIVE_MINUTES_IN_SECONDS = 5L * 60
 
-fun validateSignature(
+internal fun validateSignature(
     signatureHeader: String,
     signingKey: String,
     requestBody: String,
-): Boolean {
+) {
     // TODO: Find a way to parse signatureHeader as URL params without constructing a full URL
     val dummyUrl = "https://test.inngest.com/?$signatureHeader"
     val url = dummyUrl.toHttpUrlOrNull() ?: throw InvalidSignatureHeaderException("signature header does not match expected format")
@@ -63,5 +65,40 @@ fun validateSignature(
     }
 
     val actualSignature = signRequest(requestBody, timestamp, signingKey)
-    return actualSignature == signature
+    if (actualSignature != signature) {
+        throw InvalidSignatureHeaderException("signature is invalid")
+    }
+}
+
+/**
+ * A function to check if the signature header is valid for a given body. This function completes
+ * with Unit if everything is valid, otherwise it'll throw a relevant exception
+ *
+ * @param signatureHeader The `X-Inngest-Signature` header in the format "t=<seconds_since_unix_epoch>&s=<signature>"
+ * @param requestBody The request body as a string
+ * @param serverKind The `X-Inngest-Server-Kind` header, either "dev" or "cloud"
+ * @param config The current ServeConfig instance, holds relevant environment configuration
+ */
+fun checkHeadersAndValidateSignature(
+    signatureHeader: String?,
+    requestBody: String,
+    serverKind: String?,
+    config: ServeConfig,
+) {
+    val useDevServer = config.client.env == InngestEnv.Dev
+
+    // exit early without checking signature if we are using dev server
+    if (useDevServer) {
+        if (serverKind != "dev") {
+            // TODO: Use a real logger
+            println("WARNING: using dev server but received X-Inngest-Server-Kind: $serverKind")
+        }
+        return
+    }
+
+    val signingKey = config.signingKey()
+
+    signatureHeader ?: throw InvalidSignatureHeaderException("Using cloud inngest but did not receive X-Inngest-Signature")
+
+    validateSignature(signatureHeader, signingKey, requestBody)
 }
