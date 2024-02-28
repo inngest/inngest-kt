@@ -2,7 +2,7 @@ import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.gradle.api.tasks.testing.logging.TestLogEvent
 
 description = "Inngest SDK"
-version = "0.0.1-SNAPSHOT"
+version = "0.0.2-SNAPSHOT2"
 
 plugins {
     id("org.jetbrains.kotlin.jvm") version "1.9.10"
