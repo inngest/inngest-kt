@@ -34,7 +34,7 @@ enum class ResultStatusCode(val code: Int, val message: String) {
     StepComplete(206, "Step Complete"),
     FunctionComplete(200, "Function Complete"),
     NonRetriableError(400, "Bad Request"),
-    Error(500, "Function Error"),
+    RetriableError(500, "Function Error"),
 }
 
 abstract class StepOp(
@@ -188,7 +188,7 @@ open class InngestFunction(
                 id = e.hashedId,
                 name = e.id,
                 op = OpCode.StepStateFailed,
-                statusCode = ResultStatusCode.Error,
+                statusCode = ResultStatusCode.RetriableError,
             )
         }
     }

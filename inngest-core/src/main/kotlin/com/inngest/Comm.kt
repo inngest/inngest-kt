@@ -88,7 +88,7 @@ class CommHandler(
             )
         } catch (e: Exception) {
             val retryDecision = RetryDecision.fromException(e)
-            val statusCode = if (retryDecision.shouldRetry) ResultStatusCode.Error else ResultStatusCode.NonRetriableError
+            val statusCode = if (retryDecision.shouldRetry) ResultStatusCode.RetriableError else ResultStatusCode.NonRetriableError
 
             val err =
                 CommError(
