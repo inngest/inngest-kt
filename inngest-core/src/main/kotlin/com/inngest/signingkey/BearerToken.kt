@@ -13,6 +13,7 @@ val SIGNING_KEY_REGEX = Regex("""(?<prefix>^signkey-[\w]+-)(?<key>.*)""")
  * @return the hashed signing key in the form "signkey-<env>-<hex-encoded sha256 of key>"
  * @throws InvalidSigningKeyException If signingKey is not in the form "signkey-<env>-<key>"
  */
+@OptIn(ExperimentalStdlibApi::class)
 private fun hashedSigningKey(signingKey: String): String {
     val matchResult = SIGNING_KEY_REGEX.matchEntire(signingKey) ?: throw InvalidSigningKeyException()
 
@@ -23,8 +24,7 @@ private fun hashedSigningKey(signingKey: String): String {
 
     val sha256MessageDigest = MessageDigest.getInstance("SHA-256") // not thread safe, get new instance every time
     val hashedKey = sha256MessageDigest.digest(key.toByteArray(Charsets.UTF_8))
-    // https://gist.github.com/lovubuntu/164b6b9021f5ba54cefc67f60f7a1a25
-    val hexEncodedHashedKey = hashedKey.fold(StringBuilder()) { sb, it -> sb.append("%02x".format(it)) }.toString()
+    val hexEncodedHashedKey = hashedKey.toHexString()
 
     return "$prefix$hexEncodedHashedKey"
 }
