@@ -107,22 +107,13 @@ class CommHandler(
 
     private fun getFunctionConfigs(): List<FunctionConfig> {
         val configs: MutableList<FunctionConfig> = mutableListOf()
-        functions.forEach { entry -> configs.add(entry.value.getFunctionConfig()) }
+        functions.forEach { entry -> configs.add(entry.value.getFunctionConfig(getServeUrl())) }
         return configs
     }
 
     fun register(): String {
         val registrationUrl = "${config.baseUrl()}/fn/register"
-        // TODO use name from ServeConfig, framework from adapter, serveOrigin from ServeConfig
-        val requestPayload =
-            RegistrationRequestPayload(
-                appName = "my-app",
-                framework = "ktor",
-                sdk = "inngest-kt",
-                url = "http://localhost:8080/api/inngest",
-                v = Version.getVersion(),
-                functions = getFunctionConfigs(),
-            )
+        val requestPayload = getRegistrationRequestPayload()
 
         val httpClient = client.httpClient
 
@@ -150,15 +141,24 @@ class CommHandler(
     }
 
     fun introspect(): String {
-        val requestPayload =
-            RegistrationRequestPayload(
-                appName = "my-app",
-                framework = "ktor",
-                sdk = "inngest-kt",
-                url = "http://localhost:8080/api/inngest",
-                v = Version.getVersion(),
-                functions = getFunctionConfigs(),
-            )
+        val requestPayload = getRegistrationRequestPayload()
         return Klaxon().toJsonString(requestPayload)
+    }
+
+    private fun getRegistrationRequestPayload(): RegistrationRequestPayload {
+        return RegistrationRequestPayload(
+            appName = config.appId(),
+            framework = framework.toString(),
+            sdk = "inngest-kt",
+            url = getServeUrl(),
+            v = Version.getVersion(),
+            functions = getFunctionConfigs(),
+        )
+    }
+
+    private fun getServeUrl(): String {
+        val serveOrigin = config.serveOrigin() ?: "http://localhost:8080"
+        val servePath = config.servePath() ?: "/api/inngest"
+        return "$serveOrigin$servePath"
     }
 }

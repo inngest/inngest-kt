@@ -23,7 +23,7 @@ public class DemoControllerTest {
             .andExpect(status().isOk())
             .andExpect(content().contentType("application/json"))
             .andExpect(header().string(InngestHeaderKey.Framework.getValue(), "springboot"))
-            .andExpect(jsonPath("$.appName").value("my-app"))
+            .andExpect(jsonPath("$.appName").value("spring_test_demo"))
             .andExpect(jsonPath("$.sdk").value("inngest-kt"));
     }
 }
