@@ -193,7 +193,9 @@ open class InngestFunction(
         }
     }
 
-    fun getFunctionConfig(): FunctionConfig {
+    fun getFunctionConfig(serveUrl: String): FunctionConfig {
+        // TODO use URL objects instead of strings so we can fetch things like scheme
+        val scheme = serveUrl.split("://")[0]
         return FunctionConfig(
             id = config.id,
             name = config.name,
@@ -211,10 +213,10 @@ open class InngestFunction(
                                 ),
                             runtime =
                                 hashMapOf(
-                                    "type" to "http",
+                                    "type" to scheme,
                                     // TODO - Create correct URL
                                     "url" to
-                                        "http://localhost:8080/api/inngest?fnId=${config.id}&stepId=step",
+                                        "$serveUrl?fnId=${config.id}&stepId=step",
                                 ),
                         ),
                 ),
