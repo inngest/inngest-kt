@@ -43,15 +43,24 @@ val myFunction = InngestFunction(
 
 <details>
   <summary>Java (Coming soon)</summary>
-
 </details>
 
+## Declaring dependencies
+
+WIP
+
 ## Contributing [WIP]
+
+You'll need a GitHub token in order to be able to run the builds. Create a classic GitHub personal access token, and set it in your terminal.
+
+```sh
+export GITHUB_ACTOR=<your-username> GITHUB_TOKEN=<person-access-token>
+```
 
 To build this in development, set up Java, Kotlin and Gradle locally and run the test server:
 
 ```
-gradle inngest-test-server:run
+make dev-ktor
 ```
 
 This runs a `ktor` web server to test the SDK against the dev server.
@@ -60,5 +69,5 @@ This runs a `ktor` web server to test the SDK against the dev server.
 To run the `spring-boot` test server:
 
 ```
-gradle inngest-spring-boot-demo:bootRun
+make dev-spring-boot
 ```
