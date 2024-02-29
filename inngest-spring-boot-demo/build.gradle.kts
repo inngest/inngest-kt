@@ -28,6 +28,7 @@ repositories {
 }
 
 dependencies {
+    implementation("com.inngest:inngest:0.0.2")
     implementation("com.inngest:inngest-spring-boot-adapter:0.0.+")
 
     implementation("org.springframework.boot:spring-boot-starter-web")
