@@ -8,7 +8,7 @@ on:
 
 jobs:
   test:
-    name: Core (Java ${{ matrix.java }})
+    name: Test (Java ${{ matrix.java }})
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
