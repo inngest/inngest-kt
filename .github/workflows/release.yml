@@ -46,7 +46,7 @@ jobs:
           PKG_NAME=$NAME:$(cat VERSION)
 
           # Upload via API
-          curl -v -X POST $PUBLISHER_API?name=$PKG_NAME&publishingType=USER_MANAGED -H "Authorization: Bearer $TOKEN" -F 'bundle=@bundle.zip'
+          curl -v -X POST "$PUBLISHER_API?name=$PKG_NAME&publishingType=USER_MANAGED" -H "Authorization: Bearer $TOKEN" -F 'bundle=@bundle.zip'
 
         env:
           AUTH: "${{ secrets.MAVEN_USERNAME }}:${{ secrets.MAVEN_PASSWORD }}"
