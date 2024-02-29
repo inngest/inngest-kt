@@ -1,6 +1,7 @@
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.gradle.api.tasks.testing.logging.TestLogEvent
 
+group = "com.inngest"
 description = "Inngest SDK"
 version = "0.0.1-SNAPSHOT"
 
@@ -13,6 +14,21 @@ repositories {
     mavenCentral()
 }
 
+sourceSets {
+    create("ktor") {
+        kotlin.srcDir("src/adapters/ktor")
+    }
+}
+
+// TODO - Move this to share conventions gradle file
+java {
+    toolchain { languageVersion.set(JavaLanguageVersion.of(8)) }
+
+    registerFeature("ktor") {
+        usingSourceSet(sourceSets["ktor"])
+    }
+}
+
 dependencies {
     implementation("com.beust:klaxon:5.5")
     implementation("com.fasterxml.jackson.core:jackson-core:2.16.1")
@@ -20,8 +36,10 @@ dependencies {
     implementation("com.fasterxml.jackson.core:jackson-databind:2.16.1")
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
 
-    implementation("io.ktor:ktor-server-core:2.3.5")
+    // ktor adapter
+    "ktorImplementation"("io.ktor:ktor-server-core:2.3.5")
 
+    // tests
     testImplementation(kotlin("test"))
 }
 
@@ -82,9 +100,4 @@ tasks.named<Test>("test") {
             }),
         )
     }
-}
-
-// TODO - Move this to share conventions gradle file
-java {
-    toolchain { languageVersion.set(JavaLanguageVersion.of(8)) }
 }
