@@ -1,13 +1,30 @@
 name: Release
 
 on:
-  release:
-    types:
-      - created
+  push:
+    branches: [main]
 
 jobs:
-  publish:
+  changes:
     runs-on: ubuntu-latest
+    outputs:
+      pkgs: ${{ steps.filter.outputs.changes }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            inngest: inngest/VERSION
+
+  # Publish will only run when it detects a change on top
+  publish:
+    needs: changes
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: true
+      matrix:
+        pkg: ${{ fromJSON(needs.changes.outputs.pkgs) }}
     steps:
       - uses: actions/checkout@v4
       - name: Setup Java
@@ -19,9 +36,40 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
 
+      - name: Set version
+        working-directory: ${{ matrix.pkg }}
+        run: echo "PKG_VERSION=$(cat VERSION)" >> $GITHUB_ENV
+
       - name: Publish package
-        run: gradle publish
+        working-directory: ${{ matrix.pkg }}
+        run: gradle publish --info
         env:
           MAVEN_USERNAME: ${{ secrets.MAVEN_USERNAME }}
           MAVEN_PASSWORD: ${{ secrets.MAVEN_PASSWORD }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GPG_SIGNING_KEY: ${{ secrets.GPG_SIGNING_KEY }}
+          GPG_SIGNING_KEY_PASSWORD: ${{ secrets.GPG_SIGNING_KEY_PASSWORD }}
+
+      - name: Create bundle for Maven Central
+        working-directory: ${{ matrix.pkg }}
+        run: ./maven-bundle
+
+      - name: Upload bundle to Maven Central
+        working-directory: ${{ matrix.pkg }}
+        run: |
+          # Generate bearer token
+          TOKEN=$(echo -n $AUTH | base64)
+
+          # Upload via API
+          curl -v -X POST "$PUBLISHER_API?name=$PKG_NAME&publishingType=AUTOMATIC" \
+            -H "Authorization: Bearer $TOKEN" \
+            -F 'bundle=@bundle.zip'
+        env:
+          AUTH: "${{ secrets.MAVEN_USERNAME }}:${{ secrets.MAVEN_PASSWORD }}"
+          PKG_NAME: com.inngest:${{ matrix.pkg }}:${{ env.PKG_VERSION }}
+          PUBLISHER_API: https://central.sonatype.com/api/v1/publisher/upload
+
+      - name: Create tag for pkg
+        run: git tag $TAG && git push $TAG
+        env:
+          TAG: ${{ matrix.pkg }}-${{ env.PKG_VERSION }}

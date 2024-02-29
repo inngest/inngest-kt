@@ -1,0 +1,19 @@
+#!/bin/bash
+
+set -e
+
+RELEASES=build/repos/releases/com
+ASSEMBLE=$(mktemp -d)
+cp -R $RELEASES $ASSEMBLE
+
+# Enter temp dir
+pushd $ASSEMBLE
+
+rm com/inngest/inngest/maven-*
+zip -r bundle.zip com
+
+popd
+
+cp $ASSEMBLE/bundle.zip .
+
+rm -rf $ASSEMBLE

@@ -72,6 +72,8 @@ gradle-app.setting
 /.direnv
 .DS_Store
 .factorypath
+bundle.zip
+**/tmp/
 
 # LSP generated
 **/.settings/
