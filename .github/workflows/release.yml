@@ -18,6 +18,7 @@ jobs:
           filters: |
             inngest: inngest/VERSION
 
+  # Publish will only run when it detects a change on top
   publish:
     needs: changes
     runs-on: ubuntu-latest
