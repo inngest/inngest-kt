@@ -17,7 +17,7 @@ repositories {
 }
 
 dependencies {
-    api(project(":inngest-core"))
+    api(project(":inngest"))
 
     // Use the Kotlin JUnit 5 integration.
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")

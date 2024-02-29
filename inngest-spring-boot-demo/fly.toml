@@ -1,0 +1,52 @@
+# fly.toml app configuration file generated for inngest-spring-boot-demo on 2024-02-28T12:25:34-08:00
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = 'inngest-spring-boot-demo'
+primary_region = 'sjc'
+processes = []
+
+[build]
+  builder = "paketobuildpacks/builder-jammy-base"
+
+[env]
+  INNGEST_ENV = "prod"
+  INNGEST_API_BASE_URL = "https://api.inngest.net"
+  INNGEST_BASE_URL = "https://stage.inn.gs"
+  INNGEST_SERVE_ORIGIN = "https://inngest-spring-boot-demo.fly.dev"
+
+[[services]]
+  http_checks = []
+  internal_port = 8080
+  auto_stop_machines = true
+  auto_start_machines = true
+  min_machines_running = 0
+  processes = ["app"]
+  protocol = "tcp"
+  script_checks = []
+
+  [service.concurrency]
+    hard_limit = 25
+    soft_limit = 20
+    type = "connections"
+
+  [[services.ports]]
+    handlers = ["http"]
+    port = 80
+    force_https = true
+
+  [[services.ports]]
+    handlers = ["tls", "http"]
+    port = 443
+
+  [[service.tcp_checks]]
+    grace_period = "1s"
+    interval = "15s"
+    restart_limit = 0
+    timeout = "2s"
+
+[[vm]]
+  memory = '1gb'
+  cpu_kind = 'shared'
+  cpus = 1

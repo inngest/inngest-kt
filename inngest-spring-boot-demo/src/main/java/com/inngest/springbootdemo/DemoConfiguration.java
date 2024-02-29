@@ -25,4 +25,3 @@ public class DemoConfiguration extends InngestConfiguration {
         return new Inngest("spring_demo");
     }
 }
-

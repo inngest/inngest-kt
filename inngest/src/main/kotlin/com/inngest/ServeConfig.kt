@@ -35,7 +35,7 @@ class ServeConfig
         fun baseUrl(): String {
             if (baseUrl != null) return baseUrl
 
-            val url = System.getenv(InngestSystem.EventApiBaseUrl.value)
+            val url = System.getenv(InngestSystem.ApiBaseUrl.value)
             if (url != null) {
                 return url
             }
