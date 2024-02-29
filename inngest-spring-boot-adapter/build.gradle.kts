@@ -67,7 +67,7 @@ publishing {
         }
     }
     publications {
-        register<MavenPublication>("inngest") {
+        register<MavenPublication>("inngest-spring-boot-adapter") {
             from(components["java"])
 
             pom {
