@@ -25,12 +25,14 @@ jobs:
         uses: gradle/actions/setup-gradle@v3
 
       - name: Publish package
+        working-directory: ${{ matrix.pkgs }}
         run: gradle publish --info
         env:
           MAVEN_USERNAME: ${{ secrets.MAVEN_USERNAME }}
           MAVEN_PASSWORD: ${{ secrets.MAVEN_PASSWORD }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        working-directory: ${{ matrix.pkgs }}
+          GPG_SIGNING_KEY: ${{ secrets.GPG_SIGNING_KEY }}
+          GPG_SIGNING_KEY_PASSWORD: ${{ secrets.GPG_SIGNING_KEY_PASSWORD }}
 
       - name: Create bundle for Maven Central
         working-directory: ${{ matrix.pkgs }}
