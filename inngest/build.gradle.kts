@@ -6,9 +6,9 @@ description = "Inngest SDK"
 version = "0.0.2"
 
 plugins {
-    `java-library`
-    `maven-publish`
-    signing
+    id("java-library")
+    id("maven-publish")
+    id("signing")
     id("org.jetbrains.kotlin.jvm") version "1.9.10"
 }
 
@@ -62,33 +62,40 @@ publishing {
             from(components["java"])
 
             pom {
-                name = "Inngest SDK"
-                description = "Inngest SDK for Kotlin/Java"
-                url = "https://github.com/inngest/inngest-kt"
+                name.set(project.name)
+                description.set("Inngest SDK for Kotlin/Java")
+                url.set("https://github.com/inngest/inngest-kt")
 
                 licenses {
                     license {
-                        name = "The Apache License, Version 2.0"
-                        url = "https://www.apache.org/licenses/LICENSE-2.0.txt"
+                        name.set("The Apache License, Version 2.0")
+                        url.set("https://www.apache.org/licenses/LICENSE-2.0.txt")
                     }
                 }
 
                 developers {
                     developer {
-                        id = "eng"
-                        name = "Inngest Engineering"
-                        email = "eng@inngest.com"
+                        id.set("eng")
+                        name.set("Inngest Engineering")
+                        email.set("eng@inngest.com")
                     }
                 }
 
                 scm {
-                    connection = "scm:git:https://github.com/inngest/inngest-kt.git"
-                    developerConnection = "scm:git:git@github.com:inngest/inngest-kt.git"
-                    url = "https://github.com/inngest/inngest-kt"
+                    url.set("https://github.com/inngest/inngest-kt")
+                    connection.set("scm:git:https://github.com/inngest/inngest-kt.git")
+                    developerConnection.set("scm:git:git@github.com:inngest/inngest-kt.git")
                 }
             }
         }
     }
+}
+
+signing {
+    val signingKey = System.getenv("MAVEN_SIGNING_KEY")
+    val signingPasswd = System.getenv("MAVEN_SIGNING_PASSWD")
+    useInMemoryPgpKeys(signingKey, signingPasswd)
+    sign(publishing.publications)
 }
 
 tasks.jar {
