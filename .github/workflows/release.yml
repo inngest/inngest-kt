@@ -6,12 +6,26 @@ on:
   pull_request:
 
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: read
+    outputs:
+      pkgs: ${{ steps.filter.outputs.changes }}
+    steps:
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            inngest: inngest/VERSION
+
   publish:
+    needs: changes
     runs-on: ubuntu-latest
     strategy:
       fail-fast: true
       matrix:
-        pkg: ["inngest"]
+        pkg: ${{ fromJSON(needs.changes.outputs.pkgs) }}
     steps:
       - uses: actions/checkout@v4
       - name: Setup Java
@@ -20,44 +34,35 @@ jobs:
           java-version: "8"
           distribution: "temurin"
 
-      - uses: dorny/paths-filter@v3
-        id: ${{ matrix.pkg }}-changes
-        with:
-          filters: |
-            ${{ matrix.pkg }}/VERSION
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
 
-      - if: steps.${{ matrix.pkg }}-changes.outputs.src == 'true'
-        run: echo "${{ matrix.pkg }} version changed!"
+      - name: Publish package
+        working-directory: ${{ matrix.pkg }}
+        run: gradle publish --info
+        env:
+          MAVEN_USERNAME: ${{ secrets.MAVEN_USERNAME }}
+          MAVEN_PASSWORD: ${{ secrets.MAVEN_PASSWORD }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GPG_SIGNING_KEY: ${{ secrets.GPG_SIGNING_KEY }}
+          GPG_SIGNING_KEY_PASSWORD: ${{ secrets.GPG_SIGNING_KEY_PASSWORD }}
 
-      # - name: Setup Gradle
-      #   uses: gradle/actions/setup-gradle@v3
+      - name: Create bundle for Maven Central
+        working-directory: ${{ matrix.pkg }}
+        run: ./maven-bundle
 
-      # - name: Publish package
-      #   working-directory: ${{ matrix.pkg }}
-      #   run: gradle publish --info
-      #   env:
-      #     MAVEN_USERNAME: ${{ secrets.MAVEN_USERNAME }}
-      #     MAVEN_PASSWORD: ${{ secrets.MAVEN_PASSWORD }}
-      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      #     GPG_SIGNING_KEY: ${{ secrets.GPG_SIGNING_KEY }}
-      #     GPG_SIGNING_KEY_PASSWORD: ${{ secrets.GPG_SIGNING_KEY_PASSWORD }}
+      - name: Upload bundle to Maven Central
+        working-directory: ${{ matrix.pkg }}
+        run: |
+          # Generate bearer token
+          TOKEN=$(echo -n $AUTH | base64)
+          PKG_NAME=$NAME:$(cat VERSION)
 
-      # - name: Create bundle for Maven Central
-      #   working-directory: ${{ matrix.pkg }}
-      #   run: ./maven-bundle
-
-      # - name: Upload bundle to Maven Central
-      #   working-directory: ${{ matrix.pkg }}
-      #   run: |
-      #     # Generate bearer token
-      #     TOKEN=$(echo -n $AUTH | base64)
-      #     PKG_NAME=$NAME:$(cat VERSION)
-
-      #     # Upload via API
-      #     curl -v -X POST "$PUBLISHER_API?name=$PKG_NAME" \
-      #       -H "Authorization: Bearer $TOKEN" \
-      #       -F 'bundle=@bundle.zip'
-      #   env:
-      #     AUTH: "${{ secrets.MAVEN_USERNAME }}:${{ secrets.MAVEN_PASSWORD }}"
-      #     NAME: com.inngest:inngest
-      #     PUBLISHER_API: https://central.sonatype.com/api/v1/publisher/upload
+          # Upload via API
+          curl -v -X POST "$PUBLISHER_API?name=$PKG_NAME" \
+            -H "Authorization: Bearer $TOKEN" \
+            -F 'bundle=@bundle.zip'
+        env:
+          AUTH: "${{ secrets.MAVEN_USERNAME }}:${{ secrets.MAVEN_PASSWORD }}"
+          NAME: com.inngest:inngest
+          PUBLISHER_API: https://central.sonatype.com/api/v1/publisher/upload

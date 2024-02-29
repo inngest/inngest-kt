@@ -56,14 +56,14 @@ publishing {
             url = if (version.toString().endsWith("SNAPSHOT")) snapshotsRepoUrl else releasesRepoUrl
         }
 
-        maven {
-            name = "GitHubPackages"
-            url = uri("https://maven.pkg.github.com/inngest/inngest-kt")
-            credentials {
-                username = System.getenv("GITHUB_ACTOR")
-                password = System.getenv("GITHUB_TOKEN")
-            }
-        }
+        // maven {
+        //     name = "GitHubPackages"
+        //     url = uri("https://maven.pkg.github.com/inngest/inngest-kt")
+        //     credentials {
+        //         username = System.getenv("GITHUB_ACTOR")
+        //         password = System.getenv("GITHUB_TOKEN")
+        //     }
+        // }
     }
     publications {
         register<MavenPublication>("inngest") {
