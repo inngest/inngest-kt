@@ -19,6 +19,7 @@ jobs:
 
   # Publish will only run when it detects a change on top
   publish:
+    if: ${{ needs.changes.outputs.pkgs != '[]' }}
     needs: changes
     runs-on: ubuntu-latest
     strategy:
