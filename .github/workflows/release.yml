@@ -3,7 +3,6 @@ name: Release
 on:
   push:
     branches: [main]
-  pull_request:
 
 jobs:
   changes:
@@ -62,7 +61,7 @@ jobs:
           TOKEN=$(echo -n $AUTH | base64)
 
           # Upload via API
-          curl -v -X POST "$PUBLISHER_API?name=$PKG_NAME&publishingType=USER_MANAGED" \
+          curl -v -X POST "$PUBLISHER_API?name=$PKG_NAME&publishingType=AUTOMATIC" \
             -H "Authorization: Bearer $TOKEN" \
             -F 'bundle=@bundle.zip'
         env:

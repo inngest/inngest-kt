@@ -12,8 +12,8 @@ processes = []
 
 [env]
   INNGEST_ENV = "prod"
-  INNGEST_API_BASE_URL = "https://api.inngest.net"
-  INNGEST_BASE_URL = "https://stage.inn.gs"
+  # INNGEST_API_BASE_URL = "https://api.inngest.net"
+  # INNGEST_BASE_URL = "https://stage.inn.gs"
   INNGEST_SERVE_ORIGIN = "https://inngest-spring-boot-demo.fly.dev"
 
 [[services]]
