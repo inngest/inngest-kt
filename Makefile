@@ -17,7 +17,7 @@ itest:
 
 .PHONY: test-core
 test-core:
-	gradle test $(TEST_ARGS) -p inngest-core
+	gradle test $(TEST_ARGS) -p inngest
 
 .PHONY: test-ktor
 test-ktor:

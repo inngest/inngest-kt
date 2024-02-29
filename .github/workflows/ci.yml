@@ -8,7 +8,7 @@ on:
 
 jobs:
   test:
-    name: Test (Java ${{ matrix.java }})
+    name: Core (Java ${{ matrix.java }})
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -24,7 +24,7 @@ jobs:
           cache: gradle
 
       - name: Test
-        run: make test
+        run: make test-core
 
   lint:
     name: Lint
