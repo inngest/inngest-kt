@@ -6,13 +6,17 @@ description = "Inngest SDK"
 version = "0.0.2"
 
 plugins {
-    id("maven-publish")
+    `java-library`
+    `maven-publish`
+    signing
     id("org.jetbrains.kotlin.jvm") version "1.9.10"
 }
 
 // TODO - Move this to share conventions gradle file
 java {
     toolchain { languageVersion.set(JavaLanguageVersion.of(8)) }
+    withJavadocJar()
+    withSourcesJar()
 }
 
 repositories {
@@ -34,27 +38,55 @@ dependencies {
 
 publishing {
     repositories {
-        // maven {
-        //     name = "OSSRH"
-        //     url = uri("https://oss.sonatype.org/service/local/staging/deploy/maven2/")
-        //     credentials {
-        //         username = System.getenv("MAVEN_USERNAME")
-        //         password = System.getenv("MAVEN_PASSWORD")
-        //     }
-        // }
-
+        // NOTE: Does not work: https://central.sonatype.org/publish/publish-portal-gradle/
         maven {
-            name = "GitHubPackages"
-            url = uri("https://maven.pkg.github.com/inngest/inngest-kt")
+            name = "OSSRH"
+            url = uri("https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/")
             credentials {
-                username = project.findProperty("gpr.user") as String? ?: System.getenv("GITHUB_ACTOR")
-                password = project.findProperty("gpr.key") as String? ?: System.getenv("GITHUB_TOKEN")
+                username = System.getenv("MAVEN_USERNAME")
+                password = System.getenv("MAVEN_PASSWORD")
             }
         }
+
+        // maven {
+        //     name = "GitHubPackages"
+        //     url = uri("https://maven.pkg.github.com/inngest/inngest-kt")
+        //     credentials {
+        //         username = System.getenv("GITHUB_ACTOR")
+        //         password = System.getenv("GITHUB_TOKEN")
+        //     }
+        // }
     }
     publications {
-        register<MavenPublication>("gpr") {
+        register<MavenPublication>("inngest") {
             from(components["java"])
+
+            pom {
+                name = "Inngest SDK"
+                description = "Inngest SDK for Kotlin/Java"
+                url = "https://github.com/inngest/inngest-kt"
+
+                licenses {
+                    license {
+                        name = "The Apache License, Version 2.0"
+                        url = "https://www.apache.org/licenses/LICENSE-2.0.txt"
+                    }
+                }
+
+                developers {
+                    developer {
+                        id = "eng"
+                        name = "Inngest Engineering"
+                        email = "eng@inngest.com"
+                    }
+                }
+
+                scm {
+                    connection = "scm:git:https://github.com/inngest/inngest-kt.git"
+                    developerConnection = "scm:git:git@github.com:inngest/inngest-kt.git"
+                    url = "https://github.com/inngest/inngest-kt"
+                }
+            }
         }
     }
 }
@@ -67,6 +99,12 @@ tasks.jar {
                 "Implementation-Version" to project.version,
             ),
         )
+    }
+}
+
+tasks.javadoc {
+    if (JavaVersion.current().isJava9Compatible) {
+        (options as StandardJavadocDocletOptions).addBooleanOption("html5", true)
     }
 }
 
