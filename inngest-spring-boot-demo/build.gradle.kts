@@ -28,7 +28,7 @@ repositories {
 }
 
 dependencies {
-    implementation(project(":inngest-spring-boot-adapter"))
+    implementation("com.inngest:inngest-spring-boot-adapter:0.0.+")
 
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
