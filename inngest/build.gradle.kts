@@ -39,23 +39,23 @@ dependencies {
 publishing {
     repositories {
         // NOTE: Does not work: https://central.sonatype.org/publish/publish-portal-gradle/
-        maven {
-            name = "OSSRH"
-            url = uri("https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/")
-            credentials {
-                username = System.getenv("MAVEN_USERNAME")
-                password = System.getenv("MAVEN_PASSWORD")
-            }
-        }
-
         // maven {
-        //     name = "GitHubPackages"
-        //     url = uri("https://maven.pkg.github.com/inngest/inngest-kt")
+        //     name = "OSSRH"
+        //     url = uri("https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/")
         //     credentials {
-        //         username = System.getenv("GITHUB_ACTOR")
-        //         password = System.getenv("GITHUB_TOKEN")
+        //         username = System.getenv("MAVEN_USERNAME")
+        //         password = System.getenv("MAVEN_PASSWORD")
         //     }
         // }
+
+        maven {
+            name = "GitHubPackages"
+            url = uri("https://maven.pkg.github.com/inngest/inngest-kt")
+            credentials {
+                username = System.getenv("GITHUB_ACTOR")
+                password = System.getenv("GITHUB_TOKEN")
+            }
+        }
     }
     publications {
         register<MavenPublication>("inngest") {
@@ -93,7 +93,7 @@ publishing {
 
 signing {
     val signingKey = System.getenv("MAVEN_SIGNING_KEY")
-    val signingPasswd = System.getenv("MAVEN_SIGNING_PASSWD")
+    val signingPasswd = System.getenv("MAVEN_SIGNING_PASSWORD")
     useInMemoryPgpKeys(signingKey, signingPasswd)
     sign(publishing.publications)
 }

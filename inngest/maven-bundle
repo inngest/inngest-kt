@@ -1,0 +1,42 @@
+#!/bin/bash
+
+set -e
+
+PKG_GROUP=$(cat build.gradle.kts | grep 'group = ' | awk '{ print $3 }' | tr -d '"')
+PKG_NAME=inngest
+PKG_VERSION=$(cat build.gradle.kts | grep 'version =' | awk '{ print $3 }' | tr -d '"')
+
+PREFIX=$(echo $PKG_GROUP | sed 's/\./\//g')
+
+ASSEMBLE=$(mktemp -d)
+BUNDLE="$ASSEMBLE/$PREFIX/$PKG_NAME/$PKG_VERSION"
+
+mkdir -p $BUNDLE
+
+cp build/libs/* $BUNDLE
+cp build/publications/$PKG_NAME/* $BUNDLE
+mv $BUNDLE/pom-default.xml $BUNDLE/pom.xml
+mv $BUNDLE/pom-default.xml.asc $BUNDLE/pom.xml.asc
+
+for FILE in $BUNDLE/*; do
+  echo "Looping..."
+  if [[ $FILE != *".asc"* ]]; then
+    pushd $BUNDLE
+
+    filename=$(basename $FILE)
+    md5sum $filename > $filename.md5
+    sha1sum $filename > $filename.sha1
+
+    popd
+  fi
+done
+
+#  ls -la $BUNDLE
+
+pushd $ASSEMBLE
+  tar -czvf bundle.tar.gz ./com
+popd
+
+cp $ASSEMBLE/bundle.tar.gz ./tmp
+
+rm -rf $ASSEMBLE
