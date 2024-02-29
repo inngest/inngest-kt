@@ -6,9 +6,6 @@ on:
       - main
   pull_request:
 
-env:
-  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
 jobs:
   test:
     name: Test (Java ${{ matrix.java }})

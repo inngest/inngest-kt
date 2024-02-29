@@ -51,12 +51,6 @@ WIP
 
 ## Contributing [WIP]
 
-You'll need a GitHub token in order to be able to run the builds. Create a classic GitHub personal access token, and set it in your terminal.
-
-```sh
-export GITHUB_ACTOR=<your-username> GITHUB_TOKEN=<person-access-token>
-```
-
 To build this in development, set up Java, Kotlin and Gradle locally and run the test server:
 
 ```

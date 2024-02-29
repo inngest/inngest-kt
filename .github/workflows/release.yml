@@ -16,6 +16,7 @@ jobs:
         with:
           filters: |
             inngest: inngest/VERSION
+            inngest-spring-boot-adapter: inngest-spring-boot-adapter/VERSION
 
   # Publish will only run when it detects a change on top
   publish:
