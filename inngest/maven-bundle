@@ -2,41 +2,18 @@
 
 set -e
 
-PKG_GROUP=$(cat build.gradle.kts | grep 'group = ' | awk '{ print $3 }' | tr -d '"')
-PKG_NAME=inngest
-PKG_VERSION=$(cat build.gradle.kts | grep 'version =' | awk '{ print $3 }' | tr -d '"')
-
-PREFIX=$(echo $PKG_GROUP | sed 's/\./\//g')
-
+RELEASES=build/repos/releases/com
 ASSEMBLE=$(mktemp -d)
-BUNDLE="$ASSEMBLE/$PREFIX/$PKG_NAME/$PKG_VERSION"
+cp -R $RELEASES $ASSEMBLE
 
-mkdir -p $BUNDLE
-
-cp build/libs/* $BUNDLE
-cp build/publications/$PKG_NAME/* $BUNDLE
-mv $BUNDLE/pom-default.xml $BUNDLE/pom.xml
-mv $BUNDLE/pom-default.xml.asc $BUNDLE/pom.xml.asc
-
-for FILE in $BUNDLE/*; do
-  echo "Looping..."
-  if [[ $FILE != *".asc"* ]]; then
-    pushd $BUNDLE
-
-    filename=$(basename $FILE)
-    md5sum $filename > $filename.md5
-    sha1sum $filename > $filename.sha1
-
-    popd
-  fi
-done
-
-#  ls -la $BUNDLE
-
+# Enter temp dir
 pushd $ASSEMBLE
-  tar -czvf bundle.tar.gz ./com
+
+rm com/inngest/inngest/maven-*
+zip -r bundle.zip com
+
 popd
 
-cp $ASSEMBLE/bundle.tar.gz ./tmp
+cp $ASSEMBLE/bundle.zip .
 
 rm -rf $ASSEMBLE

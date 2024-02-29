@@ -48,6 +48,14 @@ publishing {
         //     }
         // }
 
+        // NOTE: create a local repo and bundle this to upload it to Maven Central for now
+        maven {
+            // local repo
+            val releasesRepoUrl = uri(layout.buildDirectory.dir("repos/releases"))
+            val snapshotsRepoUrl = uri(layout.buildDirectory.dir("repos/snapshots"))
+            url = if (version.toString().endsWith("SNAPSHOT")) snapshotsRepoUrl else releasesRepoUrl
+        }
+
         maven {
             name = "GitHubPackages"
             url = uri("https://maven.pkg.github.com/inngest/inngest-kt")
@@ -65,6 +73,7 @@ publishing {
                 name.set(project.name)
                 description.set("Inngest SDK for Kotlin/Java")
                 url.set("https://github.com/inngest/inngest-kt")
+                inceptionYear.set("2024")
 
                 licenses {
                     license {
