@@ -37,6 +37,10 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
 
+      - name: Set version
+        working-directory: ${{ matrix.pkg }}
+        run: echo "PKG_VERSION=$(cat VERSION)" >> $GITHUB_ENV
+
       - name: Publish package
         working-directory: ${{ matrix.pkg }}
         run: gradle publish --info
@@ -56,13 +60,17 @@ jobs:
         run: |
           # Generate bearer token
           TOKEN=$(echo -n $AUTH | base64)
-          PKG_NAME=$NAME:$(cat VERSION)
 
           # Upload via API
-          curl -v -X POST "$PUBLISHER_API?name=$PKG_NAME" \
+          curl -v -X POST "$PUBLISHER_API?name=$PKG_NAME&publishingType=USER_MANAGED" \
             -H "Authorization: Bearer $TOKEN" \
             -F 'bundle=@bundle.zip'
         env:
           AUTH: "${{ secrets.MAVEN_USERNAME }}:${{ secrets.MAVEN_PASSWORD }}"
-          NAME: com.inngest:inngest
+          PKG_NAME: com.inngest:${{ matrix.pkg }}:${{ env.PKG_VERSION }}
           PUBLISHER_API: https://central.sonatype.com/api/v1/publisher/upload
+
+      - name: Create tag for pkg
+        run: git tag $TAG && git push $TAG
+        env:
+          TAG: ${{ matrix.pkg }}-${{ env.PKG_VERSION }}
