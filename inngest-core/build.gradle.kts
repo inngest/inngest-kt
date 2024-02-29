@@ -1,11 +1,18 @@
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.gradle.api.tasks.testing.logging.TestLogEvent
 
+group = "com.inngest"
 description = "Inngest SDK"
-version = "0.0.2-SNAPSHOT2"
+version = "0.0.1"
 
 plugins {
+    id("maven-publish")
     id("org.jetbrains.kotlin.jvm") version "1.9.10"
+}
+
+// TODO - Move this to share conventions gradle file
+java {
+    toolchain { languageVersion.set(JavaLanguageVersion.of(8)) }
 }
 
 repositories {
@@ -23,6 +30,33 @@ dependencies {
     implementation("io.ktor:ktor-server-core:2.3.5")
 
     testImplementation(kotlin("test"))
+}
+
+publishing {
+    repositories {
+        // maven {
+        //     name = "OSSRH"
+        //     url = uri("https://oss.sonatype.org/service/local/staging/deploy/maven2/")
+        //     credentials {
+        //         username = System.getenv("MAVEN_USERNAME")
+        //         password = System.getenv("MAVEN_PASSWORD")
+        //     }
+        // }
+
+        maven {
+            name = "GitHubPackages"
+            url = uri("https://maven.pkg.github.com/inngest/inngest-kt")
+            credentials {
+                username = project.findProperty("gpr.user") as String? ?: System.getenv("GITHUB_ACTOR")
+                password = project.findProperty("gpr.key") as String? ?: System.getenv("GITHUB_TOKEN")
+            }
+        }
+    }
+    publications {
+        register<MavenPublication>("gpr") {
+            from(components["java"])
+        }
+    }
 }
 
 tasks.jar {
@@ -82,9 +116,4 @@ tasks.named<Test>("test") {
             }),
         )
     }
-}
-
-// TODO - Move this to share conventions gradle file
-java {
-    toolchain { languageVersion.set(JavaLanguageVersion.of(8)) }
 }
