@@ -24,7 +24,7 @@ jobs:
           cache: gradle
 
       - name: Test
-        run: make test-core
+        run: make test
 
   lint:
     name: Lint
@@ -36,6 +36,9 @@ jobs:
         with:
           fail_on_error: true
           github_token: ${{ secrets.github_token }}
+          # NOTE: lock until this is resolved
+          # https://github.com/ScaCap/action-ktlint/issues/48
+          ktlint_version: "1.1.1"
           reporter: github-pr-review
 
   itest:
