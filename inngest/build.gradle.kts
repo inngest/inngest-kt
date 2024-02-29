@@ -3,7 +3,7 @@ import org.gradle.api.tasks.testing.logging.TestLogEvent
 
 group = "com.inngest"
 description = "Inngest SDK"
-version = "0.0.2"
+version = file("VERSION").readText().trim()
 
 plugins {
     id("java-library")
@@ -56,14 +56,14 @@ publishing {
             url = if (version.toString().endsWith("SNAPSHOT")) snapshotsRepoUrl else releasesRepoUrl
         }
 
-        maven {
-            name = "GitHubPackages"
-            url = uri("https://maven.pkg.github.com/inngest/inngest-kt")
-            credentials {
-                username = System.getenv("GITHUB_ACTOR")
-                password = System.getenv("GITHUB_TOKEN")
-            }
-        }
+        // maven {
+        //     name = "GitHubPackages"
+        //     url = uri("https://maven.pkg.github.com/inngest/inngest-kt")
+        //     credentials {
+        //         username = System.getenv("GITHUB_ACTOR")
+        //         password = System.getenv("GITHUB_TOKEN")
+        //     }
+        // }
     }
     publications {
         register<MavenPublication>("inngest") {
@@ -101,8 +101,8 @@ publishing {
 }
 
 signing {
-    val signingKey = System.getenv("MAVEN_SIGNING_KEY")
-    val signingPasswd = System.getenv("MAVEN_SIGNING_PASSWORD")
+    val signingKey = System.getenv("GPG_SIGNING_KEY")
+    val signingPasswd = System.getenv("GPG_SIGNING_KEY_PASSWORD")
     useInMemoryPgpKeys(signingKey, signingPasswd)
     sign(publishing.publications)
 }

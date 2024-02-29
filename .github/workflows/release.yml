@@ -4,10 +4,15 @@ on:
   release:
     types:
       - created
+  pull_request:
 
 jobs:
   publish:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: true
+      matrix:
+        pkgs: ["inngest"]
     steps:
       - uses: actions/checkout@v4
       - name: Setup Java
@@ -20,8 +25,28 @@ jobs:
         uses: gradle/actions/setup-gradle@v3
 
       - name: Publish package
-        run: gradle publish
+        run: gradle publish --info
         env:
           MAVEN_USERNAME: ${{ secrets.MAVEN_USERNAME }}
           MAVEN_PASSWORD: ${{ secrets.MAVEN_PASSWORD }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        working-directory: ${{ matrix.pkgs }}
+
+      - name: Create bundle for Maven Central
+        working-directory: ${{ matrix.pkgs }}
+        run: ./maven-bundle
+
+      - name: Upload bundle to Maven Central
+        working-directory: ${{ matrix.pkgs }}
+        run: |
+          # Generate bearer token
+          TOKEN=$(echo -n $AUTH | base64)
+          PKG_NAME=$NAME:$(cat VERSION)
+
+          # Upload via API
+          curl -v -X POST $PUBLISHER_API?name=$PKG_NAME&publishingType=USER_MANAGED -H "Authorization: Bearer $TOKEN" -F 'bundle=@bundle.zip'
+
+        env:
+          AUTH: "${{ secrets.MAVEN_USERNAME }}:${{ secrets.MAVEN_PASSWORD }}"
+          NAME: com.inngest:inngest
+          PUBLISHER_API: https://central.sonatype.com/api/v1/publisher/upload
