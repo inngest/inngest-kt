@@ -23,7 +23,8 @@ repositories {
 }
 
 dependencies {
-    api("com.inngest:inngest:[0.0, 0.1)")
+    val pkg = if (System.getenv("RELEASE") != null) "com.inngest:inngest:[0.0, 0.1)" else project(":inngest")
+    api(pkg)
 
     implementation("org.springframework.boot:spring-boot-starter-web")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
@@ -72,7 +73,7 @@ publishing {
 
             pom {
                 name.set(project.name)
-                description.set("Inngest SDK for Kotlin/Java")
+                description.set(project.description)
                 url.set("https://github.com/inngest/inngest-kt")
                 inceptionYear.set("2024")
 

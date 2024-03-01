@@ -17,19 +17,10 @@ java {
 
 repositories {
     mavenCentral()
-
-    maven {
-        url = uri("https://maven.pkg.github.com/inngest/inngest-kt")
-        credentials {
-            username = project.findProperty("gpr.user") as String? ?: System.getenv("GITHUB_ACTOR")
-            password = project.findProperty("gpr.key") as String? ?: System.getenv("GITHUB_TOKEN")
-        }
-    }
 }
 
 dependencies {
-    implementation("com.inngest:inngest:0.0.2")
-    implementation("com.inngest:inngest-spring-boot-adapter:0.0.+")
+    implementation(project(":inngest-spring-boot-adapter"))
 
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
