@@ -1,7 +1,5 @@
 # Inngest Kotlin SDK
 
-### 🚧 In development 🚧
-
 [Inngest](https://www.inngest.com) SDK for Kotlin with Java interoperability.
 
 ## Defining a function
