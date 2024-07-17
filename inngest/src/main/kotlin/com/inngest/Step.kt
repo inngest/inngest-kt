@@ -22,6 +22,10 @@ class StepInterruptSleepException(id: String, hashedId: String, override val dat
 class StepInterruptSendEventException(id: String, hashedId: String, val eventIds: Array<String>) :
     StepInterruptException(id, hashedId, eventIds)
 
+
+class StepInterruptInvokeException(id: String, hashedId: String, fn: String, data: kotlin.Any?, timeout: String?):
+    StepInterruptException(id, hashedId, eventIds)
+
 class StepInterruptWaitForEventException(
     id: String,
     hashedId: String,
@@ -67,6 +71,29 @@ class Step(val state: State, val client: Inngest) {
 
         // TODO - handle invalidly stored step types properly
         throw Exception("step state incorrect type")
+    }
+
+    /**
+     * Invoke another Inngest function as a step
+     *
+     * @param id unique step id for memoization
+     * @param fn ID of the function to invoke
+     * @param data the data to pass within `event.data` to the function
+     * @param timeout an optional timeout for the invoked function.  If the invoked function does
+     * not finish within this time, the invoked function will be marked as failed.
+     */
+    fun invoke(
+        id: String,
+        fn: String,
+        data: kotlin.Any?,
+        timeout: String?,
+    ) {
+        val hashedId = state.getHashFromId(id)
+        try {
+            return state.getState(hashedId)
+        } catch (e: StateNotFound) {
+            throw StepInterruptInvokeException(id, hashedId, fn, data, timeout)
+        }
     }
 
     /**

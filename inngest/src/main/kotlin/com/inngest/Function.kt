@@ -25,6 +25,7 @@ enum class OpCode {
     StepStateFailed, // TODO
     Step,
     WaitForEvent,
+    Invoke,
 
     // FUTURE:
     StepNotFound,
@@ -169,6 +170,19 @@ internal open class InternalInngestFunction(
                 name = e.id,
                 op = OpCode.Sleep,
                 statusCode = ResultStatusCode.StepComplete,
+            )
+        } catch (e: StepInterruptInvokeException) {
+            return StepOptions(
+                id = e.hashedId,
+                op = OpCode.Invoke,
+                statusCode = ResultStatusCode.StepComplete,
+                opts = buildMap {
+                    put("function_id", e.fn),
+                    put("timeout", e.timeout)
+                    put("payload", buildMap {
+                        put("data", e.data),
+                    })
+                },
             )
         } catch (e: StepInterruptException) {
             // NOTE - Currently this error could be caught in the user's own function
