@@ -3,8 +3,8 @@ package com.inngest.testserver
 import com.inngest.*
 import java.time.Duration
 
-@FunctionConfig(id = "RestoreFromGlacier", name = "RestoreFromGlacier")
-@FunctionEventTrigger(event = "delivery/restore.requested")
+@FunctionConfig(id = "ProcessAlbum", name = "ProcessAlbum")
+@FunctionEventTrigger(event = "delivery/process.requested")
 class ProcessAlbum : InngestFunction() {
     override fun execute(
         ctx: FunctionContext,
@@ -12,7 +12,14 @@ class ProcessAlbum : InngestFunction() {
     ): LinkedHashMap<String, Any> {
 
         // NOTE - App ID is set on the serve level
-        val res = step.invoke<Map<String, Any>>("restore-album", "ktor-dev", "RestoreFromGlacier", mapOf("some-arg" to "awesome"), null)
+        val res = step.invoke<Map<String, Any>>(
+            "restore-album",
+            "ktor-dev",
+            "RestoreFromGlacier",
+            mapOf("some-arg" to "awesome"),
+            null,
+
+            )
 
 //        throw NonRetriableError("Could not restore")
         return linkedMapOf("hello" to true)

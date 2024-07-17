@@ -114,7 +114,7 @@ class CommHandler(
 
     private fun getFunctionConfigs(): List<InternalFunctionConfig> {
         val configs: MutableList<InternalFunctionConfig> = mutableListOf()
-        functions.forEach { entry -> configs.add(entry.value.getFunctionConfig(getServeUrl())) }
+        functions.forEach { entry -> configs.add(entry.value.getFunctionConfig(getServeUrl(), client)) }
         return configs
     }
 

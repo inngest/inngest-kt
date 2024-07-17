@@ -82,6 +82,14 @@ class Step(val state: State, val client: Inngest) {
      * @param timeout an optional timeout for the invoked function.  If the invoked function does
      * not finish within this time, the invoked function will be marked as failed.
      */
+    inline fun <reified T> invoke(
+        id: String,
+        appId: String,
+        fnId: String,
+        data: kotlin.Any?,
+        timeout: String?,
+    ): T = invoke(id, appId, fnId, data, timeout, T::class.java)
+
     fun <T> invoke(
         id: String,
         appId: String,
@@ -89,13 +97,18 @@ class Step(val state: State, val client: Inngest) {
         data: kotlin.Any?,
         timeout: String?,
         type: Class<T>,
-    ): T? {
+    ): T {
         val hashedId = state.getHashFromId(id)
         try {
-            return state.getState(hashedId, type)
+            val stepResult = state.getState(hashedId, type)
+            if (stepResult != null) {
+                return stepResult
+            }
         } catch (e: StateNotFound) {
             throw StepInterruptInvokeException(id, hashedId, appId, fnId, data, timeout)
         }
+        // TODO - handle invalidly stored step types properly
+        throw Exception("step state incorrect type")
     }
 
     /**

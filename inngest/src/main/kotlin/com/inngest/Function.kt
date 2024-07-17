@@ -217,11 +217,11 @@ internal open class InternalInngestFunction(
         }
     }
 
-    fun getFunctionConfig(serveUrl: String): InternalFunctionConfig {
+    fun getFunctionConfig(serveUrl: String, client: Inngest): InternalFunctionConfig {
         // TODO use URL objects instead of strings so we can fetch things like scheme
         val scheme = serveUrl.split("://")[0]
         return InternalFunctionConfig(
-            id = config.id,
+            id = String.format("%s-%s", client.appId, config.id),
             name = config.name,
             triggers = config.triggers,
             steps =
