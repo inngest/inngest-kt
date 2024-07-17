@@ -23,8 +23,8 @@ class StepInterruptSendEventException(id: String, hashedId: String, val eventIds
     StepInterruptException(id, hashedId, eventIds)
 
 
-class StepInterruptInvokeException(id: String, hashedId: String, fn: String, data: kotlin.Any?, timeout: String?):
-    StepInterruptException(id, hashedId, eventIds)
+class StepInterruptInvokeException(id: String, hashedId: String, val appId: String, val fnId: String, data: kotlin.Any?, val timeout: String?) :
+    StepInterruptException(id, hashedId, data)
 
 class StepInterruptWaitForEventException(
     id: String,
@@ -82,17 +82,19 @@ class Step(val state: State, val client: Inngest) {
      * @param timeout an optional timeout for the invoked function.  If the invoked function does
      * not finish within this time, the invoked function will be marked as failed.
      */
-    fun invoke(
+    fun <T> invoke(
         id: String,
-        fn: String,
+        appId: String,
+        fnId: String,
         data: kotlin.Any?,
         timeout: String?,
-    ) {
+        type: Class<T>,
+    ): T? {
         val hashedId = state.getHashFromId(id)
         try {
-            return state.getState(hashedId)
+            return state.getState(hashedId, type)
         } catch (e: StateNotFound) {
-            throw StepInterruptInvokeException(id, hashedId, fn, data, timeout)
+            throw StepInterruptInvokeException(id, hashedId, appId, fnId, data, timeout)
         }
     }
 
