@@ -21,7 +21,7 @@ fun Application.module() {
     val inngest = Inngest(appId = "ktor-dev")
 
     routing {
-        serve("/api/inngest", inngest, listOf(UserSignupFunction(), FollowupFunction()))
+        serve("/api/inngest", inngest, listOf(ProcessAlbum(), RestoreFromGlacier()))
     }
 }
 

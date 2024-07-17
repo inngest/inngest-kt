@@ -11,12 +11,12 @@ internal data class InternalFunctionOptions(
 )
 
 internal data class InternalFunctionTrigger
-    @JvmOverloads
-    constructor(
-        @Json(serializeNull = false) val event: String? = null,
-        @Json(serializeNull = false) val `if`: String? = null,
-        @Json(serializeNull = false) val cron: String? = null,
-    )
+@JvmOverloads
+constructor(
+    @Json(serializeNull = false) val event: String? = null,
+    @Json(serializeNull = false) val `if`: String? = null,
+    @Json(serializeNull = false) val cron: String? = null,
+)
 
 // TODO - Add an abstraction layer between the Function call response and the comm handler response
 enum class OpCode {
@@ -25,6 +25,7 @@ enum class OpCode {
     StepStateFailed, // TODO
     Step,
     WaitForEvent,
+    InvokeFunction,
 
     // FUTURE:
     StepNotFound,
@@ -59,6 +60,14 @@ data class StepOptions(
     override val op: OpCode,
     override val statusCode: ResultStatusCode,
     val opts: Map<String, String>?,
+) : StepOp(id, name, op, statusCode)
+
+data class StepOptionsInvoke(
+    override val id: String,
+    override val name: String,
+    override val op: OpCode,
+    override val statusCode: ResultStatusCode,
+    val opts: Map<String, Any>?,
 ) : StepOp(id, name, op, statusCode)
 
 data class StepConfig(
@@ -154,13 +163,13 @@ internal open class InternalInngestFunction(
                 op = OpCode.WaitForEvent,
                 statusCode = ResultStatusCode.StepComplete,
                 opts =
-                    buildMap {
-                        put("event", e.waitEvent)
-                        put("timeout", e.timeout)
-                        if (e.ifExpression != null) {
-                            put("if", e.ifExpression)
-                        }
-                    },
+                buildMap {
+                    put("event", e.waitEvent)
+                    put("timeout", e.timeout)
+                    if (e.ifExpression != null) {
+                        put("if", e.ifExpression)
+                    }
+                },
             )
         } catch (e: StepInterruptSleepException) {
             return StepOptions(
@@ -169,6 +178,21 @@ internal open class InternalInngestFunction(
                 name = e.id,
                 op = OpCode.Sleep,
                 statusCode = ResultStatusCode.StepComplete,
+            )
+        } catch (e: StepInterruptInvokeException) {
+            val functionId = String.format("%s-%s", e.appId, e.fnId)
+            return StepOptionsInvoke(
+                id = e.hashedId,
+                name = e.id,
+                op = OpCode.InvokeFunction,
+                statusCode = ResultStatusCode.StepComplete,
+                opts = buildMap {
+                    put("function_id", functionId)
+                    put("payload", mapOf("data" to e.data))
+                    if (e.timeout != null) {
+                        put("timeout", e.timeout)
+                    }
+                }
             )
         } catch (e: StepInterruptException) {
             // NOTE - Currently this error could be caught in the user's own function
@@ -193,33 +217,33 @@ internal open class InternalInngestFunction(
         }
     }
 
-    fun getFunctionConfig(serveUrl: String): InternalFunctionConfig {
+    fun getFunctionConfig(serveUrl: String, client: Inngest): InternalFunctionConfig {
         // TODO use URL objects instead of strings so we can fetch things like scheme
         val scheme = serveUrl.split("://")[0]
         return InternalFunctionConfig(
-            id = config.id,
+            id = String.format("%s-%s", client.appId, config.id),
             name = config.name,
             triggers = config.triggers,
             steps =
-                mapOf(
-                    "step" to
-                        StepConfig(
-                            id = "step",
-                            name = "step",
-                            retries =
-                                mapOf(
-                                    // TODO - Pull from FunctionOptions
-                                    "attempts" to 3,
-                                ),
-                            runtime =
-                                hashMapOf(
-                                    "type" to scheme,
-                                    // TODO - Create correct URL
-                                    "url" to
-                                        "$serveUrl?fnId=${config.id}&stepId=step",
-                                ),
+            mapOf(
+                "step" to
+                    StepConfig(
+                        id = "step",
+                        name = "step",
+                        retries =
+                        mapOf(
+                            // TODO - Pull from FunctionOptions
+                            "attempts" to 3,
                         ),
-                ),
+                        runtime =
+                        hashMapOf(
+                            "type" to scheme,
+                            // TODO - Create correct URL
+                            "url" to
+                                "$serveUrl?fnId=${config.id}&stepId=step",
+                        ),
+                    ),
+            ),
         )
     }
 }

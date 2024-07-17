@@ -22,6 +22,10 @@ class StepInterruptSleepException(id: String, hashedId: String, override val dat
 class StepInterruptSendEventException(id: String, hashedId: String, val eventIds: Array<String>) :
     StepInterruptException(id, hashedId, eventIds)
 
+
+class StepInterruptInvokeException(id: String, hashedId: String, val appId: String, val fnId: String, data: kotlin.Any?, val timeout: String?) :
+    StepInterruptException(id, hashedId, data)
+
 class StepInterruptWaitForEventException(
     id: String,
     hashedId: String,
@@ -65,6 +69,44 @@ class Step(val state: State, val client: Inngest) {
         }
         // TODO - Catch Step Error here and throw it when error parsing is added to getState
 
+        // TODO - handle invalidly stored step types properly
+        throw Exception("step state incorrect type")
+    }
+
+    /**
+     * Invoke another Inngest function as a step
+     *
+     * @param id unique step id for memoization
+     * @param fn ID of the function to invoke
+     * @param data the data to pass within `event.data` to the function
+     * @param timeout an optional timeout for the invoked function.  If the invoked function does
+     * not finish within this time, the invoked function will be marked as failed.
+     */
+    inline fun <reified T> invoke(
+        id: String,
+        appId: String,
+        fnId: String,
+        data: kotlin.Any?,
+        timeout: String?,
+    ): T = invoke(id, appId, fnId, data, timeout, T::class.java)
+
+    fun <T> invoke(
+        id: String,
+        appId: String,
+        fnId: String,
+        data: kotlin.Any?,
+        timeout: String?,
+        type: Class<T>,
+    ): T {
+        val hashedId = state.getHashFromId(id)
+        try {
+            val stepResult = state.getState(hashedId, type)
+            if (stepResult != null) {
+                return stepResult
+            }
+        } catch (e: StateNotFound) {
+            throw StepInterruptInvokeException(id, hashedId, appId, fnId, data, timeout)
+        }
         // TODO - handle invalidly stored step types properly
         throw Exception("step state incorrect type")
     }
