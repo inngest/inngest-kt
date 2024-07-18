@@ -15,9 +15,10 @@ public abstract class InngestConfiguration {
     protected abstract Inngest inngestClient();
 
     @Bean
-    protected CommHandler commHandler(@Autowired Inngest inngestClient) {
-        // TODO: Add missing configuration
-        ServeConfig serveConfig = new ServeConfig(inngestClient);
-        return new CommHandler(functions(), inngestClient, serveConfig, frameworkName);
+    protected abstract ServeConfig serve(@Autowired Inngest inngestClient);
+
+    @Bean
+    protected CommHandler commHandler(@Autowired Inngest inngestClient, @Autowired ServeConfig serve) {
+        return new CommHandler(functions(), inngestClient, serve, frameworkName);
     }
 }
