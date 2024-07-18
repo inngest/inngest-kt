@@ -12,7 +12,7 @@ class ProcessAlbum : InngestFunction() {
         return builder
             .name("Process Album!")
             .trigger(InngestFunctionTrigger(event = "delivery/process.requested"))
-            .batchEvents(30, Duration.ofSeconds(30))
+            .batchEvents(30, Duration.ofSeconds(10))
     }
 
     override fun execute(
@@ -20,17 +20,21 @@ class ProcessAlbum : InngestFunction() {
         step: Step,
     ): LinkedHashMap<String, Any> {
 
-        // NOTE - App ID is set on the serve level
-        val res = step.invoke<Map<String, Any>>(
-            "restore-album",
-            "ktor-dev",
-            "RestoreFromGlacier",
-            mapOf("some-arg" to "awesome"),
-            null,
+//        val list = ctx.events.map { e -> e.data.get("something") }
+//        println(list);
 
+        for (evt in ctx.events) {
+//            println(evt);
+            // NOTE - App ID is set on the serve level
+            val res = step.invoke<Map<String, Any>>(
+                "restore-album-${evt.id}",
+                "ktor-dev",
+                "RestoreFromGlacier",
+                mapOf("something" to evt.data.get("something")),
+                null,
             )
+        }
 
-//        throw NonRetriableError("Could not restore")
         return linkedMapOf("hello" to true)
     }
 

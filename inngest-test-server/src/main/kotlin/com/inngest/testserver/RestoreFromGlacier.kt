@@ -4,8 +4,14 @@ import com.inngest.*
 import java.time.Duration
 
 @FunctionConfig(id = "RestoreFromGlacier", name = "RestoreFromGlacier")
-@FunctionEventTrigger(event = "delivery/restore.requested")
 class RestoreFromGlacier : InngestFunction() {
+
+    override fun config(builder: InngestFunction.Builder): InngestFunction.Builder {
+        return builder
+            .name("Restore from Glacier")
+            .trigger(InngestFunctionTrigger(event = "delivery/restore.requested"))
+    }
+
     override fun execute(
         ctx: FunctionContext,
         step: Step,
