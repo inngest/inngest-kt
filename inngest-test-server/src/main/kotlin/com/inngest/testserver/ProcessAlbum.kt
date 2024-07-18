@@ -4,8 +4,9 @@ import com.inngest.*
 import java.time.Duration
 
 
-@FunctionConfig(id = "ProcessAlbum", name = "ProcessAlbum")
-@FunctionEventTrigger(event = "delivery/process.requested")
+/**
+ * A demo function that accepts an event in a batch and invokes a child function
+ */
 class ProcessAlbum : InngestFunction() {
 
     override fun config(builder: InngestFunctionConfigBuilder): InngestFunctionConfigBuilder {

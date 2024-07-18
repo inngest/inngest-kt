@@ -2,12 +2,16 @@ package com.inngest
 
 import com.beust.klaxon.Json
 
+/**
+ * A generic class for defining and serializing function triggers
+ */
 abstract class InngestFunctionTrigger // or interface or data class
 @JvmOverloads
 constructor(
     @Json(serializeNull = false) val event: String? = null,
     @Json(serializeNull = false) val `if`: String? = null,
     @Json(serializeNull = false) val cron: String? = null,
+    // IDEA - Add timeout and re-use for cancelOn?
 )
 
 /**

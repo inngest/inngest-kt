@@ -99,6 +99,9 @@ class InngestFunctionConfigBuilder() {
     }
 
     fun build(appId: String, serverUrl: String): InternalFunctionConfig {
+        if (id == null) {
+            throw InngestInvalidConfigurationException("Function id must be configured via builder")
+        }
         val globalId = String.format("%s-%s", appId, id)
         val config = InternalFunctionConfig(
             globalId,

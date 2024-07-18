@@ -120,6 +120,10 @@ internal interface Function {
 
 
 // TODO: make this implement the Function interface
+/**
+ * An internal class that accepts the configuration and a function handler
+ * and handles the execution and memoization of an InngestFunction
+ */
 internal open class InternalInngestFunction(
     private val configBuilder: InngestFunctionConfigBuilder,
     val handler: (ctx: FunctionContext, step: Step) -> Any?,
@@ -129,10 +133,7 @@ internal open class InternalInngestFunction(
         handler.toKotlin(),
     )
 
-    //    fun id() = config.get("id")
     fun id() = configBuilder.id
-
-    // TODO - Validate options and trigger
 
     fun call(
         ctx: FunctionContext,
@@ -141,9 +142,6 @@ internal open class InternalInngestFunction(
     ): StepOp {
         val state = State(requestBody)
         val step = Step(state, client)
-
-        // DEBUG
-//        println(state)
 
         try {
             val data = handler(ctx, step)
