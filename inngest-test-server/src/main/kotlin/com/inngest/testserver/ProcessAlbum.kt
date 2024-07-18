@@ -8,9 +8,10 @@ import java.time.Duration
 class ProcessAlbum : InngestFunction() {
     // override required
 //    override val id = "ProcessAlbum"
-    override fun config(builder: Builder): Builder {
+    override fun config(builder: InngestFunction.Builder): InngestFunction.Builder {
         return builder
             .name("Process Album!")
+            .trigger(InngestFunctionTrigger(event = "delivery/process.requested"))
             .batchEvents(30, Duration.ofSeconds(30))
     }
 

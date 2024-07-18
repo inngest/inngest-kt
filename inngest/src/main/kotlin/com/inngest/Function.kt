@@ -77,12 +77,18 @@ data class StepConfig(
     val runtime: HashMap<String, String> = hashMapOf("type" to "http"),
 )
 
-data class InternalFunctionConfig(
+class InternalFunctionConfig @JvmOverloads constructor(
     val id: String,
-    val name: String,
-    val triggers: Array<InternalFunctionTrigger>,
+    val name: String?,
+    val triggers: MutableList<InngestFunctionTrigger>,
+    @Json(serializeNull = false)
+    val batchEvents: BatchEvents?,
     val steps: Map<String, StepConfig>,
-)
+) {
+}
+// NOTE - This should probably be called serialized or formatted config
+// as it's only used to format the config for register requests
+//typealias InternalFunctionConfig = Map<String, Any>
 
 /**
  * The context for the current function run
@@ -111,20 +117,22 @@ data class SendEventPayload(val event_ids: Array<String>)
 internal interface Function {
     fun id(): String
 
-    fun config(): InternalFunctionConfig
+//    fun config(): InternalFunctionConfig
 }
+
 
 // TODO: make this implement the Function interface
 internal open class InternalInngestFunction(
-    val config: Map<String, Any>,
+    private val config: InternalFunctionConfig,
     val handler: (ctx: FunctionContext, step: Step) -> Any?,
 ) {
-    constructor(config: Map<String, Any>, handler: BiFunction<FunctionContext, Step, out Any>) : this(
+    constructor(config: InternalFunctionConfig, handler: BiFunction<FunctionContext, Step, out Any>) : this(
         config,
         handler.toKotlin(),
     )
 
-    fun id() = config.get("id")
+    //    fun id() = config.get("id")
+    fun id() = config.id
 
     // TODO - Validate options and trigger
 
@@ -137,7 +145,7 @@ internal open class InternalInngestFunction(
         val step = Step(state, client)
 
         // DEBUG
-        println(state)
+//        println(state)
 
         try {
             val data = handler(ctx, step)
@@ -217,9 +225,11 @@ internal open class InternalInngestFunction(
         }
     }
 
-    fun getFunctionConfig(serveUrl: String, client: Inngest): Map<String, Any> {
+    fun getFunctionConfig(serveUrl: String, client: Inngest): InternalFunctionConfig {
         // TODO use URL objects instead of strings so we can fetch things like scheme
         val scheme = serveUrl.split("://")[0]
+
+        println(config)
 
         return config;
 

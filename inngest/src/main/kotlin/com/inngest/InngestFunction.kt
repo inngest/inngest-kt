@@ -1,6 +1,9 @@
 package com.inngest
 
+import com.beust.klaxon.Converter
 import com.beust.klaxon.Json
+import com.beust.klaxon.JsonValue
+import com.beust.klaxon.KlaxonException
 import java.time.Duration
 
 @Target(AnnotationTarget.CLASS)
@@ -58,16 +61,37 @@ abstract class InngestFunction {
             return this;
         }
 
-        fun build(): Map<String, Any> {
-            return buildMap<String, Any> {
-                put("triggers", triggers)
-                if (name != null) {
-                    put("name", name!!)
-                }
-                if (batchEvents != null) {
-                    put("batchEvents", batchEvents!!.maxSize)
-                }
-            }
+        private fun buildSteps(): Map<String, StepConfig> {
+            return mapOf(
+                "step" to
+                    StepConfig(
+                        id = "step",
+                        name = "step",
+                        retries =
+                        mapOf(
+                            // TODO - Pull from conf option
+                            "attempts" to 3,
+                        ),
+                        runtime =
+                        hashMapOf(
+//                            "type" to scheme,
+//                            // TODO - Create correct URL
+//                            "url" to
+//                                "$serveUrl?fnId=${config.id}&stepId=step",
+                        ),
+                    ),
+            )
+        }
+
+        fun build(id: String): InternalFunctionConfig {
+            val config = InternalFunctionConfig(
+                id,
+                name,
+                triggers,
+                batchEvents,
+                steps = buildSteps()
+            )
+            return config
         }
     }
 
@@ -95,15 +119,7 @@ abstract class InngestFunction {
 //        }
         val triggers = buildEventTriggers() + buildCronTriggers() + buildIfTriggers()
         val builder = Builder()
-        val config = this.config(builder).build()
-
-//        val fnConfig =
-//            InternalFunctionOptions(
-//                id = id(),
-//                config = config,
-//                triggers = triggers.toTypedArray(),
-//            )
-
+        val config = this.config(builder).build(id())
         return InternalInngestFunction(config, this::execute)
     }
 
@@ -129,8 +145,24 @@ constructor(
     @Json(serializeNull = false) val cron: String? = null,
 )
 
-private data class BatchEvents(
+@Target(AnnotationTarget.FIELD)
+annotation class KlaxonDuration
+
+val durationConverter = object : Converter {
+    override fun canConvert(cls: Class<*>): Boolean = cls == Duration::class.java;
+
+    // TODO Implement this - parse 30s into duration of seconds
+    override fun fromJson(jv: JsonValue): Duration =
+        throw KlaxonException("Duration parse not implemented: ${jv.string}")
+
+    override fun toJson(value: Any): String = """"${(value as Duration).seconds}s""""
+}
+
+data class BatchEvents
+@JvmOverloads
+constructor(
     val maxSize: Int,
+    @KlaxonDuration
     val timeout: Duration,
     @Json(serializeNull = false) val key: String? = null
 )

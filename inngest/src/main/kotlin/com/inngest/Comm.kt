@@ -20,11 +20,11 @@ data class ExecutionContext(
     val env: String,
 )
 
-internal data class RegistrationRequestPayload(
+internal data class RegistrationRequestPayload @JvmOverloads constructor(
     val appName: String,
     val deployType: String = "ping",
     val framework: String,
-    val functions: List<Map<String, Any>> = listOf(),
+    val functions: List<InternalFunctionConfig> = listOf(),
     val sdk: String,
     val url: String,
     val v: String,
@@ -112,9 +112,21 @@ class CommHandler(
         return mapper.writeValueAsString(requestBody)
     }
 
+    private fun serializePayload(payload: Any?): String {
+        try {
+            return Klaxon()
+                .fieldConverter(KlaxonDuration::class, durationConverter)
+                .toJsonString(payload)
+        } catch (e: Exception) {
+            println(e);
+            return """{ "message": "failed serialization" }"""
+        }
 
-    private fun getFunctionConfigs(origin: String): List<Map<String, Any>> {
-        val configs: MutableList<Map<String, Any>> = mutableListOf()
+    }
+
+
+    private fun getFunctionConfigs(origin: String): List<InternalFunctionConfig> {
+        val configs: MutableList<InternalFunctionConfig> = mutableListOf()
         functions.forEach { entry -> configs.add(entry.value.getFunctionConfig(getServeUrl(origin), client)) }
         return configs
     }
@@ -150,7 +162,7 @@ class CommHandler(
 
     fun introspect(origin: String): String {
         val requestPayload = getRegistrationRequestPayload(origin)
-        return parseRequestBody(requestPayload)
+        return serializePayload(requestPayload)
     }
 
     private fun getRegistrationRequestPayload(origin: String): RegistrationRequestPayload {

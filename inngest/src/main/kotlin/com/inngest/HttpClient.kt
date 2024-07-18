@@ -26,7 +26,9 @@ internal class HttpClient(private val clientConfig: RequestConfig) {
         payload: Any,
         config: RequestConfig? = null,
     ): okhttp3.Request {
-        val jsonRequestBody = Klaxon().toJsonString(payload)
+        val jsonRequestBody = Klaxon()
+            .fieldConverter(KlaxonDuration::class, durationConverter)
+            .toJsonString(payload)
         val body = jsonRequestBody.toRequestBody(jsonMediaType)
 
         val clientHeaders = clientConfig.headers ?: emptyMap()
