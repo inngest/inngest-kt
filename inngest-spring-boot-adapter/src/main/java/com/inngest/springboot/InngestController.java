@@ -31,7 +31,6 @@ public abstract class InngestController {
         @RequestHeader(HttpHeaders.HOST) String hostHeader,
         HttpServletRequest request
     ) {
-
         String origin = String.format("%s://%s", request.getScheme(), hostHeader);
         if (this.inngestOrigin != null && !this.inngestOrigin.isEmpty()) {
             origin = this.inngestOrigin;
