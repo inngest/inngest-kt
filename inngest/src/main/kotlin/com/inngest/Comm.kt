@@ -24,7 +24,7 @@ internal data class RegistrationRequestPayload(
     val appName: String,
     val deployType: String = "ping",
     val framework: String,
-    val functions: List<InternalFunctionConfig> = listOf(),
+    val functions: List<Map<String, Any>> = listOf(),
     val sdk: String,
     val url: String,
     val v: String,
@@ -112,8 +112,8 @@ class CommHandler(
         return mapper.writeValueAsString(requestBody)
     }
 
-    private fun getFunctionConfigs(): List<InternalFunctionConfig> {
-        val configs: MutableList<InternalFunctionConfig> = mutableListOf()
+    private fun getFunctionConfigs(): List<Map<String, Any>> {
+        val configs: MutableList<Map<String, Any>> = mutableListOf()
         functions.forEach { entry -> configs.add(entry.value.getFunctionConfig(getServeUrl(), client)) }
         return configs
     }

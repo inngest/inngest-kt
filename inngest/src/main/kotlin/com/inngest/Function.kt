@@ -6,11 +6,11 @@ import java.util.function.BiFunction
 // IDEA: Use data classes
 internal data class InternalFunctionOptions(
     val id: String,
-    val name: String,
+    val config: Map<String, Any>,
     val triggers: Array<InternalFunctionTrigger>,
 )
 
-internal data class InternalFunctionTrigger
+data class InternalFunctionTrigger
 @JvmOverloads
 constructor(
     @Json(serializeNull = false) val event: String? = null,
@@ -77,7 +77,7 @@ data class StepConfig(
     val runtime: HashMap<String, String> = hashMapOf("type" to "http"),
 )
 
-internal data class InternalFunctionConfig(
+data class InternalFunctionConfig(
     val id: String,
     val name: String,
     val triggers: Array<InternalFunctionTrigger>,
@@ -116,15 +116,15 @@ internal interface Function {
 
 // TODO: make this implement the Function interface
 internal open class InternalInngestFunction(
-    val config: InternalFunctionOptions,
+    val config: Map<String, Any>,
     val handler: (ctx: FunctionContext, step: Step) -> Any?,
 ) {
-    constructor(config: InternalFunctionOptions, handler: BiFunction<FunctionContext, Step, out Any>) : this(
+    constructor(config: Map<String, Any>, handler: BiFunction<FunctionContext, Step, out Any>) : this(
         config,
         handler.toKotlin(),
     )
 
-    fun id() = config.id
+    fun id() = config.get("id")
 
     // TODO - Validate options and trigger
 
@@ -217,33 +217,37 @@ internal open class InternalInngestFunction(
         }
     }
 
-    fun getFunctionConfig(serveUrl: String, client: Inngest): InternalFunctionConfig {
+    fun getFunctionConfig(serveUrl: String, client: Inngest): Map<String, Any> {
         // TODO use URL objects instead of strings so we can fetch things like scheme
         val scheme = serveUrl.split("://")[0]
-        return InternalFunctionConfig(
-            id = String.format("%s-%s", client.appId, config.id),
-            name = config.name,
-            triggers = config.triggers,
-            steps =
-            mapOf(
-                "step" to
-                    StepConfig(
-                        id = "step",
-                        name = "step",
-                        retries =
-                        mapOf(
-                            // TODO - Pull from FunctionOptions
-                            "attempts" to 3,
-                        ),
-                        runtime =
-                        hashMapOf(
-                            "type" to scheme,
-                            // TODO - Create correct URL
-                            "url" to
-                                "$serveUrl?fnId=${config.id}&stepId=step",
-                        ),
-                    ),
-            ),
-        )
+
+        return config;
+
+//        return InternalFunctionConfig(
+//            id = String.format("%s-%s", client.appId, config.id),
+//            name = config.config.get("name"),
+//            triggers = config.triggers,
+//
+//            steps =
+//            mapOf(
+//                "step" to
+//                    StepConfig(
+//                        id = "step",
+//                        name = "step",
+//                        retries =
+//                        mapOf(
+//                            // TODO - Pull from FunctionOptions
+//                            "attempts" to 3,
+//                        ),
+//                        runtime =
+//                        hashMapOf(
+//                            "type" to scheme,
+//                            // TODO - Create correct URL
+//                            "url" to
+//                                "$serveUrl?fnId=${config.id}&stepId=step",
+//                        ),
+//                    ),
+//            ),
+//        )
     }
 }

@@ -6,6 +6,14 @@ import java.time.Duration
 @FunctionConfig(id = "ProcessAlbum", name = "ProcessAlbum")
 @FunctionEventTrigger(event = "delivery/process.requested")
 class ProcessAlbum : InngestFunction() {
+    // override required
+//    override val id = "ProcessAlbum"
+    override fun config(builder: Builder): Builder {
+        return builder
+            .name("Process Album!")
+            .batchEvents(30, Duration.ofSeconds(30))
+    }
+
     override fun execute(
         ctx: FunctionContext,
         step: Step,
