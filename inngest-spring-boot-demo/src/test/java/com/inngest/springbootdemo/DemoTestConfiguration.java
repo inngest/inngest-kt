@@ -35,6 +35,11 @@ public class DemoTestConfiguration extends InngestConfiguration {
         return new Inngest("spring_test_demo");
     }
 
+    @Override
+    protected ServeConfig serve(Inngest client) {
+        return new ServeConfig(client);
+    }
+
     @Bean
     protected CommHandler commHandler(@Autowired Inngest inngestClient) {
         ServeConfig serveConfig = new ServeConfig(inngestClient);

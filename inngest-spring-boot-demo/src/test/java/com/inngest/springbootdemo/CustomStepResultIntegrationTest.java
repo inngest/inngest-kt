@@ -16,7 +16,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 class CustomStepResultIntegrationTest {
     @BeforeAll
     static void setup(@Autowired CommHandler handler) {
-        handler.register();
+        handler.register("http://localhost:8080");
     }
 
     @Autowired

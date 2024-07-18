@@ -19,7 +19,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 class ErrorsInStepsIntegrationTest {
     @BeforeAll
     static void setup(@Autowired CommHandler handler) {
-        handler.register();
+        handler.register("http://localhost:8080");
     }
 
     @Autowired
