@@ -23,8 +23,8 @@ public abstract class InngestController {
     }
 
     // ex. https://api.mysite.com
-    @Value("${inngest.origin:}")
-    private String inngestOrigin;
+    @Value("${inngest.serveOrigin:}")
+    private String serveOrigin;
 
     @GetMapping()
     public ResponseEntity<String> index(
@@ -32,8 +32,8 @@ public abstract class InngestController {
         HttpServletRequest request
     ) {
         String origin = String.format("%s://%s", request.getScheme(), hostHeader);
-        if (this.inngestOrigin != null && !this.inngestOrigin.isEmpty()) {
-            origin = this.inngestOrigin;
+        if (this.serveOrigin != null && !this.serveOrigin.isEmpty()) {
+            origin = this.serveOrigin;
         }
         String response = commHandler.introspect(origin);
         return ResponseEntity.ok().headers(getHeaders()).body(response);
@@ -45,8 +45,8 @@ public abstract class InngestController {
         HttpServletRequest request
     ) {
         String origin = String.format("%s://%s", request.getScheme(), hostHeader);
-        if (this.inngestOrigin != null && !this.inngestOrigin.isEmpty()) {
-            origin = this.inngestOrigin;
+        if (this.serveOrigin != null && !this.serveOrigin.isEmpty()) {
+            origin = this.serveOrigin;
         }
         String response = commHandler.register(origin);
         return ResponseEntity.ok().headers(getHeaders()).body(response);
