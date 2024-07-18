@@ -27,7 +27,6 @@ public class DemoConfiguration extends InngestConfiguration {
 
     @Override
     protected ServeConfig serve(Inngest inngestClient) {
-        System.out.println("HELLO WORLD");
         return new ServeConfig(inngestClient);
     }
 }
