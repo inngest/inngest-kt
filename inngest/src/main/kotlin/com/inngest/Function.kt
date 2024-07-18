@@ -10,7 +10,7 @@ internal data class InternalFunctionOptions(
     val triggers: Array<InternalFunctionTrigger>,
 )
 
-data class InternalFunctionTrigger
+internal open class InternalFunctionTrigger
 @JvmOverloads
 constructor(
     @Json(serializeNull = false) val event: String? = null,
@@ -116,17 +116,15 @@ data class SendEventPayload(val event_ids: Array<String>)
 
 internal interface Function {
     fun id(): String
-
-//    fun config(): InternalFunctionConfig
 }
 
 
 // TODO: make this implement the Function interface
 internal open class InternalInngestFunction(
-    private val configBuilder: InngestFunction.Builder,
+    private val configBuilder: InngestFunctionConfigBuilder,
     val handler: (ctx: FunctionContext, step: Step) -> Any?,
 ) {
-    constructor(configBuilder: InngestFunction.Builder, handler: BiFunction<FunctionContext, Step, out Any>) : this(
+    constructor(configBuilder: InngestFunctionConfigBuilder, handler: BiFunction<FunctionContext, Step, out Any>) : this(
         configBuilder,
         handler.toKotlin(),
     )

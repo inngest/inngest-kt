@@ -3,13 +3,14 @@ package com.inngest.testserver
 import com.inngest.*
 import java.time.Duration
 
-@FunctionConfig(id = "RestoreFromGlacier", name = "RestoreFromGlacier")
+//@FunctionConfig(id = "RestoreFromGlacier", name = "RestoreFromGlacier")
 class RestoreFromGlacier : InngestFunction() {
 
-    override fun config(builder: InngestFunction.Builder): InngestFunction.Builder {
+    override fun config(builder: InngestFunctionConfigBuilder): InngestFunctionConfigBuilder {
         return builder
+            .id("RestoreFromGlacier")
             .name("Restore from Glacier")
-            .trigger(InngestFunctionTrigger(event = "delivery/restore.requested"))
+            .trigger(InngestFunctionTriggers.Event("delivery/restore.requested"))
     }
 
     override fun execute(

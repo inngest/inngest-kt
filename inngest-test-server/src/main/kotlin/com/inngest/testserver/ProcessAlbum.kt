@@ -3,15 +3,18 @@ package com.inngest.testserver
 import com.inngest.*
 import java.time.Duration
 
+
 @FunctionConfig(id = "ProcessAlbum", name = "ProcessAlbum")
 @FunctionEventTrigger(event = "delivery/process.requested")
 class ProcessAlbum : InngestFunction() {
 
-    //    override val id = "ProcessAlbum"
-    override fun config(builder: InngestFunction.Builder): InngestFunction.Builder {
+    override fun config(builder: InngestFunctionConfigBuilder): InngestFunctionConfigBuilder {
         return builder
             .name("Process Album!")
-            .trigger(InngestFunctionTrigger(event = "delivery/process.requested"))
+            .triggerEvent("delivery/process.requested")
+            .triggerCron("5 0 * 8 *")
+            .trigger(
+                InngestFunctionTriggers.Cron("5 0 * 8 *"))
             .batchEvents(30, Duration.ofSeconds(10))
     }
 
@@ -22,6 +25,7 @@ class ProcessAlbum : InngestFunction() {
 
 //        val list = ctx.events.map { e -> e.data.get("something") }
 //        println(list);
+
 
         for (evt in ctx.events) {
 //            println(evt);
