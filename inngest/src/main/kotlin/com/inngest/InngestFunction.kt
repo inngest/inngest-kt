@@ -39,7 +39,7 @@ abstract class InngestFunction {
 //    abstract val id: String;
 
     // TODO: Throw illegal argument exception
-    class Builder {
+    class Builder(val id: String) {
         private var name: String? = null;
         private var triggers: MutableList<InngestFunctionTrigger> = mutableListOf();
         private var batchEvents: BatchEvents? = null;
@@ -61,7 +61,8 @@ abstract class InngestFunction {
             return this;
         }
 
-        private fun buildSteps(): Map<String, StepConfig> {
+        private fun buildSteps(serveUrl: String): Map<String, StepConfig> {
+            val scheme = serveUrl.split("://")[0]
             return mapOf(
                 "step" to
                     StepConfig(
@@ -74,22 +75,21 @@ abstract class InngestFunction {
                         ),
                         runtime =
                         hashMapOf(
-//                            "type" to scheme,
-//                            // TODO - Create correct URL
-//                            "url" to
-//                                "$serveUrl?fnId=${config.id}&stepId=step",
+                            "type" to scheme,
+                            "url" to "$serveUrl?fnId=${id}&stepId=step",
                         ),
                     ),
             )
         }
 
-        fun build(id: String): InternalFunctionConfig {
+        fun build(appId: String, serverUrl: String): InternalFunctionConfig {
+            val globalId = String.format("%s-%s", appId, id)
             val config = InternalFunctionConfig(
-                id,
+                globalId,
                 name,
                 triggers,
                 batchEvents,
-                steps = buildSteps()
+                steps = buildSteps(serverUrl)
             )
             return config
         }
@@ -118,9 +118,9 @@ abstract class InngestFunction {
 //            throw Exception("FunctionConfig annotation is required to setup an InngestFunction")
 //        }
         val triggers = buildEventTriggers() + buildCronTriggers() + buildIfTriggers()
-        val builder = Builder()
-        val config = this.config(builder).build(id())
-        return InternalInngestFunction(config, this::execute)
+        val builder = Builder(id())
+        val configBuilder = this.config(builder)
+        return InternalInngestFunction(configBuilder, this::execute)
     }
 
     // TODO: DRY this

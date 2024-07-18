@@ -66,7 +66,7 @@ fun Route.serve(
                     call.response.status(
                         HttpStatusCode(response.statusCode.code, response.statusCode.message),
                     )
-                    println("response: " + response.body)
+//                    println("response: " + response.body)
                     call.respond(response.body)
                 } catch (e: Exception) {
                     call.respond(HttpStatusCode.InternalServerError, e.toString())

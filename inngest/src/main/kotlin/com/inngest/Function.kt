@@ -123,16 +123,16 @@ internal interface Function {
 
 // TODO: make this implement the Function interface
 internal open class InternalInngestFunction(
-    private val config: InternalFunctionConfig,
+    private val configBuilder: InngestFunction.Builder,
     val handler: (ctx: FunctionContext, step: Step) -> Any?,
 ) {
-    constructor(config: InternalFunctionConfig, handler: BiFunction<FunctionContext, Step, out Any>) : this(
-        config,
+    constructor(configBuilder: InngestFunction.Builder, handler: BiFunction<FunctionContext, Step, out Any>) : this(
+        configBuilder,
         handler.toKotlin(),
     )
 
     //    fun id() = config.get("id")
-    fun id() = config.id
+    fun id() = configBuilder.id
 
     // TODO - Validate options and trigger
 
@@ -226,38 +226,7 @@ internal open class InternalInngestFunction(
     }
 
     fun getFunctionConfig(serveUrl: String, client: Inngest): InternalFunctionConfig {
-        // TODO use URL objects instead of strings so we can fetch things like scheme
-        val scheme = serveUrl.split("://")[0]
-
-        println(config)
-
-        return config;
-
-//        return InternalFunctionConfig(
-//            id = String.format("%s-%s", client.appId, config.id),
-//            name = config.config.get("name"),
-//            triggers = config.triggers,
-//
-//            steps =
-//            mapOf(
-//                "step" to
-//                    StepConfig(
-//                        id = "step",
-//                        name = "step",
-//                        retries =
-//                        mapOf(
-//                            // TODO - Pull from FunctionOptions
-//                            "attempts" to 3,
-//                        ),
-//                        runtime =
-//                        hashMapOf(
-//                            "type" to scheme,
-//                            // TODO - Create correct URL
-//                            "url" to
-//                                "$serveUrl?fnId=${config.id}&stepId=step",
-//                        ),
-//                    ),
-//            ),
-//        )
+        // TODO use URL objects for serveUrl instead of strings so we can fetch things like scheme
+        return configBuilder.build(client.appId, serveUrl)
     }
 }

@@ -60,8 +60,6 @@ class CommHandler(
         functionId: String,
         requestBody: String,
     ): CommResponse {
-        println(requestBody)
-
         try {
             val payload = Klaxon().parse<ExecutionRequestPayload>(requestBody)
             // TODO - check that payload is not null and throw error
