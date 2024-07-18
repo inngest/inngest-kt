@@ -24,6 +24,7 @@ public class DemoControllerTest {
             .andExpect(content().contentType("application/json"))
             .andExpect(header().string(InngestHeaderKey.Framework.getValue(), "springboot"))
             .andExpect(jsonPath("$.appName").value("spring_test_demo"))
+            .andExpect(jsonPath("$.url").value("http://localhost:8090/api/inngest"))
             .andExpect(jsonPath("$.sdk").value("inngest-kt"));
     }
 }
