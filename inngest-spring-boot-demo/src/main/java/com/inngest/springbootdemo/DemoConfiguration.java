@@ -21,7 +21,13 @@ public class DemoConfiguration extends InngestConfiguration {
     }
 
     @Override
-    public Inngest inngestClient() {
+    protected Inngest inngestClient() {
         return new Inngest("spring_demo");
+    }
+
+    @Override
+    protected ServeConfig serve(Inngest inngestClient) {
+        System.out.println("HELLO WORLD");
+        return new ServeConfig(inngestClient);
     }
 }
