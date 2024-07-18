@@ -112,15 +112,15 @@ class CommHandler(
         return mapper.writeValueAsString(requestBody)
     }
 
-    private fun getFunctionConfigs(): List<InternalFunctionConfig> {
+    private fun getFunctionConfigs(origin: String): List<InternalFunctionConfig> {
         val configs: MutableList<InternalFunctionConfig> = mutableListOf()
-        functions.forEach { entry -> configs.add(entry.value.getFunctionConfig(getServeUrl(), client)) }
+        functions.forEach { entry -> configs.add(entry.value.getFunctionConfig(getServeUrl(origin), client)) }
         return configs
     }
 
-    fun register(): String {
+    fun register(origin: String): String {
         val registrationUrl = "${config.baseUrl()}/fn/register"
-        val requestPayload = getRegistrationRequestPayload()
+        val requestPayload = getRegistrationRequestPayload(origin)
 
         val httpClient = client.httpClient
 
@@ -147,24 +147,25 @@ class CommHandler(
         return Result.success(InngestSyncResult.None)
     }
 
-    fun introspect(): String {
-        val requestPayload = getRegistrationRequestPayload()
+    fun introspect(origin: String): String {
+        val requestPayload = getRegistrationRequestPayload(origin)
         return parseRequestBody(requestPayload)
     }
 
-    private fun getRegistrationRequestPayload(): RegistrationRequestPayload {
+    private fun getRegistrationRequestPayload(origin: String): RegistrationRequestPayload {
         return RegistrationRequestPayload(
             appName = config.appId(),
             framework = framework.toString(),
             sdk = "inngest-kt",
-            url = getServeUrl(),
+            url = getServeUrl(origin),
             v = Version.getVersion(),
-            functions = getFunctionConfigs(),
+            functions = getFunctionConfigs(origin),
         )
     }
 
-    private fun getServeUrl(): String {
-        val serveOrigin = config.serveOrigin() ?: "http://localhost:8080"
+    private fun getServeUrl(origin: String): String {
+        // TODO - property from SpringBoot should take preference to env variable?
+        val serveOrigin = config.serveOrigin() ?: origin
         val servePath = config.servePath() ?: "/api/inngest"
         return "$serveOrigin$servePath"
     }

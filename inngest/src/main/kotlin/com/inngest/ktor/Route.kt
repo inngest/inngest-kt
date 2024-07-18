@@ -3,6 +3,7 @@ package com.inngest.ktor
 import com.inngest.*
 import io.ktor.http.*
 import io.ktor.server.application.*
+import io.ktor.server.plugins.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
@@ -42,7 +43,11 @@ fun Route.serve(
 
     route(path) {
         get("") {
-            val resp = comm.introspect()
+            var origin = String.format("%s://%s", call.request.origin.scheme, call.request.origin.serverHost)
+            if (call.request.origin.serverPort != 80 || call.request.origin.serverPort != 443) {
+                origin = String.format("%s:%s", origin, call.request.origin.serverPort)
+            }
+            val resp = comm.introspect(origin)
             call.respond(HttpStatusCode.OK, resp)
         }
 
@@ -72,7 +77,11 @@ fun Route.serve(
         }
 
         put("") {
-            val resp = comm.register()
+            var origin = String.format("%s://%s", call.request.origin.scheme, call.request.origin.serverHost)
+            if (call.request.origin.serverPort != 80 || call.request.origin.serverPort != 443) {
+                origin = String.format("%s:%s", origin, call.request.origin.serverPort)
+            }
+            val resp = comm.register(origin)
             call.respond(HttpStatusCode.OK, resp)
         }
     }

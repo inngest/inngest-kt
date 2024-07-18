@@ -3,12 +3,16 @@ package com.inngest.springboot;
 import com.inngest.CommHandler;
 import com.inngest.CommResponse;
 import com.inngest.signingkey.SignatureVerificationKt;
+import jdk.internal.joptsimple.internal.Strings;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import javax.servlet.http.HttpServletRequest;
 
 public abstract class InngestController {
     @Autowired
@@ -20,15 +24,34 @@ public abstract class InngestController {
         return headers;
     }
 
+    // ex. https://api.mysite.com
+    @Value("${inngest.origin:}")
+    private String inngestOrigin;
+
     @GetMapping()
-    public ResponseEntity<String> index() {
-        String response = commHandler.introspect();
+    public ResponseEntity<String> index(
+        @RequestHeader(HttpHeaders.HOST) String hostHeader,
+        HttpServletRequest request
+    ) {
+
+        String origin = String.format("%s://%s", request.getScheme(), hostHeader);
+        if (this.inngestOrigin != null && !this.inngestOrigin.isEmpty()) {
+            origin = this.inngestOrigin;
+        }
+        String response = commHandler.introspect(origin);
         return ResponseEntity.ok().headers(getHeaders()).body(response);
     }
 
     @PutMapping()
-    public ResponseEntity<String> put() {
-        String response = commHandler.register();
+    public ResponseEntity<String> put(
+        @RequestHeader(HttpHeaders.HOST) String hostHeader,
+        HttpServletRequest request
+    ) {
+        String origin = String.format("%s://%s", request.getScheme(), hostHeader);
+        if (this.inngestOrigin != null && !this.inngestOrigin.isEmpty()) {
+            origin = this.inngestOrigin;
+        }
+        String response = commHandler.register(origin);
         return ResponseEntity.ok().headers(getHeaders()).body(response);
     }
 
