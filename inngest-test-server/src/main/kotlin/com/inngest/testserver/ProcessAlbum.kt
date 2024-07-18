@@ -6,8 +6,8 @@ import java.time.Duration
 @FunctionConfig(id = "ProcessAlbum", name = "ProcessAlbum")
 @FunctionEventTrigger(event = "delivery/process.requested")
 class ProcessAlbum : InngestFunction() {
-    // override required
-//    override val id = "ProcessAlbum"
+
+    //    override val id = "ProcessAlbum"
     override fun config(builder: InngestFunction.Builder): InngestFunction.Builder {
         return builder
             .name("Process Album!")
@@ -27,10 +27,10 @@ class ProcessAlbum : InngestFunction() {
 //            println(evt);
             // NOTE - App ID is set on the serve level
             val res = step.invoke<Map<String, Any>>(
-                "restore-album-${evt.id}",
+                "restore-album-${evt.data.get("albumId")}",
                 "ktor-dev",
                 "RestoreFromGlacier",
-                mapOf("something" to evt.data.get("something")),
+                evt.data,
                 null,
             )
         }
