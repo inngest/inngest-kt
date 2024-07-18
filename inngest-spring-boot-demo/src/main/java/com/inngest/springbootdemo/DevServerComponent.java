@@ -17,7 +17,7 @@ public class DevServerComponent {
     DevServerComponent() throws Exception {
         Runtime rt = Runtime.getRuntime();
         rt.exec("pkill inngest-cli");
-        rt.exec("npx -y inngest-cli dev -u http://127.0.0.1:8090/api/inngest");
+        rt.exec("npx -y inngest-cli dev -u http://127.0.0.1:8080/api/inngest");
 
         waitForStartup();
     }

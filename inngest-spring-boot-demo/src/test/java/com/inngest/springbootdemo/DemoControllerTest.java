@@ -19,12 +19,12 @@ public class DemoControllerTest {
 
     @Test
     public void shouldReturnSyncPayload() throws Exception {
-        mockMvc.perform(get("/api/inngest").header("Host", "localhost:8090"))
+        mockMvc.perform(get("/api/inngest").header("Host", "localhost:8080"))
             .andExpect(status().isOk())
             .andExpect(content().contentType("application/json"))
             .andExpect(header().string(InngestHeaderKey.Framework.getValue(), "springboot"))
             .andExpect(jsonPath("$.appName").value("spring_test_demo"))
-            .andExpect(jsonPath("$.url").value("http://localhost:8090/api/inngest"))
+            .andExpect(jsonPath("$.url").value("http://localhost:8080/api/inngest"))
             .andExpect(jsonPath("$.sdk").value("inngest-kt"));
     }
 }

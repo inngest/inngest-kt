@@ -21,7 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 @AutoConfigureMockMvc
 @Execution(ExecutionMode.CONCURRENT)
 class SpringBootDemoApplicationIntegrationTest {
-    @Value("${TEST_URL:http://localhost:8090}")
+    @Value("${TEST_URL:http://localhost:8080}")
     private String testUrl;
 
     @Autowired
