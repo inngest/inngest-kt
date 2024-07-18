@@ -7,4 +7,5 @@ import com.inngest.springboot.InngestController;
 @RestController
 @RequestMapping(value = "/api/inngest")
 public class DemoController extends InngestController {
+
 }
