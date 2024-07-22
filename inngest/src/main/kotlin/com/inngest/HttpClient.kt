@@ -28,6 +28,7 @@ internal class HttpClient(private val clientConfig: RequestConfig) {
     ): okhttp3.Request {
         val jsonRequestBody = Klaxon()
             .fieldConverter(KlaxonDuration::class, durationConverter)
+            .fieldConverter(KlaxonConcurrencyScope::class, concurrencyScopeConverter)
             .toJsonString(payload)
         val body = jsonRequestBody.toRequestBody(jsonMediaType)
 

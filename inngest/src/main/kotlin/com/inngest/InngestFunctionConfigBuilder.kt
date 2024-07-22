@@ -11,6 +11,7 @@ class InngestFunctionConfigBuilder() {
     var id: String? = null;
     private var name: String? = null;
     private var triggers: MutableList<InngestFunctionTrigger> = mutableListOf();
+    private var concurrency: MutableList<Concurrency>? = null;
     private var batchEvents: BatchEvents? = null;
 
     /**
@@ -77,6 +78,25 @@ class InngestFunctionConfigBuilder() {
         return this;
     }
 
+    /**
+     * Configure step concurrency limit
+     *
+     * @param limit Maximum number of concurrent executing steps across function type
+     * @param key   A CEL expression to apply limit using event payload properties. Example: "event.data.destinationId"
+     * @param scope The scope to apply the limit to. Options
+     */
+    fun concurrency(limit: Int, key: String? = null, scope: ConcurrencyScope? = null): InngestFunctionConfigBuilder {
+        val c = Concurrency(limit, key, scope)
+        // TODO - Limit concurrency length to 2
+        if (this.concurrency == null) {
+            this.concurrency = mutableListOf(c)
+        } else {
+            this.concurrency?.add(c)
+        }
+        println(scope?.value)
+        return this
+    }
+
     private fun buildSteps(serveUrl: String): Map<String, StepConfig> {
         val scheme = serveUrl.split("://")[0]
         return mapOf(
@@ -98,15 +118,18 @@ class InngestFunctionConfigBuilder() {
         )
     }
 
-    fun build(appId: String, serverUrl: String): InternalFunctionConfig {
+    internal fun build(appId: String, serverUrl: String): InternalFunctionConfig {
         if (id == null) {
             throw InngestInvalidConfigurationException("Function id must be configured via builder")
         }
         val globalId = String.format("%s-%s", appId, id)
+        println("concurrency")
+        println(concurrency)
         val config = InternalFunctionConfig(
             globalId,
             name,
             triggers,
+            concurrency,
             batchEvents,
             steps = buildSteps(serverUrl)
         )
@@ -127,7 +150,34 @@ val durationConverter = object : Converter {
     override fun toJson(value: Any): String = """"${(value as Duration).seconds}s""""
 }
 
-data class BatchEvents
+@Target(AnnotationTarget.FIELD)
+annotation class KlaxonConcurrencyScope
+
+val concurrencyScopeConverter = object : Converter {
+    override fun canConvert(cls: Class<*>): Boolean = cls.isEnum
+    override fun fromJson(jv: JsonValue): ConcurrencyScope = enumValueOf<ConcurrencyScope>(jv.string!!)
+    override fun toJson(value: Any): String = """"${(value as ConcurrencyScope).value}""""
+}
+
+// TODO - Convert enum element to value, not name
+enum class ConcurrencyScope(val value: String) {
+    ACCOUNT("account"),
+    ENVIRONMENT("env"),
+    FUNCTION("fn"),
+}
+
+internal data class Concurrency
+@JvmOverloads
+constructor(
+    val limit: Int,
+    @Json(serializeNull = false)
+    val key: String? = null,
+    @Json(serializeNull = false)
+    @KlaxonConcurrencyScope
+    val scope: ConcurrencyScope? = null,
+)
+
+internal data class BatchEvents
 @JvmOverloads
 constructor(
     val maxSize: Int,

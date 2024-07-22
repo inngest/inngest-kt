@@ -3,9 +3,13 @@ package com.inngest.testserver
 import com.inngest.*
 import java.time.Duration
 
-@FunctionConfig(id = "fn-id-slug", name = "My function!")
-@FunctionEventTrigger(event = "user-signup")
-class UserSignupFunction : InngestFunction() {
+class ProcessUserSignup : InngestFunction() {
+
+    override fun config(builder: InngestFunctionConfigBuilder): InngestFunctionConfigBuilder {
+        return builder.id("process-user-signup")
+            .triggerEvent("user-signup")
+    }
+
     override fun execute(
         ctx: FunctionContext,
         step: Step,

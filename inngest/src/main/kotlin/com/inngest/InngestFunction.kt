@@ -26,7 +26,9 @@ abstract class InngestFunction {
         try {
             return buildConfig().id!!
         } catch (e: Exception) {
-            throw InngestInvalidConfigurationException("Function id must be configured via builder")
+            throw InngestInvalidConfigurationException(
+                "Function id must be configured via builder: ${this.javaClass.name}"
+            )
         }
     }
 

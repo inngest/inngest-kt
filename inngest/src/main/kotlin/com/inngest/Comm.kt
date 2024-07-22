@@ -114,6 +114,7 @@ class CommHandler(
         try {
             return Klaxon()
                 .fieldConverter(KlaxonDuration::class, durationConverter)
+                .fieldConverter(KlaxonConcurrencyScope::class, concurrencyScopeConverter)
                 .toJsonString(payload)
         } catch (e: Exception) {
             println(e);

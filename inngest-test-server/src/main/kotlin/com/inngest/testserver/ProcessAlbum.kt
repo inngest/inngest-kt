@@ -11,11 +11,10 @@ class ProcessAlbum : InngestFunction() {
 
     override fun config(builder: InngestFunctionConfigBuilder): InngestFunctionConfigBuilder {
         return builder
+            .id("ProcessAlbum")
             .name("Process Album!")
             .triggerEvent("delivery/process.requested")
-            .triggerCron("5 0 * 8 *")
-            .trigger(
-                InngestFunctionTriggers.Cron("5 0 * 8 *"))
+            .trigger(InngestFunctionTriggers.Cron("5 0 * 8 *"))
             .batchEvents(30, Duration.ofSeconds(10))
     }
 

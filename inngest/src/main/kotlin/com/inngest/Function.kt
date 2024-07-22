@@ -77,10 +77,12 @@ data class StepConfig(
     val runtime: HashMap<String, String> = hashMapOf("type" to "http"),
 )
 
-class InternalFunctionConfig @JvmOverloads constructor(
+internal class InternalFunctionConfig @JvmOverloads constructor(
     val id: String,
     val name: String?,
     val triggers: MutableList<InngestFunctionTrigger>,
+    @Json(serializeNull = false)
+    val concurrency: MutableList<Concurrency>?,
     @Json(serializeNull = false)
     val batchEvents: BatchEvents?,
     val steps: Map<String, StepConfig>,
