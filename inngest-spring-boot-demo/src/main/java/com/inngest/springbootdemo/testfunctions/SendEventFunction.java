@@ -1,12 +1,20 @@
 package com.inngest.springbootdemo.testfunctions;
 
 import com.inngest.*;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
 
-@FunctionConfig(id = "send-fn", name = "Send Function")
-@FunctionEventTrigger(event = "test/send")
 public class SendEventFunction extends InngestFunction {
+
+    @NotNull
+    @Override
+    public InngestFunctionConfigBuilder config(InngestFunctionConfigBuilder builder) {
+        return builder
+            .id("send-fn")
+            .name("Send Function")
+            .triggerEvent("test/send");
+    }
 
     @Override
     public SendEventsResponse execute(FunctionContext ctx, Step step) {

@@ -1,10 +1,19 @@
 package com.inngest.springbootdemo.testfunctions;
 
 import com.inngest.*;
+import org.jetbrains.annotations.NotNull;
 
-@FunctionConfig(id = "two-steps-fn", name = "Two Steps Function")
-@FunctionEventTrigger(event = "test/two.steps")
 public class TwoStepsFunction extends InngestFunction {
+
+    @NotNull
+    @Override
+    public InngestFunctionConfigBuilder config(InngestFunctionConfigBuilder builder) {
+        return builder
+            .id("two-steps-fn")
+            .name("Two Steps Function")
+            .triggerEvent("test/two.steps");
+    }
+
 
     private final int count = 0;
 

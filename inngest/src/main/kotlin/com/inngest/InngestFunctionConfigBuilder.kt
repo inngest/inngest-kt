@@ -44,13 +44,23 @@ class InngestFunctionConfigBuilder() {
 
     /**
      * Define a function trigger for any matching events with a given name.
-     * Optionally filter matching events with an expression statement.
      *
      * @param event The name of the event to trigger on
-     * @param if    A CEL expression to filter matching events to trigger on (optional).
+     */
+    fun triggerEvent(event: String): InngestFunctionConfigBuilder {
+        this.triggers.add(InngestFunctionTriggers.Event(event, null))
+        return this
+    }
+
+    /**
+     * Define a function trigger for any matching events with a given name and filter
+     * matching events with an expression statement.
+     *
+     * @param event The name of the event to trigger on
+     * @param if    A CEL expression to filter matching events to trigger on.
      *              Example: "event.data.appId == '12345'"
      */
-    fun triggerEvent(event: String, `if`: String? = null): InngestFunctionConfigBuilder {
+    fun triggerEventIf(event: String, `if`: String? = null): InngestFunctionConfigBuilder {
         this.triggers.add(InngestFunctionTriggers.Event(event, `if`))
         return this
     }
@@ -93,7 +103,6 @@ class InngestFunctionConfigBuilder() {
         } else {
             this.concurrency?.add(c)
         }
-        println(scope?.value)
         return this
     }
 
@@ -123,8 +132,6 @@ class InngestFunctionConfigBuilder() {
             throw InngestInvalidConfigurationException("Function id must be configured via builder")
         }
         val globalId = String.format("%s-%s", appId, id)
-        println("concurrency")
-        println(concurrency)
         val config = InternalFunctionConfig(
             globalId,
             name,

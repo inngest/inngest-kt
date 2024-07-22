@@ -117,6 +117,7 @@ class CommHandler(
                 .fieldConverter(KlaxonConcurrencyScope::class, concurrencyScopeConverter)
                 .toJsonString(payload)
         } catch (e: Exception) {
+            // TODO - Properly log this serialization failure
             println(e);
             return """{ "message": "failed serialization" }"""
         }

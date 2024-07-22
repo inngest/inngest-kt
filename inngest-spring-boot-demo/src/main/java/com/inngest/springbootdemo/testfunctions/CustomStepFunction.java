@@ -1,10 +1,18 @@
 package com.inngest.springbootdemo.testfunctions;
 
 import com.inngest.*;
+import org.jetbrains.annotations.NotNull;
 
-@FunctionConfig(id = "custom-result-fn", name = "Custom Result Function")
-@FunctionEventTrigger(event = "test/custom.result.step")
 public class CustomStepFunction extends InngestFunction {
+
+    @NotNull
+    @Override
+    public InngestFunctionConfigBuilder config(InngestFunctionConfigBuilder builder) {
+        return builder
+            .id("custom-result-fn")
+            .name("Custom Result Function")
+            .triggerEvent("test/custom.result.step");
+    }
 
     private final int count = 0;
 
