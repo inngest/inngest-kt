@@ -5,26 +5,63 @@ import java.time.Duration
 typealias MemoizedRecord = HashMap<String, Any>
 typealias MemoizedState = HashMap<String, MemoizedRecord>
 
-data class InngestEvent(val name: String, val data: Any)
+data class InngestEvent(
+    val name: String,
+    val data: Any,
+)
 
-data class SendEventsResponse(val ids: Array<String>)
+data class SendEventsResponse(
+    val ids: Array<String>,
+) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
 
-class StepInvalidStateTypeException(val id: String, val hashedId: String) : Throwable("Step execution interrupted")
+        other as SendEventsResponse
 
-class StepStateTypeMismatchException(val id: String, val hashedId: String) : Throwable("Step execution interrupted")
+        return ids.contentEquals(other.ids)
+    }
 
-open class StepInterruptException(val id: String, val hashedId: String, open val data: kotlin.Any?) :
-    Throwable("Interrupt $id")
+    override fun hashCode(): Int = ids.contentHashCode()
+}
 
-class StepInterruptSleepException(id: String, hashedId: String, override val data: String) :
-    StepInterruptException(id, hashedId, data)
+class StepInvalidStateTypeException(
+    val id: String,
+    val hashedId: String,
+) : Throwable("Step execution interrupted")
 
-class StepInterruptSendEventException(id: String, hashedId: String, val eventIds: Array<String>) :
-    StepInterruptException(id, hashedId, eventIds)
+// TODO - Add State type mismatch checks
+// class StepStateTypeMismatchException(
+//    val id: String,
+//    val hashedId: String,
+// ) : Throwable("Step execution interrupted")
 
+open class StepInterruptException(
+    val id: String,
+    val hashedId: String,
+    open val data: Any?,
+) : Throwable("Interrupt $id")
 
-class StepInterruptInvokeException(id: String, hashedId: String, val appId: String, val fnId: String, data: kotlin.Any?, val timeout: String?) :
-    StepInterruptException(id, hashedId, data)
+class StepInterruptSleepException(
+    id: String,
+    hashedId: String,
+    override val data: String,
+) : StepInterruptException(id, hashedId, data)
+
+class StepInterruptSendEventException(
+    id: String,
+    hashedId: String,
+    val eventIds: Array<String>,
+) : StepInterruptException(id, hashedId, eventIds)
+
+class StepInterruptInvokeException(
+    id: String,
+    hashedId: String,
+    val appId: String,
+    val fnId: String,
+    data: Any?,
+    val timeout: String?,
+) : StepInterruptException(id, hashedId, data)
 
 class StepInterruptWaitForEventException(
     id: String,
@@ -32,13 +69,12 @@ class StepInterruptWaitForEventException(
     val waitEvent: String,
     val timeout: String,
     val ifExpression: String?,
-) :
-    StepInterruptException(id, hashedId, null)
+) : StepInterruptException(id, hashedId, null)
 
-// TODO: Add name, stack, etc. if poss
-class StepError(message: String) : Exception(message)
-
-class Step(val state: State, val client: Inngest) {
+class Step(
+    private val state: State,
+    val client: Inngest,
+) {
     /**
      * Run a function
      *
@@ -77,7 +113,8 @@ class Step(val state: State, val client: Inngest) {
      * Invoke another Inngest function as a step
      *
      * @param id unique step id for memoization
-     * @param fn ID of the function to invoke
+     * @param appId ID of the Inngest app which contains the function to invoke (see client)
+     * @param fnId ID of the function to invoke
      * @param data the data to pass within `event.data` to the function
      * @param timeout an optional timeout for the invoked function.  If the invoked function does
      * not finish within this time, the invoked function will be marked as failed.
@@ -86,7 +123,7 @@ class Step(val state: State, val client: Inngest) {
         id: String,
         appId: String,
         fnId: String,
-        data: kotlin.Any?,
+        data: Any?,
         timeout: String?,
     ): T = invoke(id, appId, fnId, data, timeout, T::class.java)
 
@@ -94,7 +131,7 @@ class Step(val state: State, val client: Inngest) {
         id: String,
         appId: String,
         fnId: String,
-        data: kotlin.Any?,
+        data: Any?,
         timeout: String?,
         type: Class<T>,
     ): T {
@@ -131,7 +168,7 @@ class Step(val state: State, val client: Inngest) {
             }
             return
         } catch (e: StateNotFound) {
-            val durationInSeconds = duration.getSeconds()
+            val durationInSeconds = duration.seconds
             throw StepInterruptSleepException(id, hashedId, "${durationInSeconds}s")
         }
     }

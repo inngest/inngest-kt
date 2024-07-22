@@ -1,10 +1,18 @@
 package com.inngest.springbootdemo.testfunctions;
 
 import com.inngest.*;
+import org.jetbrains.annotations.NotNull;
 
-@FunctionConfig(id = "wait-for-event-fn", name = "Wait for Event Function")
-@FunctionEventTrigger(event = "test/wait-for-event")
 public class WaitForEventFunction extends InngestFunction {
+
+    @NotNull
+    @Override
+    public InngestFunctionConfigBuilder config(InngestFunctionConfigBuilder builder) {
+        return builder
+            .id("wait-for-event-fn")
+            .name("Wait for Event Function")
+            .triggerEvent("test/wait-for-event");
+    }
 
     @Override
     public String execute(FunctionContext ctx, Step step) {

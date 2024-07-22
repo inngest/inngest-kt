@@ -17,7 +17,7 @@ class Inngest
         val headers: RequestHeaders = Environment.inngestHeaders()
         val env = Environment.inngestEnv(env = env, isDev = isDev)
         val eventKey = Environment.inngestEventKey(eventKey)
-        val baseUrl = Environment.inngestEventApiBaseUrl(env = this.env, url = baseUrl)
+        private val baseUrl = Environment.inngestEventApiBaseUrl(env = this.env, url = baseUrl)
 
         internal val httpClient = HttpClient(RequestConfig(headers))
 

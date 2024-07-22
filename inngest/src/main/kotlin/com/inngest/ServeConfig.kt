@@ -23,10 +23,9 @@ class ServeConfig
             return when (client.env) {
                 InngestEnv.Dev -> "test"
                 else -> {
-                    val signingKey = System.getenv(InngestSystem.SigningKey.value)
-                    if (signingKey == null) {
-                        throw Exception("signing key is required")
-                    }
+                    val signingKey =
+                        System.getenv(InngestSystem.SigningKey.value)
+                            ?: throw Exception("signing key is required")
                     signingKey
                 }
             }

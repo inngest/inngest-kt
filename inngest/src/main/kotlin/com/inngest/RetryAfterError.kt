@@ -5,8 +5,11 @@ import java.time.format.DateTimeFormatter
 
 open class RetryAfterError
     @JvmOverloads
-    constructor(message: String, retryAfter: Any, cause: Throwable? = null) :
-    RuntimeException(message, cause) {
+    constructor(
+        message: String,
+        retryAfter: Any,
+        cause: Throwable? = null,
+    ) : RuntimeException(message, cause) {
         var retryAfter: String =
             when (retryAfter) {
                 is ZonedDateTime -> retryAfter.format(DateTimeFormatter.ISO_INSTANT)

@@ -50,7 +50,7 @@ object Environment {
                 "0" -> InngestEnv.Prod
                 "1" -> InngestEnv.Dev
                 else -> {
-                    var other = InngestEnv.Other
+                    val other = InngestEnv.Other
                     other.value = sysDev
                     other
                 }
@@ -64,7 +64,7 @@ object Environment {
                 "prod" -> InngestEnv.Prod
                 "production" -> InngestEnv.Prod
                 else -> {
-                    var other = InngestEnv.Other
+                    val other = InngestEnv.Other
                     other.value = env
                     other
                 }
@@ -72,8 +72,7 @@ object Environment {
         }
 
         // Read from environment variable
-        val inngestEnv = System.getenv(InngestSystem.Env.value)
-        return when (inngestEnv) {
+        return when (val inngestEnv = System.getenv(InngestSystem.Env.value)) {
             null -> InngestEnv.Dev
             "dev" -> InngestEnv.Dev
             "development" -> InngestEnv.Dev
@@ -81,7 +80,7 @@ object Environment {
             "production" -> InngestEnv.Prod
 
             else -> {
-                var other = InngestEnv.Other
+                val other = InngestEnv.Other
                 other.value = inngestEnv
                 other
             }

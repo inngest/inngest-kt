@@ -6,9 +6,17 @@ import org.jetbrains.annotations.NotNull;
 import java.time.Duration;
 import java.util.HashMap;
 
-@FunctionConfig(id = "fn-id-slug", name = "My function!")
-@FunctionEventTrigger(event = "user-signup")
 public class UserSignupFunction extends InngestFunction {
+
+    @NotNull
+    @Override
+    public InngestFunctionConfigBuilder config(InngestFunctionConfigBuilder builder) {
+        return builder
+            .id("fn-id-slug")
+            .name("My Function!")
+            .triggerEvent("user-signup");
+    }
+
     @Override
     public HashMap<String, String> execute(@NotNull FunctionContext ctx, @NotNull Step step) {
         int x = 10;

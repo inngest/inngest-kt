@@ -3,36 +3,39 @@ package com.inngest.testserver
 import com.inngest.*
 import java.time.Duration
 
-@FunctionConfig(id = "ProcessAlbum", name = "ProcessAlbum")
-@FunctionEventTrigger(event = "delivery/process.requested")
+/**
+ * A demo function that accepts an event in a batch and invokes a child function
+ */
 class ProcessAlbum : InngestFunction() {
+    override fun config(builder: InngestFunctionConfigBuilder): InngestFunctionConfigBuilder =
+        builder
+            .id("ProcessAlbum")
+            .name("Process Album!")
+            .triggerEvent("delivery/process.requested")
+            .trigger(InngestFunctionTriggers.Cron("5 0 * 8 *"))
+            .batchEvents(30, Duration.ofSeconds(10))
+
     override fun execute(
         ctx: FunctionContext,
         step: Step,
     ): LinkedHashMap<String, Any> {
+//        val list = ctx.events.map { e -> e.data.get("something") }
+//        println(list);
 
-        // NOTE - App ID is set on the serve level
-        val res = step.invoke<Map<String, Any>>(
-            "restore-album",
-            "ktor-dev",
-            "RestoreFromGlacier",
-            mapOf("some-arg" to "awesome"),
-            null,
-
-            )
-
-//        throw NonRetriableError("Could not restore")
-        return linkedMapOf("hello" to true)
-    }
-
-    fun isRestoredFromGlacier(temp: Int): Boolean {
-        if (temp > 2) {
-            return true
+        for (evt in ctx.events) {
+//            println(evt);
+            // NOTE - App ID is set on the serve level
+            val res =
+                step.invoke<Map<String, Any>>(
+                    "restore-album-${evt.data["albumId"]}",
+                    "ktor-dev",
+                    "RestoreFromGlacier",
+                    evt.data,
+                    null,
+                )
+            println(res["restored"])
         }
-        return false;
-    }
 
-    fun restoreFromGlacier(): String {
-        return "FILES_RESTORED"
+        return linkedMapOf("hello" to true)
     }
 }

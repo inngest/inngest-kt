@@ -20,19 +20,21 @@ data class ExecutionContext(
     val env: String,
 )
 
-internal data class RegistrationRequestPayload(
-    val appName: String,
-    val deployType: String = "ping",
-    val framework: String,
-    val functions: List<InternalFunctionConfig> = listOf(),
-    val sdk: String,
-    val url: String,
-    val v: String,
-)
+internal data class RegistrationRequestPayload
+    @JvmOverloads
+    constructor(
+        val appName: String,
+        val deployType: String = "ping",
+        val framework: String,
+        val functions: List<InternalFunctionConfig> = listOf(),
+        val sdk: String,
+        val url: String,
+        val v: String,
+    )
 
-enum class InngestSyncResult {
-    None,
-}
+// enum class InngestSyncResult {
+//    None,
+// }
 
 data class CommResponse(
     val body: String,
@@ -44,6 +46,8 @@ data class CommError(
     val name: String,
     val message: String?,
     val stack: String?,
+    // TODO - Convert to camelCase and use Klaxon property renaming for parsing/serialization
+    @Suppress("PropertyName")
     val __serialized: Boolean = true,
 )
 
@@ -54,14 +58,12 @@ class CommHandler(
     private val framework: SupportedFrameworkName,
 ) {
     val headers = Environment.inngestHeaders(framework).plus(client.headers)
-    internal val functions = functions.mapValues { (_, fn) -> fn.toInngestFunction() }
+    private val functions = functions.mapValues { (_, fn) -> fn.toInngestFunction() }
 
     fun callFunction(
         functionId: String,
         requestBody: String,
     ): CommResponse {
-        println(requestBody)
-
         try {
             val payload = Klaxon().parse<ExecutionRequestPayload>(requestBody)
             // TODO - check that payload is not null and throw error
@@ -112,6 +114,19 @@ class CommHandler(
         return mapper.writeValueAsString(requestBody)
     }
 
+    private fun serializePayload(payload: Any?): String {
+        try {
+            return Klaxon()
+                .fieldConverter(KlaxonDuration::class, durationConverter)
+                .fieldConverter(KlaxonConcurrencyScope::class, concurrencyScopeConverter)
+                .toJsonString(payload)
+        } catch (e: Exception) {
+            // TODO - Properly log this serialization failure
+            println(e)
+            return """{ "message": "failed serialization" }"""
+        }
+    }
+
     private fun getFunctionConfigs(origin: String): List<InternalFunctionConfig> {
         val configs: MutableList<InternalFunctionConfig> = mutableListOf()
         functions.forEach { entry -> configs.add(entry.value.getFunctionConfig(getServeUrl(origin), client)) }
@@ -143,17 +158,16 @@ class CommHandler(
         return parseRequestBody(body)
     }
 
-    fun sync(): Result<InngestSyncResult> {
-        return Result.success(InngestSyncResult.None)
-    }
+    // TODO
+//    fun sync(): Result<InngestSyncResult> = Result.success(InngestSyncResult.None)
 
     fun introspect(origin: String): String {
         val requestPayload = getRegistrationRequestPayload(origin)
-        return parseRequestBody(requestPayload)
+        return serializePayload(requestPayload)
     }
 
-    private fun getRegistrationRequestPayload(origin: String): RegistrationRequestPayload {
-        return RegistrationRequestPayload(
+    private fun getRegistrationRequestPayload(origin: String): RegistrationRequestPayload =
+        RegistrationRequestPayload(
             appName = config.appId(),
             framework = framework.toString(),
             sdk = "inngest-kt",
@@ -161,7 +175,6 @@ class CommHandler(
             v = Version.getVersion(),
             functions = getFunctionConfigs(origin),
         )
-    }
 
     private fun getServeUrl(origin: String): String {
         // TODO - property from SpringBoot should take preference to env variable?

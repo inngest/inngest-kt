@@ -1,6 +1,6 @@
 package com.inngest
 
-class Version() {
+class Version {
     companion object {
         private val version: String? = Version::class.java.getPackage().implementationVersion
 

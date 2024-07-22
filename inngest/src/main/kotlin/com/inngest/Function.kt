@@ -3,21 +3,6 @@ package com.inngest
 import com.beust.klaxon.Json
 import java.util.function.BiFunction
 
-// IDEA: Use data classes
-internal data class InternalFunctionOptions(
-    val id: String,
-    val name: String,
-    val triggers: Array<InternalFunctionTrigger>,
-)
-
-internal data class InternalFunctionTrigger
-@JvmOverloads
-constructor(
-    @Json(serializeNull = false) val event: String? = null,
-    @Json(serializeNull = false) val `if`: String? = null,
-    @Json(serializeNull = false) val cron: String? = null,
-)
-
 // TODO - Add an abstraction layer between the Function call response and the comm handler response
 enum class OpCode {
     StepRun,
@@ -28,10 +13,13 @@ enum class OpCode {
     InvokeFunction,
 
     // FUTURE:
-    StepNotFound,
+//    StepNotFound,
 }
 
-enum class ResultStatusCode(val code: Int, val message: String) {
+enum class ResultStatusCode(
+    val code: Int,
+    val message: String,
+) {
     StepComplete(206, "Step Complete"),
     FunctionComplete(200, "Function Complete"),
     NonRetriableError(400, "Bad Request"),
@@ -77,12 +65,22 @@ data class StepConfig(
     val runtime: HashMap<String, String> = hashMapOf("type" to "http"),
 )
 
-internal data class InternalFunctionConfig(
-    val id: String,
-    val name: String,
-    val triggers: Array<InternalFunctionTrigger>,
-    val steps: Map<String, StepConfig>,
-)
+@Suppress("unused")
+internal class InternalFunctionConfig
+    @JvmOverloads
+    constructor(
+        val id: String,
+        val name: String?,
+        val triggers: MutableList<InngestFunctionTrigger>,
+        @Json(serializeNull = false)
+        val concurrency: MutableList<Concurrency>? = null,
+        @Json(serializeNull = false)
+        val batchEvents: BatchEvents? = null,
+        val steps: Map<String, StepConfig>,
+    )
+// NOTE - This should probably be called serialized or formatted config
+// as it's only used to format the config for register requests
+// typealias InternalFunctionConfig = Map<String, Any>
 
 /**
  * The context for the current function run
@@ -97,36 +95,47 @@ data class FunctionContext(
     val attempt: Int,
 )
 
-// TODO - Determine if we should merge config + trigger
+data class SendEventPayload(
+    // TODO - Change this to camelCase and add Klaxon annotation to parse underscore name via API
+    @Suppress("PropertyName")
+    val event_ids: Array<String>,
+) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
 
-/**
- * A function that can be called by the Inngest system
- *
- * @param config The options for the function
- * @param handler The function to be called when the function is triggered
- */
+        other as SendEventPayload
 
-data class SendEventPayload(val event_ids: Array<String>)
+        return event_ids.contentEquals(other.event_ids)
+    }
+
+    override fun hashCode(): Int = event_ids.contentHashCode()
+}
 
 internal interface Function {
     fun id(): String
-
-    fun config(): InternalFunctionConfig
 }
 
 // TODO: make this implement the Function interface
+
+/**
+ * An internal class that accepts the configuration and a function handler
+ * and handles the execution and memoization of an InngestFunction
+ */
 internal open class InternalInngestFunction(
-    val config: InternalFunctionOptions,
+    private val configBuilder: InngestFunctionConfigBuilder,
     val handler: (ctx: FunctionContext, step: Step) -> Any?,
 ) {
-    constructor(config: InternalFunctionOptions, handler: BiFunction<FunctionContext, Step, out Any>) : this(
-        config,
+    @Suppress("unused")
+    constructor(
+        configBuilder: InngestFunctionConfigBuilder,
+        handler: BiFunction<FunctionContext, Step, out Any>,
+    ) : this(
+        configBuilder,
         handler.toKotlin(),
     )
 
-    fun id() = config.id
-
-    // TODO - Validate options and trigger
+    fun id() = configBuilder.id
 
     fun call(
         ctx: FunctionContext,
@@ -135,9 +144,6 @@ internal open class InternalInngestFunction(
     ): StepOp {
         val state = State(requestBody)
         val step = Step(state, client)
-
-        // DEBUG
-        println(state)
 
         try {
             val data = handler(ctx, step)
@@ -163,13 +169,13 @@ internal open class InternalInngestFunction(
                 op = OpCode.WaitForEvent,
                 statusCode = ResultStatusCode.StepComplete,
                 opts =
-                buildMap {
-                    put("event", e.waitEvent)
-                    put("timeout", e.timeout)
-                    if (e.ifExpression != null) {
-                        put("if", e.ifExpression)
-                    }
-                },
+                    buildMap {
+                        put("event", e.waitEvent)
+                        put("timeout", e.timeout)
+                        if (e.ifExpression != null) {
+                            put("if", e.ifExpression)
+                        }
+                    },
             )
         } catch (e: StepInterruptSleepException) {
             return StepOptions(
@@ -186,13 +192,14 @@ internal open class InternalInngestFunction(
                 name = e.id,
                 op = OpCode.InvokeFunction,
                 statusCode = ResultStatusCode.StepComplete,
-                opts = buildMap {
-                    put("function_id", functionId)
-                    put("payload", mapOf("data" to e.data))
-                    if (e.timeout != null) {
-                        put("timeout", e.timeout)
-                    }
-                }
+                opts =
+                    buildMap {
+                        put("function_id", functionId)
+                        put("payload", mapOf("data" to e.data))
+                        if (e.timeout != null) {
+                            put("timeout", e.timeout)
+                        }
+                    },
             )
         } catch (e: StepInterruptException) {
             // NOTE - Currently this error could be caught in the user's own function
@@ -217,33 +224,11 @@ internal open class InternalInngestFunction(
         }
     }
 
-    fun getFunctionConfig(serveUrl: String, client: Inngest): InternalFunctionConfig {
-        // TODO use URL objects instead of strings so we can fetch things like scheme
-        val scheme = serveUrl.split("://")[0]
-        return InternalFunctionConfig(
-            id = String.format("%s-%s", client.appId, config.id),
-            name = config.name,
-            triggers = config.triggers,
-            steps =
-            mapOf(
-                "step" to
-                    StepConfig(
-                        id = "step",
-                        name = "step",
-                        retries =
-                        mapOf(
-                            // TODO - Pull from FunctionOptions
-                            "attempts" to 3,
-                        ),
-                        runtime =
-                        hashMapOf(
-                            "type" to scheme,
-                            // TODO - Create correct URL
-                            "url" to
-                                "$serveUrl?fnId=${config.id}&stepId=step",
-                        ),
-                    ),
-            ),
-        )
+    fun getFunctionConfig(
+        serveUrl: String,
+        client: Inngest,
+    ): InternalFunctionConfig {
+        // TODO use URL objects for serveUrl instead of strings so we can fetch things like scheme
+        return configBuilder.build(client.appId, serveUrl)
     }
 }

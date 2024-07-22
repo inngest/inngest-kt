@@ -1,10 +1,19 @@
 package com.inngest.springbootdemo.testfunctions;
 
 import com.inngest.*;
+import org.jetbrains.annotations.NotNull;
 
-@FunctionConfig(id = "retriable-fn", name = "Retriable Function")
-@FunctionEventTrigger(event = "test/retriable")
 public class RetriableErrorFunction extends InngestFunction {
+
+    @NotNull
+    @Override
+    public InngestFunctionConfigBuilder config(InngestFunctionConfigBuilder builder) {
+        return builder
+            .id("retriable-fn")
+            .name("Retriable Function")
+            .triggerEvent("test/retriable");
+    }
+
     static int retryCount = 0;
 
     @Override
