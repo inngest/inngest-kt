@@ -43,10 +43,7 @@ fun Route.serve(
 
     route(path) {
         get("") {
-            var origin = String.format("%s://%s", call.request.origin.scheme, call.request.origin.serverHost)
-            if (call.request.origin.serverPort != 80 || call.request.origin.serverPort != 443) {
-                origin = String.format("%s:%s", origin, call.request.origin.serverPort)
-            }
+            val origin = getOrigin(call)
             val resp = comm.introspect(origin)
             call.respond(HttpStatusCode.OK, resp)
         }
@@ -77,12 +74,17 @@ fun Route.serve(
         }
 
         put("") {
-            var origin = String.format("%s://%s", call.request.origin.scheme, call.request.origin.serverHost)
-            if (call.request.origin.serverPort != 80 || call.request.origin.serverPort != 443) {
-                origin = String.format("%s:%s", origin, call.request.origin.serverPort)
-            }
+            val origin = getOrigin(call)
             val resp = comm.register(origin)
             call.respond(HttpStatusCode.OK, resp)
         }
     }
+}
+
+fun getOrigin(call: ApplicationCall): String {
+    var origin = String.format("%s://%s", call.request.origin.scheme, call.request.origin.serverHost)
+    if (call.request.origin.serverPort != 80 || call.request.origin.serverPort != 443) {
+        origin = String.format("%s:%s", origin, call.request.origin.serverPort)
+    }
+    return origin
 }

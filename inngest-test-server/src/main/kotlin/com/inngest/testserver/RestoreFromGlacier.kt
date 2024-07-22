@@ -3,22 +3,18 @@ package com.inngest.testserver
 import com.inngest.*
 import java.time.Duration
 
-//@FunctionConfig(id = "RestoreFromGlacier", name = "RestoreFromGlacier")
 class RestoreFromGlacier : InngestFunction() {
-
-    override fun config(builder: InngestFunctionConfigBuilder): InngestFunctionConfigBuilder {
-        return builder
+    override fun config(builder: InngestFunctionConfigBuilder): InngestFunctionConfigBuilder =
+        builder
             .id("RestoreFromGlacier")
             .name("Restore from Glacier")
             .trigger(InngestFunctionTriggers.Event("delivery/restore.requested"))
             .concurrency(10, null, ConcurrencyScope.ENVIRONMENT)
-    }
 
     override fun execute(
         ctx: FunctionContext,
         step: Step,
     ): LinkedHashMap<String, Any> {
-
         step.run("restore") {
             if (!isRestoredFromGlacier(0)) {
                 restoreFromGlacier()
@@ -26,9 +22,10 @@ class RestoreFromGlacier : InngestFunction() {
         }
         var i = 0
         while (i < 6) {
-            val isRestored = step.run(String.format("check-status-%d", i)) {
-                isRestoredFromGlacier(i)
-            }
+            val isRestored =
+                step.run(String.format("check-status-%d", i)) {
+                    isRestoredFromGlacier(i)
+                }
             if (isRestored) {
                 return linkedMapOf("restored" to true)
             }
@@ -40,14 +37,9 @@ class RestoreFromGlacier : InngestFunction() {
         return linkedMapOf("restored" to false)
     }
 
-    fun isRestoredFromGlacier(temp: Int): Boolean {
-        if (temp > 2) {
-            return true
-        }
-        return false;
-    }
+    // NOTE - This method is only a stub meant to simulate that Glacier restoration will return false
+    // the first couple of times in the loop. This is just to show the concept.
+    private fun isRestoredFromGlacier(temp: Int): Boolean = temp > 2
 
-    fun restoreFromGlacier(): String {
-        return "FILES_RESTORED"
-    }
+    private fun restoreFromGlacier(): String = "FILES_RESTORED"
 }

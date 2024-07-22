@@ -9,33 +9,42 @@ import okhttp3.Response
 
 typealias RequestHeaders = Map<String, String>
 
-data class RequestConfig(val headers: RequestHeaders? = null)
+data class RequestConfig(
+    val headers: RequestHeaders? = null,
+)
 
 val jsonMediaType = "application/json".toMediaType()
 
-internal class HttpClient(private val clientConfig: RequestConfig) {
+internal class HttpClient(
+    private val clientConfig: RequestConfig,
+) {
     private val client = OkHttpClient()
 
     fun <T> send(
         request: okhttp3.Request,
         handler: (Response) -> T,
-    ) = this.client.newCall(request).execute().use(handler)
+    ) = this.client
+        .newCall(request)
+        .execute()
+        .use(handler)
 
     fun build(
         url: String,
         payload: Any,
         config: RequestConfig? = null,
     ): okhttp3.Request {
-        val jsonRequestBody = Klaxon()
-            .fieldConverter(KlaxonDuration::class, durationConverter)
-            .fieldConverter(KlaxonConcurrencyScope::class, concurrencyScopeConverter)
-            .toJsonString(payload)
+        val jsonRequestBody =
+            Klaxon()
+                .fieldConverter(KlaxonDuration::class, durationConverter)
+                .fieldConverter(KlaxonConcurrencyScope::class, concurrencyScopeConverter)
+                .toJsonString(payload)
         val body = jsonRequestBody.toRequestBody(jsonMediaType)
 
         val clientHeaders = clientConfig.headers ?: emptyMap()
         val requestHeaders = config?.headers ?: emptyMap()
 
-        return okhttp3.Request.Builder()
+        return okhttp3.Request
+            .Builder()
             .url(url)
             .post(body)
             .headers(toOkHttpHeaders(clientHeaders + requestHeaders))

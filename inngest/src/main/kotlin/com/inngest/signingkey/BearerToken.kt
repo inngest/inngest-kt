@@ -4,7 +4,7 @@ import com.inngest.RequestHeaders
 import java.lang.NumberFormatException
 import java.security.MessageDigest
 
-val SIGNING_KEY_REGEX = Regex("""(?<prefix>^signkey-[\w]+-)(?<key>.*)""")
+val SIGNING_KEY_REGEX = Regex("""(?<prefix>^signkey-\w+-)(?<key>.*)""")
 
 /**
  * Takes a signing key in the form "signkey-<env>-<hex-encoded key>" and returns "signkey-<env>-<hex-encoded sha256 of key>"
@@ -18,7 +18,7 @@ val SIGNING_KEY_REGEX = Regex("""(?<prefix>^signkey-[\w]+-)(?<key>.*)""")
 private fun hashedSigningKey(signingKey: String): String {
     val matchResult = SIGNING_KEY_REGEX.matchEntire(signingKey) ?: throw InvalidSigningKeyException()
 
-    // We aggressively assert non null here because if `matchEntire` had failed (and thus these capture groups didn't
+    // We aggressively assert non-null here because if `matchEntire` had failed (and thus these capture groups didn't
     // exist), we would have already thrown an exception
     val prefix = matchResult.groups["prefix"]!!.value
     val key = matchResult.groups["key"]!!.value

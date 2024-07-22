@@ -9,7 +9,7 @@ data class Event(
     val v: Any? = null,
 )
 
-data class EventAPIResponse(
-    val ids: Array<String>,
-    val status: String,
-)
+// data class EventAPIResponse(
+//    val ids: Array<String>,
+//    val status: String,
+// )

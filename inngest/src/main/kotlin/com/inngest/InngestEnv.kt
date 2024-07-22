@@ -1,6 +1,8 @@
 package com.inngest
 
-enum class InngestSystem(val value: String) {
+enum class InngestSystem(
+    val value: String,
+) {
     // Critical variables
     EventKey("INNGEST_EVENT_KEY"),
     SigningKey("INNGEST_SIGNING_KEY"),
@@ -10,14 +12,17 @@ enum class InngestSystem(val value: String) {
     EventApiBaseUrl("INNGEST_BASE_URL"),
     ApiBaseUrl("INNGEST_API_BASE_URL"),
     LogLevel("INNGEST_LOG_LEVEL"),
-    ApiOrigin("INNGEST_API_ORIGIN"),
+
+    // TODO - Rename this env variable to match other SDKS
+//    ApiOrigin("INNGEST_API_ORIGIN"),
     ServeOrigin("INNGEST_SERVE_ORIGIN"),
     ServePath("INNGEST_SERVE_PATH"),
-    Streaming("INNGEST_STREAMING"),
     Dev("INNGEST_DEV"),
 }
 
-enum class InngestEnv(var value: String) {
+enum class InngestEnv(
+    var value: String,
+) {
     Dev("dev"),
     Prod("prod"),
     Other("other"),

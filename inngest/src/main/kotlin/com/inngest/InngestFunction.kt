@@ -1,10 +1,7 @@
 package com.inngest
 
 abstract class InngestFunction {
-
-    open fun config(builder: InngestFunctionConfigBuilder): InngestFunctionConfigBuilder {
-        return builder
-    }
+    open fun config(builder: InngestFunctionConfigBuilder): InngestFunctionConfigBuilder = builder
 
     /**
      * The function handler that will be run whenever the function is executed.
@@ -17,9 +14,9 @@ abstract class InngestFunction {
         step: Step,
     ): Any?
 
-    fun buildConfig(): InngestFunctionConfigBuilder {
+    private fun buildConfig(): InngestFunctionConfigBuilder {
         val builder = InngestFunctionConfigBuilder()
-        return this.config(builder);
+        return this.config(builder)
     }
 
     fun id(): String {
@@ -27,7 +24,7 @@ abstract class InngestFunction {
             return buildConfig().id!!
         } catch (e: Exception) {
             throw InngestInvalidConfigurationException(
-                "Function id must be configured via builder: ${this.javaClass.name}"
+                "Function id must be configured via builder: ${this.javaClass.name}",
             )
         }
     }
@@ -40,6 +37,3 @@ abstract class InngestFunction {
 
     // TODO - Add toFailureHandler method to generate a second function if configured
 }
-
-
-

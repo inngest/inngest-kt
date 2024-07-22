@@ -4,9 +4,11 @@ import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import java.security.MessageDigest
 
-class StateNotFound() : Throwable("State not found for id")
+class StateNotFound : Throwable("State not found for id")
 
-class State(val payloadJson: String) {
+class State(
+    private val payloadJson: String,
+) {
     fun getHashFromId(id: String): String {
         val bytes = id.toByteArray(Charsets.UTF_8)
         val digest = MessageDigest.getInstance("SHA-1")

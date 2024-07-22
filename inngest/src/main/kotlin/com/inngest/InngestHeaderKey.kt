@@ -1,6 +1,9 @@
 package com.inngest
 
-enum class InngestHeaderKey(val value: String) {
+@Suppress("unused")
+enum class InngestHeaderKey(
+    val value: String,
+) {
     ContentType("content-type"),
     UserAgent("user-agent"),
     Sdk("x-inngest-sdk"),

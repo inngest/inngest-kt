@@ -12,12 +12,11 @@ const val HMAC_SHA256 = "HmacSHA256"
 // Implementation of this is inspired by the pure Java example from https://www.baeldung.com/java-hmac#hmac-using-jdk-apis
 @OptIn(ExperimentalStdlibApi::class)
 private fun computeHMAC(
-    algorithm: String,
     data: String,
     key: String,
 ): String {
-    val secretKeySpec = SecretKeySpec(key.toByteArray(Charsets.UTF_8), algorithm)
-    val mac = Mac.getInstance(algorithm)
+    val secretKeySpec = SecretKeySpec(key.toByteArray(Charsets.UTF_8), HMAC_SHA256)
+    val mac = Mac.getInstance(HMAC_SHA256)
     mac.init(secretKeySpec)
     return mac.doFinal(data.toByteArray(Charsets.UTF_8)).toHexString()
 }
@@ -26,9 +25,7 @@ internal fun signRequest(
     requestBody: String,
     timestamp: Long,
     signingKey: String,
-): String {
-    return signRequest(requestBody, timestamp.toString(), signingKey)
-}
+): String = signRequest(requestBody, timestamp.toString(), signingKey)
 
 private fun signRequest(
     requestBody: String,
@@ -39,10 +36,12 @@ private fun signRequest(
     val key = matchResult.groups["key"]!!.value
     val message = requestBody + timestamp
 
-    return computeHMAC(HMAC_SHA256, message, key)
+    return computeHMAC(message, key)
 }
 
-class InvalidSignatureHeaderException(message: String) : Throwable(message)
+class InvalidSignatureHeaderException(
+    message: String,
+) : Throwable(message)
 
 class ExpiredSignatureHeaderException : Throwable("signature header has expired")
 
@@ -55,8 +54,12 @@ internal fun validateSignature(
 ) {
     // TODO: Find a way to parse signatureHeader as URL params without constructing a full URL
     val dummyUrl = "https://test.inngest.com/?$signatureHeader"
-    val url = dummyUrl.toHttpUrlOrNull() ?: throw InvalidSignatureHeaderException("signature header does not match expected format")
-    val timestamp = url.queryParameter("t")?.toLongOrNull() ?: throw InvalidSignatureHeaderException("timestamp is invalid")
+    val url =
+        dummyUrl.toHttpUrlOrNull()
+            ?: throw InvalidSignatureHeaderException("signature header does not match expected format")
+    val timestamp =
+        url.queryParameter("t")?.toLongOrNull()
+            ?: throw InvalidSignatureHeaderException("timestamp is invalid")
     val signature = url.queryParameter("s") ?: throw InvalidSignatureHeaderException("signature is invalid")
 
     val fiveMinutesAgo = Instant.now().minusSeconds(FIVE_MINUTES_IN_SECONDS).epochSecond
@@ -98,7 +101,8 @@ fun checkHeadersAndValidateSignature(
 
     val signingKey = config.signingKey()
 
-    signatureHeader ?: throw InvalidSignatureHeaderException("Using cloud inngest but did not receive X-Inngest-Signature")
+    signatureHeader
+        ?: throw InvalidSignatureHeaderException("Using cloud inngest but did not receive X-Inngest-Signature")
 
     validateSignature(signatureHeader, signingKey, requestBody)
 }

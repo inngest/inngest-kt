@@ -1,6 +1,9 @@
 package com.inngest
 
-internal data class RetryDecision(val shouldRetry: Boolean, val headers: Map<String, String>) {
+internal data class RetryDecision(
+    val shouldRetry: Boolean,
+    val headers: Map<String, String>,
+) {
     companion object {
         internal fun fromException(exception: Exception): RetryDecision =
             when (exception) {
