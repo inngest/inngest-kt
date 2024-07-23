@@ -1,5 +1,7 @@
 package com.inngest
 
+import com.beust.klaxon.Json
+
 /**
  * An internal class used for parsing events sent to Inngest functions
  */
@@ -15,14 +17,20 @@ internal data class Event(
 /**
  * Create an event to send to Inngest
  */
-data class InngestEvent(
-    val id: String?,
-    val name: String,
-    val data: Any,
-    val user: Any?,
-    val ts: Long?,
-    val v: String? = null,
-)
+data class InngestEvent
+    @JvmOverloads
+    constructor(
+        val name: String,
+        val data: Any,
+        @Json(serializeNull = false)
+        val user: Any? = null,
+        @Json(serializeNull = false)
+        val id: String? = null,
+        @Json(serializeNull = false)
+        val ts: Long? = null,
+        @Json(serializeNull = false)
+        val v: String? = null,
+    )
 
 /**
  * Construct a new Inngest Event via builder
@@ -68,10 +76,10 @@ class InngestEventBuilder(
             throw IllegalArgumentException("data is required")
         }
         return InngestEvent(
-            id,
             name!!,
             data!!,
             user,
+            id,
             ts,
             v,
         )
