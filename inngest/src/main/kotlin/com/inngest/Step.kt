@@ -124,7 +124,7 @@ class Step(
         appId: String,
         fnId: String,
         data: Any?,
-        timeout: String?,
+        timeout: String? = null,
     ): T = invoke(id, appId, fnId, data, timeout, T::class.java)
 
     fun <T> invoke(

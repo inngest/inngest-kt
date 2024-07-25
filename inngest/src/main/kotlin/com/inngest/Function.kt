@@ -70,8 +70,9 @@ internal class InternalFunctionConfig
     @JvmOverloads
     constructor(
         val id: String,
+        @Json(serializeNull = false)
         val name: String?,
-        val triggers: MutableList<InngestFunctionTrigger>,
+        val triggers: MutableList<InngestFunctionTrigger> = mutableListOf(),
         @Json(serializeNull = false)
         val concurrency: MutableList<Concurrency>? = null,
         @Json(serializeNull = false)

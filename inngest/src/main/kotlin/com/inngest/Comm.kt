@@ -3,6 +3,7 @@ package com.inngest
 import com.beust.klaxon.Json
 import com.beust.klaxon.Klaxon
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.SerializationFeature
 import com.inngest.signingkey.getAuthorizationHeader
 import java.io.IOException
 
@@ -111,6 +112,7 @@ class CommHandler(
 
     private fun parseRequestBody(requestBody: Any?): String {
         val mapper = ObjectMapper()
+        mapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false)
         return mapper.writeValueAsString(requestBody)
     }
 

@@ -151,7 +151,7 @@ class InngestFunctionConfigBuilder {
         val config =
             InternalFunctionConfig(
                 globalId,
-                name,
+                name ?: id,
                 triggers,
                 concurrency,
                 batchEvents,
