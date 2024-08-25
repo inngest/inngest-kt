@@ -29,6 +29,7 @@ fun Application.module() {
                 TranscodeVideo(),
                 ImageFromPrompt(),
                 PushToSlackChannel(),
+                SlackFailureReport(),
                 WeeklyCleanup(),
             ),
         )
