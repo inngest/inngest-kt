@@ -9,7 +9,7 @@ import java.time.Duration
 // TODO: Throw illegal argument exception
 class InngestFunctionConfigBuilder {
     var id: String? = null
-    var name: String? = null
+    internal var name: String? = null
     private var triggers: MutableList<InngestFunctionTrigger> = mutableListOf()
     private var concurrency: MutableList<Concurrency>? = null
     private var retries = 3
