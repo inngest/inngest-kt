@@ -55,6 +55,14 @@ public class DevServerComponent {
         });
     }
 
+    EventsResponse listEvents() throws Exception {
+        Request request = new Request.Builder()
+            .url(String.format("%s/v1/events", baseUrl))
+            .build();
+        return makeRequest(request, new TypeReference<EventsResponse>() {
+        });
+    }
+
     <T> RunResponse<T> runById(String eventId, Class<T> outputType) throws Exception {
         Request request = new Request.Builder()
             .url(String.format("%s/v1/runs/%S", baseUrl, eventId))
