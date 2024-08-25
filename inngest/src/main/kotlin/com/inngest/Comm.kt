@@ -54,6 +54,15 @@ data class CommError(
 
 private val stepTerminalStatusCodes = setOf(ResultStatusCode.StepComplete, ResultStatusCode.StepError)
 
+private fun generateFailureFunctions(
+    functions: Map<String, InngestFunction>,
+    client: Inngest,
+): Map<String, InternalInngestFunction> =
+    functions
+        .mapNotNull { (_, fn) ->
+            fn.toFailureHandler(client.appId)?.let { it.id()!! to it }
+        }.toMap()
+
 class CommHandler(
     functions: Map<String, InngestFunction>,
     val client: Inngest,
@@ -61,7 +70,10 @@ class CommHandler(
     private val framework: SupportedFrameworkName,
 ) {
     val headers = Environment.inngestHeaders(framework).plus(client.headers)
-    private val functions = functions.mapValues { (_, fn) -> fn.toInngestFunction() }
+    private val functions =
+        functions
+            .mapValues { (_, fn) -> fn.toInngestFunction() }
+            .plus(generateFailureFunctions(functions, client))
 
     fun callFunction(
         functionId: String,

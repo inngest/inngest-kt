@@ -1,5 +1,7 @@
 package com.inngest
 
+const val FUNCTION_FAILED = "inngest/function.failed"
+
 abstract class InngestFunction {
     open fun config(builder: InngestFunctionConfigBuilder): InngestFunctionConfigBuilder = builder
 
@@ -29,5 +31,20 @@ abstract class InngestFunction {
         return InternalInngestFunction(configBuilder, this::execute)
     }
 
-    // TODO - Add toFailureHandler method to generate a second function if configured
+    internal fun toFailureHandler(appId: String): InternalInngestFunction? {
+        if (this is WithFailureHandler) {
+            val fnConfig = buildConfig()
+            val fullyQualifiedId = "$appId-${fnConfig.id}"
+            val fnName = fnConfig.name ?: fnConfig.id
+
+            val configBuilder =
+                InngestFunctionConfigBuilder()
+                    .id("${fnConfig.id}-failure")
+                    .name("$fnName (failure)")
+                    .triggerEventIf(FUNCTION_FAILED, "event.data.function_id == '$fullyQualifiedId'")
+
+            return InternalInngestFunction(configBuilder, this::onFailure)
+        }
+        return null
+    }
 }
