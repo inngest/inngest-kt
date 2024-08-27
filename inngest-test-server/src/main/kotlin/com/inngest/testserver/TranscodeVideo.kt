@@ -12,6 +12,7 @@ class TranscodeVideo : InngestFunction() {
             .name("Process video upload")
             .triggerEvent("media/video.uploaded")
             .concurrency(10)
+            .retries(2)
 
     override fun execute(
         ctx: FunctionContext,

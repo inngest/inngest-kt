@@ -12,6 +12,7 @@ class InngestFunctionConfigBuilder {
     private var name: String? = null
     private var triggers: MutableList<InngestFunctionTrigger> = mutableListOf()
     private var concurrency: MutableList<Concurrency>? = null
+    private var retries: Int? = null
     private var batchEvents: BatchEvents? = null
 
     /**
@@ -119,6 +120,13 @@ class InngestFunctionConfigBuilder {
         return this
     }
 
+    /**
+     * Specifies the maximum number of retries for all steps across this function.
+     *
+     * @param attempts The number of times to retry a step before failing, defaults to 3.
+     */
+    fun retries(attempts: Int): InngestFunctionConfigBuilder = apply { this.retries = attempts }
+
     private fun buildSteps(serveUrl: String): Map<String, StepConfig> {
         val scheme = serveUrl.split("://")[0]
         return mapOf(
@@ -126,11 +134,7 @@ class InngestFunctionConfigBuilder {
                 StepConfig(
                     id = "step",
                     name = "step",
-                    retries =
-                        mapOf(
-                            // TODO - Pull from conf option
-                            "attempts" to 3,
-                        ),
+                    retries = mapOf("attempts" to (this.retries ?: 3)),
                     runtime =
                         hashMapOf(
                             "type" to scheme,

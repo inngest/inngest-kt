@@ -18,6 +18,7 @@ class TranscodeVideo : InngestFunction() {
       .id("process-video")
       .name("Process video upload")
       .triggerEvent("media/video.uploaded")
+      .retries(2)
       .concurrency(10)
 
   override fun execute(
@@ -68,6 +69,7 @@ class TranscodeVideo : InngestFunction() {
       .id("process-video")
       .name("Process video upload")
       .triggerEvent("media/video.uploaded")
+      .retries(2)
       .concurrency(10)
 
 }
