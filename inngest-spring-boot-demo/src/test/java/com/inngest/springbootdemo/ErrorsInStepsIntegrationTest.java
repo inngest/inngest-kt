@@ -46,6 +46,21 @@ class ErrorsInStepsIntegrationTest {
         assertEquals(output.get("message"), "something fatally went wrong");
     }
 
+    @Test
+    void testFunctionSetToZeroRetriesShouldFail() throws Exception {
+        String eventId = InngestFunctionTestHelpers.sendEvent(client, "test/zero.retries").first();
+
+        Thread.sleep(sleepTime);
+
+        RunEntry<Object> run = devServer.runsByEvent(eventId).first();
+        LinkedHashMap<String, String> output = (LinkedHashMap<String, String>) run.getOutput();
+
+        assertEquals("Failed", run.getStatus());
+        assertNotNull(run.getEnded_at());
+
+        assert output.get("name").contains("RetryAfterError");
+        assert output.get("stack").contains("ZeroRetriesFunction.lambda$execute");
+    }
 
     @Test
     void testRetriableShouldSucceedAfterFirstAttempt() throws Exception {

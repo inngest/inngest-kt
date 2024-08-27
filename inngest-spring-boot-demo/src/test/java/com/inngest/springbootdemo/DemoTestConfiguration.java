@@ -20,6 +20,7 @@ public class DemoTestConfiguration extends InngestConfiguration {
         addInngestFunction(functions, new SendEventFunction());
         addInngestFunction(functions, new NonRetriableErrorFunction());
         addInngestFunction(functions, new RetriableErrorFunction());
+        addInngestFunction(functions, new ZeroRetriesFunction());
 
         return functions;
     }
