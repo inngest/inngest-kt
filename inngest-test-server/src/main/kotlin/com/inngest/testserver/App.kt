@@ -26,6 +26,8 @@ fun Application.module() {
                 RestoreFromGlacier(),
                 ProcessUserSignup(),
                 TranscodeVideo(),
+                ImageFromPrompt(),
+                PushToSlackChannel(),
             ),
         )
     }
