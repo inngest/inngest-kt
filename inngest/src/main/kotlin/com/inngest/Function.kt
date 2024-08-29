@@ -6,6 +6,7 @@ import java.util.function.BiFunction
 // TODO - Add an abstraction layer between the Function call response and the comm handler response
 enum class OpCode {
     StepRun,
+    StepError,
     Sleep,
     StepStateFailed, // TODO
     Step,
@@ -21,6 +22,7 @@ enum class ResultStatusCode(
     val message: String,
 ) {
     StepComplete(206, "Step Complete"),
+    StepError(206, "Step Error"),
     FunctionComplete(200, "Function Complete"),
     NonRetriableError(400, "Bad Request"),
     RetriableError(500, "Function Error"),
@@ -40,6 +42,7 @@ data class StepResult(
     override val op: OpCode,
     override val statusCode: ResultStatusCode,
     val data: Any? = null,
+    val error: Exception? = null,
 ) : StepOp(id, name, op, statusCode)
 
 data class StepOptions(
@@ -201,6 +204,14 @@ internal open class InternalInngestFunction(
                             put("timeout", e.timeout)
                         }
                     },
+            )
+        } catch (e: StepInterruptErrorException) {
+            return StepResult(
+                id = e.hashedId,
+                name = e.id,
+                op = OpCode.StepError,
+                statusCode = ResultStatusCode.StepError,
+                error = e.error,
             )
         } catch (e: StepInterruptException) {
             // NOTE - Currently this error could be caught in the user's own function

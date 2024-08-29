@@ -71,6 +71,12 @@ class StepInterruptWaitForEventException(
     val ifExpression: String?,
 ) : StepInterruptException(id, hashedId, null)
 
+class StepInterruptErrorException(
+    id: String,
+    hashedId: String,
+    val error: Exception,
+) : StepInterruptException(id, hashedId, null)
+
 class Step(
     private val state: State,
     val client: Inngest,
@@ -80,6 +86,8 @@ class Step(
      *
      * @param id unique step id for memoization
      * @param fn the function to run
+     *
+     * @exception StepError if the function throws an [Exception].
      */
     inline fun <reified T> run(
         id: String,
@@ -100,13 +108,32 @@ class Step(
             }
         } catch (e: StateNotFound) {
             // If there is no existing result, run the lambda
-            val data = fn()
-            throw StepInterruptException(id, hashedId, data)
+            executeStep(id, hashedId, fn)
+        } catch (e: StepError) {
+            throw e
         }
-        // TODO - Catch Step Error here and throw it when error parsing is added to getState
 
         // TODO - handle invalidly stored step types properly
         throw Exception("step state incorrect type")
+    }
+
+    private fun <T> executeStep(
+        id: String,
+        hashedId: String,
+        fn: () -> T,
+    ) {
+        try {
+            val data = fn()
+            throw StepInterruptException(id, hashedId, data)
+        } catch (exception: Exception) {
+            when (exception) {
+                is RetryAfterError,
+                is NonRetriableError,
+                -> throw exception
+
+                else -> throw StepInterruptErrorException(id, hashedId, exception)
+            }
+        }
     }
 
     /**
@@ -118,6 +145,8 @@ class Step(
      * @param data the data to pass within `event.data` to the function
      * @param timeout an optional timeout for the invoked function.  If the invoked function does
      * not finish within this time, the invoked function will be marked as failed.
+     *
+     * @exception StepError if the invoked function fails.
      */
     inline fun <reified T> invoke(
         id: String,
@@ -143,7 +172,10 @@ class Step(
             }
         } catch (e: StateNotFound) {
             throw StepInterruptInvokeException(id, hashedId, appId, fnId, data, timeout)
+        } catch (e: StepError) {
+            throw e
         }
+
         // TODO - handle invalidly stored step types properly
         throw Exception("step state incorrect type")
     }

@@ -38,8 +38,8 @@ class State(
             val dataNode = stepResult.get(fieldName)
             return mapper.treeToValue(dataNode, type)
         } else if (stepResult.has("error")) {
-            // TODO - Parse the error and throw it
-            return null
+            val error = mapper.treeToValue(stepResult.get("error"), StepError::class.java)
+            throw error
         }
         // NOTE - Sleep steps will be stored as null
         // TODO - Investigate if sendEvents stores null as well.

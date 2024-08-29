@@ -81,7 +81,13 @@ class CommHandler(
 
             val result = function.call(ctx = ctx, client = client, requestBody)
             var body: Any? = null
-            if (result.statusCode == ResultStatusCode.StepComplete || result is StepOptions) {
+            if (result.statusCode in
+                setOf(
+                    ResultStatusCode.StepComplete,
+                    ResultStatusCode.StepError,
+                ) ||
+                result is StepOptions
+            ) {
                 body = listOf(result)
             }
             if (result is StepResult && result.statusCode == ResultStatusCode.FunctionComplete) {
@@ -94,7 +100,8 @@ class CommHandler(
             )
         } catch (e: Exception) {
             val retryDecision = RetryDecision.fromException(e)
-            val statusCode = if (retryDecision.shouldRetry) ResultStatusCode.RetriableError else ResultStatusCode.NonRetriableError
+            val statusCode =
+                if (retryDecision.shouldRetry) ResultStatusCode.RetriableError else ResultStatusCode.NonRetriableError
 
             val err =
                 CommError(
