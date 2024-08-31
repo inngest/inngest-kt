@@ -1,14 +1,11 @@
 package com.inngest.springbootdemo;
 
-import com.inngest.CommHandler;
 import com.inngest.Inngest;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.parallel.Execution;
 import org.junit.jupiter.api.parallel.ExecutionMode;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -17,11 +14,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 @IntegrationTest
 @Execution(ExecutionMode.CONCURRENT)
 class ErrorsInStepsIntegrationTest {
-    @BeforeAll
-    static void setup(@Autowired CommHandler handler) {
-        handler.register("http://localhost:8080");
-    }
-
     @Autowired
     private DevServerComponent devServer;
 
