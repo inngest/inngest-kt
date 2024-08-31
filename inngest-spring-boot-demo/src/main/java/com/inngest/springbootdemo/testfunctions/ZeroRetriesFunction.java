@@ -20,6 +20,7 @@ public class ZeroRetriesFunction extends InngestFunction {
             throw new RetryAfterError("This is a retriable exception but retries are set to 0", 50);
         }, String.class);
 
+        // This is unreachable because the step above will always throw an exception, and it will never be retried.
         return "Success";
     }
 }

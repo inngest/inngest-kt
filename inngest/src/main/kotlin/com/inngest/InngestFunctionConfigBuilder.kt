@@ -12,7 +12,7 @@ class InngestFunctionConfigBuilder {
     private var name: String? = null
     private var triggers: MutableList<InngestFunctionTrigger> = mutableListOf()
     private var concurrency: MutableList<Concurrency>? = null
-    private var retries: Int? = null
+    private var retries = 3
     private var batchEvents: BatchEvents? = null
 
     /**
@@ -134,7 +134,7 @@ class InngestFunctionConfigBuilder {
                 StepConfig(
                     id = "step",
                     name = "step",
-                    retries = mapOf("attempts" to (this.retries ?: 3)),
+                    retries = mapOf("attempts" to this.retries),
                     runtime =
                         hashMapOf(
                             "type" to scheme,
