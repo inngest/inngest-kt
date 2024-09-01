@@ -82,6 +82,7 @@ internal class InternalFunctionConfig
         val throttle: Throttle? = null,
         @Json(serializeNull = false)
         val debounce: Debounce? = null,
+        val priority: Priority? = null,
         @Json(serializeNull = false)
         val batchEvents: BatchEvents? = null,
         val steps: Map<String, StepConfig>,
