@@ -17,7 +17,7 @@ public class ThrottledFunction extends InngestFunction {
             .id("ThrottledFunction")
             .name("Throttled Function")
             .triggerEvent("test/throttled")
-            .throttle(1, Duration.ofSeconds(10), 1, "throttled");
+            .throttle(1, Duration.ofSeconds(10), "throttled", 1);
     }
 
     @Override

@@ -134,17 +134,17 @@ class InngestFunctionConfigBuilder {
      * @param limit The total number of runs allowed to start within the given period. The limit is applied evenly over the period.
      * @param period The period of time for the rate limit. Run starts are evenly spaced through the given period.
      * The minimum granularity is 1 second.
-     * @param burst The number of runs allowed to start in the given window in a single burst.
-     * A burst > 1 bypasses smoothing for the burst and allows many runs to start at once, if desired. Defaults to 1, which disables bursting.
      * @param key An optional expression which returns a throttling key for controlling throttling.
      * Every unique key is its own throttle limit. Event data may be used within this expression, eg "event.data.user_id".
+     * @param burst The number of runs allowed to start in the given window in a single burst.
+     * A burst > 1 bypasses smoothing for the burst and allows many runs to start at once, if desired. Defaults to 1, which disables bursting.
      */
     @JvmOverloads
     fun throttle(
         limit: Int,
         period: Duration,
-        burst: Int? = null,
         key: String? = null,
+        burst: Int? = null,
     ): InngestFunctionConfigBuilder = apply { this.throttle = Throttle(limit, period, key, burst) }
 
     private fun buildSteps(serveUrl: String): Map<String, StepConfig> {
@@ -245,7 +245,7 @@ internal data class Throttle
         @Json(serializeNull = false)
         val key: String? = null,
         @Json(serializeNull = false)
-        val burst: Int? = 1,
+        val burst: Int? = null,
     )
 
 internal data class BatchEvents
