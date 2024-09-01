@@ -17,7 +17,7 @@ public class NonRetriableErrorFunction extends InngestFunction {
     @Override
     public String execute(FunctionContext ctx, Step step) {
         step.run("fail-step", () -> {
-            throw new NonRetriableError("something fatally went wrong");
+            throw new NonRetriableError("Something fatally went wrong");
         }, String.class);
 
         return "Success";
