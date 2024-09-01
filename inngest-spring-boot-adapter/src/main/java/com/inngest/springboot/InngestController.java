@@ -2,6 +2,7 @@ package com.inngest.springboot;
 
 import com.inngest.CommHandler;
 import com.inngest.CommResponse;
+import com.inngest.InngestEnv;
 import com.inngest.signingkey.SignatureVerificationKt;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -31,6 +32,11 @@ public abstract class InngestController {
         @RequestHeader(HttpHeaders.HOST) String hostHeader,
         HttpServletRequest request
     ) {
+        if (commHandler.getClient().getEnv() != InngestEnv.Dev) {
+            // TODO: Return an UnauthenticatedIntrospection instead when app diagnostics are implemented
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body("Introspect endpoint is only available in development mode");
+        }
         String origin = String.format("%s://%s", request.getScheme(), hostHeader);
         if (this.serveOrigin != null && !this.serveOrigin.isEmpty()) {
             origin = this.serveOrigin;
