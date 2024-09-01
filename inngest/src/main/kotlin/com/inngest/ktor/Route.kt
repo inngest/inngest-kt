@@ -43,6 +43,12 @@ fun Route.serve(
 
     route(path) {
         get("") {
+            if (client.env != InngestEnv.Dev) {
+                // TODO: Return an UnauthenticatedIntrospection instead when app diagnostics are implemented
+                call.respond(HttpStatusCode.Forbidden, "Introspect endpoint is only available in development mode")
+                return@get
+            }
+
             val origin = getOrigin(call)
             val resp = comm.introspect(origin)
             call.respond(HttpStatusCode.OK, resp)
