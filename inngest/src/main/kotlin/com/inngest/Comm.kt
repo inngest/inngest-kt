@@ -52,6 +52,8 @@ data class CommError(
     val __serialized: Boolean = true,
 )
 
+private val stepTerminalStatusCodes = setOf(ResultStatusCode.StepComplete, ResultStatusCode.StepError)
+
 class CommHandler(
     functions: Map<String, InngestFunction>,
     val client: Inngest,
@@ -81,13 +83,7 @@ class CommHandler(
 
             val result = function.call(ctx = ctx, client = client, requestBody)
             var body: Any? = null
-            if (result.statusCode in
-                setOf(
-                    ResultStatusCode.StepComplete,
-                    ResultStatusCode.StepError,
-                ) ||
-                result is StepOptions
-            ) {
+            if (result.statusCode in stepTerminalStatusCodes || result is StepOptions) {
                 body = listOf(result)
             }
             if (result is StepResult && result.statusCode == ResultStatusCode.FunctionComplete) {
