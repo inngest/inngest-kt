@@ -13,6 +13,7 @@ class InngestFunctionConfigBuilder {
     private var triggers: MutableList<InngestFunctionTrigger> = mutableListOf()
     private var concurrency: MutableList<Concurrency>? = null
     private var retries = 3
+    private var throttle: Throttle? = null
     private var batchEvents: BatchEvents? = null
 
     /**
@@ -127,6 +128,25 @@ class InngestFunctionConfigBuilder {
      */
     fun retries(attempts: Int): InngestFunctionConfigBuilder = apply { this.retries = attempts }
 
+    /**
+     * Configure function throttle limit
+     *
+     * @param limit The total number of runs allowed to start within the given period. The limit is applied evenly over the period.
+     * @param period The period of time for the rate limit. Run starts are evenly spaced through the given period.
+     * The minimum granularity is 1 second.
+     * @param key An optional expression which returns a throttling key for controlling throttling.
+     * Every unique key is its own throttle limit. Event data may be used within this expression, eg "event.data.user_id".
+     * @param burst The number of runs allowed to start in the given window in a single burst.
+     * A burst > 1 bypasses smoothing for the burst and allows many runs to start at once, if desired. Defaults to 1, which disables bursting.
+     */
+    @JvmOverloads
+    fun throttle(
+        limit: Int,
+        period: Duration,
+        key: String? = null,
+        burst: Int? = null,
+    ): InngestFunctionConfigBuilder = apply { this.throttle = Throttle(limit, period, key, burst) }
+
     private fun buildSteps(serveUrl: String): Map<String, StepConfig> {
         val scheme = serveUrl.split("://")[0]
         return mapOf(
@@ -158,6 +178,7 @@ class InngestFunctionConfigBuilder {
                 name ?: id,
                 triggers,
                 concurrency,
+                throttle,
                 batchEvents,
                 steps = buildSteps(serverUrl),
             )
@@ -213,6 +234,18 @@ internal data class Concurrency
         @Json(serializeNull = false)
         @KlaxonConcurrencyScope
         val scope: ConcurrencyScope? = null,
+    )
+
+internal data class Throttle
+    @JvmOverloads
+    constructor(
+        val limit: Int,
+        @KlaxonDuration
+        val period: Duration,
+        @Json(serializeNull = false)
+        val key: String? = null,
+        @Json(serializeNull = false)
+        val burst: Int? = null,
     )
 
 internal data class BatchEvents
