@@ -22,7 +22,7 @@ class MultiStepsFunctionIntegrationTest {
 
     @Test
     void testTwoStepsFunctionValidResult() throws Exception {
-        String eventId = InngestFunctionTestHelpers.sendEvent(client, "test/two.steps").first();
+        String eventId = InngestFunctionTestHelpers.sendEvent(client, "test/two.steps").getIds()[0];
 
         Thread.sleep(sleepTime);
 

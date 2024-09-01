@@ -23,7 +23,7 @@ class CustomStepResultIntegrationTest {
 
     @Test
     void testMultiStepsFunctionWithClassResultStep() throws Exception {
-        String eventId = InngestFunctionTestHelpers.sendEvent(client, "test/custom.result.step").first();
+        String eventId = InngestFunctionTestHelpers.sendEvent(client, "test/custom.result.step").getIds()[0];
 
         Thread.sleep(sleepTime);
 

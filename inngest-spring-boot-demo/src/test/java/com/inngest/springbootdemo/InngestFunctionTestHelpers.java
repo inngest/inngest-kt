@@ -7,11 +7,11 @@ import java.util.Objects;
 
 public class InngestFunctionTestHelpers {
 
-    static SendEventResponse sendEvent(Inngest inngest, String eventName) {
+    static SendEventsResponse sendEvent(Inngest inngest, String eventName) {
         InngestEvent event = new InngestEvent(eventName, new HashMap<String, String>());
-        SendEventResponse response = inngest.send(event, SendEventResponse.class);
+        SendEventsResponse response = inngest.send(event);
 
-        assert Objects.requireNonNull(response).ids.length > 0;
+        assert Objects.requireNonNull(response).getIds().length > 0;
         return response;
     }
 }

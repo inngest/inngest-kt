@@ -21,7 +21,7 @@ class WaitForEventFunctionIntegrationTest {
 
     @Test
     void testWaitForEventFunctionWhenFullFilled() throws Exception {
-        String eventId = InngestFunctionTestHelpers.sendEvent(client, "test/wait-for-event").first();
+        String eventId = InngestFunctionTestHelpers.sendEvent(client, "test/wait-for-event").getIds()[0];
 
         Thread.sleep(sleepTime);
 
@@ -31,7 +31,7 @@ class WaitForEventFunctionIntegrationTest {
         assertEquals(run.getStatus(), "Running");
         assertNull(run.getEnded_at());
 
-        InngestFunctionTestHelpers.sendEvent(client, "test/yolo.wait").first();
+        InngestFunctionTestHelpers.sendEvent(client, "test/yolo.wait");
 
         Thread.sleep(sleepTime);
 
@@ -45,7 +45,7 @@ class WaitForEventFunctionIntegrationTest {
 
     @Test
     void testWaitForEventFunctionWhenTimeOut() throws Exception {
-        String eventId = InngestFunctionTestHelpers.sendEvent(client, "test/wait-for-event").first();
+        String eventId = InngestFunctionTestHelpers.sendEvent(client, "test/wait-for-event").getIds()[0];
 
         Thread.sleep(sleepTime);
 

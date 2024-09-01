@@ -24,7 +24,7 @@ class SendEventFunctionIntegrationTest {
 
     @Test
     void testSendEventFunctionSendsEventSuccessfully() throws Exception {
-        String eventId = InngestFunctionTestHelpers.sendEvent(client, "test/send").first();
+        String eventId = InngestFunctionTestHelpers.sendEvent(client, "test/send").getIds()[0];
 
         Thread.sleep(sleepTime);
 

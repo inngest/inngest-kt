@@ -24,7 +24,7 @@ class ErrorsInStepsIntegrationTest {
 
     @Test
     void testNonRetriableShouldFail() throws Exception {
-        String eventId = InngestFunctionTestHelpers.sendEvent(client, "test/non.retriable").first();
+        String eventId = InngestFunctionTestHelpers.sendEvent(client, "test/non.retriable").getIds()[0];
 
         Thread.sleep(sleepTime);
 
@@ -40,7 +40,7 @@ class ErrorsInStepsIntegrationTest {
 
     @Test
     void testFunctionSetToZeroRetriesShouldFail() throws Exception {
-        String eventId = InngestFunctionTestHelpers.sendEvent(client, "test/zero.retries").first();
+        String eventId = InngestFunctionTestHelpers.sendEvent(client, "test/zero.retries").getIds()[0];
 
         Thread.sleep(sleepTime);
 
@@ -56,7 +56,7 @@ class ErrorsInStepsIntegrationTest {
 
     @Test
     void testRetriableShouldSucceedAfterFirstAttempt() throws Exception {
-        String eventId = InngestFunctionTestHelpers.sendEvent(client, "test/retriable").first();
+        String eventId = InngestFunctionTestHelpers.sendEvent(client, "test/retriable").getIds()[0];
 
         Thread.sleep(5000);
 
