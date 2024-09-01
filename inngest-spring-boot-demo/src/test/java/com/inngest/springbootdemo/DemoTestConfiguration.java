@@ -48,7 +48,7 @@ public class DemoTestConfiguration extends InngestConfiguration {
     }
 
     @Bean
-    protected DevServerComponent devServerComponent(@Autowired Inngest inngestClient) throws Exception {
-        return new DevServerComponent();
+    protected DevServerComponent devServerComponent(@Autowired CommHandler commHandler) throws Exception {
+        return new DevServerComponent(commHandler);
     }
 }

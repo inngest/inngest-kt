@@ -3,6 +3,7 @@ package com.inngest.springbootdemo;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.inngest.CommHandler;
 import okhttp3.Request;
 
 import javax.annotation.PreDestroy;
@@ -14,24 +15,25 @@ public class DevServerComponent {
     static String baseUrl = "http://127.0.0.1:8288";
     OkHttpClient httpClient = new OkHttpClient();
 
-    DevServerComponent() throws Exception {
+    DevServerComponent(CommHandler commHandler) throws Exception {
         Runtime rt = Runtime.getRuntime();
         rt.exec("pkill inngest-cli");
         rt.exec("npx -y inngest-cli dev -u http://127.0.0.1:8080/api/inngest");
 
-        waitForStartup();
+        waitForStartup(commHandler);
     }
 
-    private void waitForStartup() throws Exception {
-
+    private void waitForStartup(CommHandler commHandler) throws Exception {
         while (true) {
             try {
                 Request request = new Request.Builder()
-                    .url(baseUrl)
+                    .url(String.format("%s/health", baseUrl))
                     .build();
 
                 try (Response response = httpClient.newCall(request).execute()) {
                     if (response.code() == 200) {
+                        Thread.sleep(3000);
+                        commHandler.register("http://localhost:8080");
                         return;
                     }
                 }
