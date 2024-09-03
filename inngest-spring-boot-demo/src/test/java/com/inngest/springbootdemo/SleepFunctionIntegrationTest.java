@@ -19,7 +19,7 @@ class SleepFunctionIntegrationTest {
 
     @Test
     void testSleepFunctionRunningSuccessfully() throws Exception {
-        String eventId = InngestFunctionTestHelpers.sendEvent(client, "test/sleep").first();
+        String eventId = InngestFunctionTestHelpers.sendEvent(client, "test/sleep").getIds()[0];
 
         Thread.sleep(5000);
 

@@ -21,7 +21,7 @@ class NoStepFunctionIntegrationTest {
 
     @Test
     void testNoStepFunctionRunningSuccessfully() throws Exception {
-        String eventId = InngestFunctionTestHelpers.sendEvent(client, "test/no-step").first();
+        String eventId = InngestFunctionTestHelpers.sendEvent(client, "test/no-step").getIds()[0];
 
         Thread.sleep(sleepTime);
 

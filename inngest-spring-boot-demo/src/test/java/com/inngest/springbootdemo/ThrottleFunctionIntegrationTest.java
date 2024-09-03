@@ -19,9 +19,9 @@ class ThrottleFunctionIntegrationTest {
 
     @Test
     void testThrottledFunctionShouldNotRunConcurrently() throws Exception {
-        String firstEvent = InngestFunctionTestHelpers.sendEvent(client, "test/throttled").first();
+        String firstEvent = InngestFunctionTestHelpers.sendEvent(client, "test/throttled").getIds()[0];
         Thread.sleep(500);
-        String secondEvent = InngestFunctionTestHelpers.sendEvent(client, "test/throttled").first();
+        String secondEvent = InngestFunctionTestHelpers.sendEvent(client, "test/throttled").getIds()[0];
 
         Thread.sleep(5000);
 

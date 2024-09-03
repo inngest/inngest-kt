@@ -206,23 +206,22 @@ class Step(
     }
 
     /**
-     * Sends multiple events to Inngest
+     * Sends a single event to Inngest.
      *
      * @param id Unique step id for memoization.
-     * @param event An event payload object.
+     * @param event The event to send.
      *
      */
-
     fun sendEvent(
         id: String,
         event: InngestEvent,
     ) = sendEvent(id, arrayOf(event))
 
     /**
-     * Sends a single event to Inngest
+     * Sends multiple events to Inngest.
      *
      * @param id Unique step id for memoization.
-     * @param events An array of event payload objects.
+     * @param events The events to send.
      *
      */
     fun sendEvent(
@@ -239,7 +238,7 @@ class Step(
             }
             throw Exception("step state expected sendEvent, got something else")
         } catch (e: StateNotFound) {
-            val response = client.send<SendEventsResponse>(events)
+            val response = client.send(events)
             throw StepInterruptSendEventException(id, hashedId, response!!.ids)
         }
     }

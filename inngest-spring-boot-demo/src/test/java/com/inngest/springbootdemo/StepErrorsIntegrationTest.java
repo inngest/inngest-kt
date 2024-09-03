@@ -22,7 +22,7 @@ class StepErrorsIntegrationTest {
 
     @Test
     void testShouldCatchStepErrorWhenInvokeThrows() throws Exception {
-        String eventId = InngestFunctionTestHelpers.sendEvent(client, "test/invoke.failure").first();
+        String eventId = InngestFunctionTestHelpers.sendEvent(client, "test/invoke.failure").getIds()[0];
 
         Thread.sleep(sleepTime);
 
@@ -37,7 +37,7 @@ class StepErrorsIntegrationTest {
 
     @Test
     void testShouldCatchStepErrorWhenRunThrows() throws Exception {
-        String eventId = InngestFunctionTestHelpers.sendEvent(client, "test/try.catch.run").first();
+        String eventId = InngestFunctionTestHelpers.sendEvent(client, "test/try.catch.run").getIds()[0];
 
         Thread.sleep(sleepTime);
 
