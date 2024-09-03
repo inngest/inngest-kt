@@ -24,6 +24,7 @@ public class DemoTestConfiguration extends InngestConfiguration {
         addInngestFunction(functions, new InvokeFailureFunction());
         addInngestFunction(functions, new TryCatchRunFunction());
         addInngestFunction(functions, new ThrottledFunction());
+        addInngestFunction(functions, new DebouncedFunction());
 
         return functions;
     }
