@@ -14,6 +14,7 @@ class InngestFunctionConfigBuilder {
     private var concurrency: MutableList<Concurrency>? = null
     private var retries = 3
     private var throttle: Throttle? = null
+    private var debounce: Debounce? = null
     private var batchEvents: BatchEvents? = null
 
     /**
@@ -147,6 +148,30 @@ class InngestFunctionConfigBuilder {
         burst: Int? = null,
     ): InngestFunctionConfigBuilder = apply { this.throttle = Throttle(limit, period, key, burst) }
 
+    /**
+     * Debounce delays functions for the `period` specified. If an event is sent,
+     * the function will not run until at least `period` has elapsed.
+     *
+     * If any new events are received that match the same debounce `key`, the
+     * function is rescheduled for another `period` delay, and the triggering
+     * event is replaced with the latest event received.
+     *
+     * See the [Debounce documentation](https://innge.st/debounce) for more
+     * information.
+     *
+     * @param period The period of time to delay after receiving the last trigger to run the function.
+     * @param key An optional key to use for debouncing.
+     * @param timeout The maximum time that a debounce can be extended before running.
+     * If events are continually received within the given period, a function
+     * will always run after the given timeout period.
+     */
+    @JvmOverloads
+    fun debounce(
+        period: Duration,
+        key: String? = null,
+        timeout: Duration? = null,
+    ): InngestFunctionConfigBuilder = apply { this.debounce = Debounce(period, key, timeout) }
+
     private fun buildSteps(serveUrl: String): Map<String, StepConfig> {
         val scheme = serveUrl.split("://")[0]
         return mapOf(
@@ -179,6 +204,7 @@ class InngestFunctionConfigBuilder {
                 triggers,
                 concurrency,
                 throttle,
+                debounce,
                 batchEvents,
                 steps = buildSteps(serverUrl),
             )
@@ -246,6 +272,18 @@ internal data class Throttle
         val key: String? = null,
         @Json(serializeNull = false)
         val burst: Int? = null,
+    )
+
+internal data class Debounce
+    @JvmOverloads
+    constructor(
+        @KlaxonDuration
+        val period: Duration,
+        @Json(serializeNull = false)
+        val key: String? = null,
+        @Json(serializeNull = false)
+        @KlaxonDuration
+        val timeout: Duration? = null,
     )
 
 internal data class BatchEvents
