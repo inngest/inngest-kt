@@ -15,6 +15,7 @@ class InngestFunctionConfigBuilder {
     private var retries = 3
     private var throttle: Throttle? = null
     private var debounce: Debounce? = null
+    private var priority: Priority? = null
     private var batchEvents: BatchEvents? = null
 
     /**
@@ -172,6 +173,19 @@ class InngestFunctionConfigBuilder {
         timeout: Duration? = null,
     ): InngestFunctionConfigBuilder = apply { this.debounce = Debounce(period, key, timeout) }
 
+    /**
+     *
+     * Configure how the priority of a function run is decided when multiple
+     * functions are triggered at the same time.
+     *
+     * @param run An expression to use to determine the priority of a function run. The
+     * expression can return a number between `-600` and `600`, where `600`
+     * declares that this run should be executed before any others enqueued in
+     * the last 600 seconds (10 minutes), and `-600` declares that this run
+     * should be executed after any others enqueued in the last 600 seconds.
+     */
+    fun priority(run: String): InngestFunctionConfigBuilder = apply { this.priority = Priority(run) }
+
     private fun buildSteps(serveUrl: String): Map<String, StepConfig> {
         val scheme = serveUrl.split("://")[0]
         return mapOf(
@@ -205,6 +219,7 @@ class InngestFunctionConfigBuilder {
                 concurrency,
                 throttle,
                 debounce,
+                priority,
                 batchEvents,
                 steps = buildSteps(serverUrl),
             )
@@ -284,6 +299,11 @@ internal data class Debounce
         @Json(serializeNull = false)
         @KlaxonDuration
         val timeout: Duration? = null,
+    )
+
+internal data class Priority
+    constructor(
+        val run: String,
     )
 
 internal data class BatchEvents
