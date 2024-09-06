@@ -9,8 +9,17 @@ class StateNotFound : Throwable("State not found for id")
 class State(
     private val payloadJson: String,
 ) {
+    private val stepIds = mutableSetOf<String>()
+
     fun getHashFromId(id: String): String {
-        val bytes = id.toByteArray(Charsets.UTF_8)
+        val idToHash: String =
+            if (id in stepIds) {
+                findNextAvailableStepId(id)
+            } else {
+                id
+            }
+        stepIds.add(idToHash)
+        val bytes = idToHash.toByteArray(Charsets.UTF_8)
         val digest = MessageDigest.getInstance("SHA-1")
         val hashedBytes = digest.digest(bytes)
         val sb = StringBuilder()
@@ -18,6 +27,20 @@ class State(
             sb.append(String.format("%02x", byte))
         }
         return sb.toString()
+    }
+
+    private fun findNextAvailableStepId(id: String): String {
+        var stepNumber = 1
+        var possibleStepId: String
+        while (true) {
+            possibleStepId = "$id:$stepNumber"
+            if (possibleStepId !in stepIds) {
+                break
+            }
+            stepNumber++
+        }
+
+        return possibleStepId
     }
 
     inline fun <reified T> getState(
