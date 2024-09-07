@@ -16,6 +16,21 @@ internal class EnvironmentTest {
         assertEquals(key, Environment.inngestEventKey(key))
     }
 
+    @Test
+    fun `test isInngestEventKeySet returns false when it's null`() {
+        assertFalse(Environment.isInngestEventKeySet(null))
+    }
+
+    @Test
+    fun `test isInngestEventKeySet returns false when it's set to the dummy event key`() {
+        assertFalse(Environment.isInngestEventKeySet("NO_EVENT_KEY_SET"))
+    }
+
+    @Test
+    fun `test isInngestEventKeySet returns true when it's set to a valid event key`() {
+        assertTrue(Environment.isInngestEventKeySet("event"))
+    }
+
     // @Test
     // fun `test inngestEventKey with INNGEST_EVENT_KEY value`() {}
 
