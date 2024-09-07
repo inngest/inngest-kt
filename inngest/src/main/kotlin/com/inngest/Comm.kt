@@ -4,8 +4,11 @@ import com.beust.klaxon.Json
 import com.beust.klaxon.Klaxon
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.SerializationFeature
+import com.inngest.signingkey.checkHeadersAndValidateSignature
 import com.inngest.signingkey.getAuthorizationHeader
+import com.inngest.signingkey.hashedSigningKey
 import java.io.IOException
+import java.security.MessageDigest
 
 data class ExecutionRequestPayload(
     val ctx: ExecutionContext,
@@ -177,8 +180,50 @@ class CommHandler(
     // TODO
 //    fun sync(): Result<InngestSyncResult> = Result.success(InngestSyncResult.None)
 
-    fun introspect(origin: String): String {
-        val requestPayload = getRegistrationRequestPayload(origin)
+    fun introspect(
+        signature: String?,
+        requestBody: String,
+        serverKind: String?,
+    ): String {
+        val insecureIntrospection =
+            InsecureIntrospection(
+                functionCount = functions.size,
+                hasEventKey = Environment.isInngestEventKeySet(client.eventKey),
+                hasSigningKey = config.hasSigningKey(),
+                mode = if (client.env == InngestEnv.Dev) "dev" else "cloud",
+            )
+
+        val requestPayload =
+            when (client.env) {
+                InngestEnv.Dev -> insecureIntrospection
+
+                else ->
+                    runCatching {
+                        checkHeadersAndValidateSignature(signature, requestBody, serverKind, config)
+
+                        SecureIntrospection(
+                            functionCount = functions.size,
+                            hasEventKey = Environment.isInngestEventKeySet(client.eventKey),
+                            hasSigningKey = config.hasSigningKey(),
+                            authenticationSucceeded = true,
+                            mode = "cloud",
+                            env = client.env.value,
+                            appId = config.appId(),
+                            apiOrigin = "${config.baseUrl()}/",
+                            framework = framework.value,
+                            sdkVersion = Version.getVersion(),
+                            sdkLanguage = "java",
+                            servePath = config.servePath(),
+                            serveOrigin = config.serveOrigin(),
+                            signingKeyHash = hashedSigningKey(config.signingKey()),
+                            eventApiOrigin = "${Environment.inngestEventApiBaseUrl(client.env)}/",
+                            eventKeyHash = if (config.hasSigningKey()) hashedEventKey(client.eventKey) else null,
+                        )
+                    }.getOrElse {
+                        insecureIntrospection.apply { authenticationSucceeded = false }
+                    }
+            }
+
         return serializePayload(requestPayload)
     }
 
@@ -198,4 +243,14 @@ class CommHandler(
         val servePath = config.servePath() ?: "/api/inngest"
         return "$serveOrigin$servePath"
     }
+
+    private fun hashedEventKey(eventKey: String): String? =
+        eventKey
+            .takeIf { Environment.isInngestEventKeySet(it) }
+            ?.let {
+                MessageDigest
+                    .getInstance("SHA-256")
+                    .digest(it.toByteArray())
+                    .joinToString("") { byte -> "%02x".format(byte) }
+            }
 }
