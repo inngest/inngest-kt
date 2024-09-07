@@ -43,15 +43,13 @@ fun Route.serve(
 
     route(path) {
         get("") {
-            if (client.env != InngestEnv.Dev) {
-                // TODO: Return an UnauthenticatedIntrospection instead when app diagnostics are implemented
-                call.respond(HttpStatusCode.Forbidden, "Introspect endpoint is only available in development mode")
-                return@get
-            }
+            val signature = call.request.headers[InngestHeaderKey.Signature.value]
+            val serverKind = call.request.headers[InngestHeaderKey.ServerKind.value]
 
-            val origin = getOrigin(call)
-            val resp = comm.introspect(origin)
-            call.respond(HttpStatusCode.OK, resp)
+            val requestBody = call.receiveText()
+
+            val resp = comm.introspect(signature, requestBody, serverKind)
+            call.respondText(resp, ContentType.Application.Json, HttpStatusCode.OK)
         }
 
         post("") {

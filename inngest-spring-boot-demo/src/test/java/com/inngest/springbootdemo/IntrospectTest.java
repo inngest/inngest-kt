@@ -13,21 +13,22 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @Import(DemoTestConfiguration.class)
 @WebMvcTest(DemoController.class)
-public class DemoControllerTest {
+public class IntrospectTest {
 
     @Autowired
     private MockMvc mockMvc;
 
     @Test
-    public void shouldReturnSyncPayload() throws Exception {
+    public void shouldReturnInsecureIntrospectPayload() throws Exception {
         mockMvc.perform(get("/api/inngest").header("Host", "localhost:8080"))
             .andExpect(status().isOk())
             .andExpect(content().contentType("application/json"))
             .andExpect(header().string(InngestHeaderKey.Framework.getValue(), "springboot"))
-            .andExpect(jsonPath("$.appName").value("spring_test_demo"))
-            .andExpect(jsonPath("$.framework").value("springboot"))
-            .andExpect(jsonPath("$.v").value("0.1"))
-            .andExpect(jsonPath("$.url").value("http://localhost:8080/api/inngest"))
-            .andExpect(jsonPath("$.sdk").value(String.format("java:v%s", Version.Companion.getVersion())));
+            .andExpect(jsonPath("$.authentication_succeeded").isEmpty())
+            .andExpect(jsonPath("$.function_count").isNumber())
+            .andExpect(jsonPath("$.has_event_key").value(false))
+            .andExpect(jsonPath("$.has_signing_key").value(false))
+            .andExpect(jsonPath("$.mode").value("dev"))
+            .andExpect(jsonPath("$.schema_version").value("2024-05-24"));
     }
 }
