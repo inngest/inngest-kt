@@ -174,10 +174,10 @@ class CommHandler(
     private fun getRegistrationRequestPayload(origin: String): RegistrationRequestPayload =
         RegistrationRequestPayload(
             appName = config.appId(),
-            framework = framework.toString(),
-            sdk = "inngest-kt",
+            framework = framework.value,
+            sdk = "java:v${Version.getVersion()}",
             url = getServeUrl(origin),
-            v = Version.getVersion(),
+            v = "0.1",
             functions = getFunctionConfigs(origin),
         )
 

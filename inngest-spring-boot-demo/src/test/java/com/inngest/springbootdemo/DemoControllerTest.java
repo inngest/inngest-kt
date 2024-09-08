@@ -1,6 +1,7 @@
 package com.inngest.springbootdemo;
 
 import com.inngest.InngestHeaderKey;
+import com.inngest.Version;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -24,7 +25,9 @@ public class DemoControllerTest {
             .andExpect(content().contentType("application/json"))
             .andExpect(header().string(InngestHeaderKey.Framework.getValue(), "springboot"))
             .andExpect(jsonPath("$.appName").value("spring_test_demo"))
+            .andExpect(jsonPath("$.framework").value("springboot"))
+            .andExpect(jsonPath("$.v").value("0.1"))
             .andExpect(jsonPath("$.url").value("http://localhost:8080/api/inngest"))
-            .andExpect(jsonPath("$.sdk").value("inngest-kt"));
+            .andExpect(jsonPath("$.sdk").value(String.format("java:v%s", Version.Companion.getVersion())));
     }
 }
