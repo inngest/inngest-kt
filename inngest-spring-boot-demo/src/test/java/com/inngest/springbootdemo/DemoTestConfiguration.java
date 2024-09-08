@@ -27,6 +27,8 @@ public class DemoTestConfiguration extends InngestConfiguration {
         addInngestFunction(functions, new DebouncedFunction());
         addInngestFunction(functions, new PriorityFunction());
         addInngestFunction(functions, new IdempotentFunction());
+        addInngestFunction(functions, new Scale2DObjectFunction());
+        addInngestFunction(functions, new MultiplyMatrixFunction());
 
         return functions;
     }

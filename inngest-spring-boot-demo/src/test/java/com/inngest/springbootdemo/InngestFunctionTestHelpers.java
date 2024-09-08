@@ -12,7 +12,7 @@ public class InngestFunctionTestHelpers {
         return sendEvent(inngest, eventName, new HashMap());
     }
 
-    static SendEventsResponse sendEvent(Inngest inngest, String eventName, Map<String, String> data) {
+    static SendEventsResponse sendEvent(Inngest inngest, String eventName, Map<String, Object> data) {
         InngestEvent event = new InngestEvent(eventName, data);
         SendEventsResponse response = inngest.send(event);
 
