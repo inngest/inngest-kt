@@ -62,21 +62,15 @@ fun Route.serve(
                 val body = call.receiveText()
                 try {
                     val response = comm.callFunction(fnId, body)
-                    call.response.header(
-                        HttpHeaders.ContentType,
-                        ContentType.Application.Json.toString(),
-                    )
+                    response.headers.forEach({ (k, v) -> call.response.header(k, v) })
                     call.response.status(
                         HttpStatusCode(response.statusCode.code, response.statusCode.message),
                     )
-//                    println("response: " + response.body)
-                    call.respond(response.body)
+                    call.respondText(response.body)
                 } catch (e: Exception) {
                     call.respond(HttpStatusCode.InternalServerError, e.toString())
                 }
             }
-
-            call.respondText("Invoke functions")
         }
 
         put("") {
