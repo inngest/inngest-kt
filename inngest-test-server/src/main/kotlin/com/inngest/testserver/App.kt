@@ -45,7 +45,7 @@ fun Application.module() {
                     )
                 val res = inngest.send(event)
                 println(res)
-                call.respondText(res.ids.toString())
+                call.respondText(res?.ids.toString())
             } catch (e: Exception) {
                 println(e)
                 call.respondText(e.toString())
