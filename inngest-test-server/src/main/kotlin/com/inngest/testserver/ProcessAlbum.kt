@@ -12,7 +12,6 @@ class ProcessAlbum : InngestFunction() {
             .id("ProcessAlbum")
             .name("Process Album!")
             .triggerEvent("delivery/process.requested")
-            .trigger(InngestFunctionTriggers.Cron("5 0 * 8 *"))
             .batchEvents(30, Duration.ofSeconds(10))
 
     override fun execute(

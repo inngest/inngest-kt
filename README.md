@@ -53,7 +53,7 @@ class TranscodeVideo : InngestFunction() {
   <summary>Java (Coming soon)</summary>
 </details>
 
-## Defining configuration
+## Creating functions
 
 Define your function's configuration using the `config` method and the `InngestFunctionConfigBuilder` class.
 The `config` method must be overridden and an `id` is required. All options should are discoverable via
@@ -63,6 +63,8 @@ the builder class passed as the only argument to the `config` method.
   <summary>Kotlin</summary>
 
 ```kotlin
+import java.time.Duration
+
 class TranscodeVideo : InngestFunction() {
   override fun config(builder: InngestFunctionConfigBuilder): InngestFunctionConfigBuilder =
     builder
@@ -70,8 +72,29 @@ class TranscodeVideo : InngestFunction() {
       .name("Process video upload")
       .triggerEvent("media/video.uploaded")
       .retries(2)
+      .batchEvents(50, Duration.ofSeconds(30))
       .concurrency(10)
+}
+```
 
+</details>
+
+## Sending events (_triggering functions_)
+
+<details open>
+  <summary>Kotlin</summary>
+
+```kotlin
+import java.time.Duration
+
+class TranscodeVideo : InngestFunction() {
+  override fun config(builder: InngestFunctionConfigBuilder): InngestFunctionConfigBuilder =
+    builder
+      .id("process-video")
+      .name("Process video upload")
+      .triggerEvent("media/video.uploaded")
+      .batchEvents(50, Duration.ofSeconds(30))
+      .concurrency(10)
 }
 ```
 
