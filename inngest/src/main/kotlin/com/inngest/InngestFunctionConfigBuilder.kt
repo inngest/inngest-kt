@@ -16,6 +16,7 @@ class InngestFunctionConfigBuilder {
     private var throttle: Throttle? = null
     private var debounce: Debounce? = null
     private var priority: Priority? = null
+    private var idempotency: String? = null
     private var batchEvents: BatchEvents? = null
 
     /**
@@ -182,7 +183,6 @@ class InngestFunctionConfigBuilder {
     ): InngestFunctionConfigBuilder = apply { this.debounce = Debounce(period, key, timeout) }
 
     /**
-     *
      * Configure how the priority of a function run is decided when multiple
      * functions are triggered at the same time.
      *
@@ -193,6 +193,15 @@ class InngestFunctionConfigBuilder {
      * should be executed after any others enqueued in the last 600 seconds.
      */
     fun priority(run: String): InngestFunctionConfigBuilder = apply { this.priority = Priority(run) }
+
+    /**
+     * Allow the specification of an idempotency key using event data. If
+     * specified, this overrides the `rateLimit` object.
+     *
+     * @param idempotencyKey An expression using event payload data for a
+     * unique string key for idempotency.
+     */
+    fun idempotency(idempotencyKey: String): InngestFunctionConfigBuilder = apply { this.idempotency = idempotencyKey }
 
     private fun buildSteps(serveUrl: String): Map<String, StepConfig> {
         val scheme = serveUrl.split("://")[0]
@@ -228,6 +237,7 @@ class InngestFunctionConfigBuilder {
                 throttle,
                 debounce,
                 priority,
+                idempotency,
                 batchEvents,
                 steps = buildSteps(serverUrl),
             )
