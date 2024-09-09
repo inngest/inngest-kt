@@ -20,13 +20,7 @@ abstract class InngestFunction {
     }
 
     fun id(): String {
-        try {
-            return buildConfig().id!!
-        } catch (e: Exception) {
-            throw InngestInvalidConfigurationException(
-                "Function id must be configured via builder: ${this.javaClass.name}",
-            )
-        }
+        return buildConfig().id!!
     }
 
     internal fun toInngestFunction(): InternalInngestFunction {
