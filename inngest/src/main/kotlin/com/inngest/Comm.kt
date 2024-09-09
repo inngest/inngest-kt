@@ -9,8 +9,8 @@ import java.io.IOException
 
 data class ExecutionRequestPayload(
     val ctx: ExecutionContext,
-    val event: Event,
-    val events: List<Event>,
+    val event: InngestEvent,
+    val events: List<InngestEvent>,
     val steps: MemoizedState,
 )
 

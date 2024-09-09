@@ -21,7 +21,7 @@ data class InngestEvent
     @JvmOverloads
     constructor(
         val name: String,
-        val data: Any,
+        val data: Map<String, Any>,
         @Json(serializeNull = false)
         val user: Any? = null,
         @Json(serializeNull = false)
@@ -38,7 +38,7 @@ data class InngestEvent
 class InngestEventBuilder(
     var id: String?,
     var name: String?,
-    var data: Any?,
+    var data: Map<String, Any>?,
     private var user: Any?,
     private var ts: Long?,
     private var v: String? = null,
@@ -53,7 +53,7 @@ class InngestEventBuilder(
         return this
     }
 
-    fun data(data: Any): InngestEventBuilder {
+    fun data(data: Map<String, Any>): InngestEventBuilder {
         this.data = data
         return this
     }
@@ -91,6 +91,6 @@ class InngestEventBuilder(
  * in the order of which they were included in the request
  */
 data class SendEventsResponse(
-    val ids: List<String>,
+    val ids: Array<String>,
     val status: Int,
 )

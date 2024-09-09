@@ -100,8 +100,8 @@ internal class InternalFunctionConfig
  * Includes event(s) and other run information
  */
 data class FunctionContext(
-    val event: Event,
-    val events: List<Event>,
+    val event: InngestEvent,
+    val events: List<InngestEvent>,
     val runId: String,
     val fnId: String,
     val attempt: Int,

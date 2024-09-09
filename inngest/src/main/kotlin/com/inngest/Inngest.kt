@@ -1,8 +1,6 @@
 package com.inngest
 
 import com.beust.klaxon.Klaxon
-import java.io.IOException
-import io.ktor.http.*
 import java.net.ConnectException
 
 class Inngest
@@ -47,13 +45,15 @@ class Inngest
 
                     val responseBody = response.body!!.charStream()
                     try {
-                        val sendEventsResponse = Klaxon().parse<EventAPIResponse>(responseBody)
+                        val sendEventsResponse = Klaxon().parse<SendEventsResponse>(responseBody)
                         if (sendEventsResponse != null) {
                             return@lambda sendEventsResponse
                         }
                     } catch (e: Exception) {
                         throw InngestSendEventInvalidResponseException(responseBody.toString())
                     }
+                    // If we haven't successfully parsed and returned a valid SendEventsResponse
+                    // by this point, throw an exception
                     throw InngestSendEventInvalidResponseException(responseBody.toString())
                 }
             } catch (e: ConnectException) {

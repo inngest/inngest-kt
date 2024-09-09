@@ -31,7 +31,7 @@ class StepInterruptSleepException(
 class StepInterruptSendEventException(
     id: String,
     hashedId: String,
-    val eventIds: List<String>,
+    val eventIds: Array<String>,
 ) : StepInterruptException(id, hashedId, eventIds)
 
 class StepInterruptInvokeException(
@@ -211,7 +211,7 @@ class Step(
         val hashedId = state.getHashFromId(id)
 
         try {
-            val stepState = state.getState<List<String>>(hashedId, "event_ids")
+            val stepState = state.getState<Array<String>>(hashedId, "event_ids")
 
             if (stepState != null) {
                 return SendEventsResponse(stepState, 200)
@@ -219,8 +219,7 @@ class Step(
             throw Exception("step state expected sendEvent, got something else")
         } catch (e: StateNotFound) {
             val response = client.send(events)
-            //throw StepInterruptSendEventException(id, hashedId, response!!.ids)
-            throw StepInterruptSendEventException(id, hashedId, response.ids)
+            throw StepInterruptSendEventException(id, hashedId, response!!.ids)
         }
     }
 
