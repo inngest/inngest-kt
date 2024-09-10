@@ -9,7 +9,7 @@ class RestoreFromGlacier : InngestFunction() {
             .id("RestoreFromGlacier")
             .name("Restore from Glacier")
             .trigger(InngestFunctionTriggers.Event("delivery/restore.requested"))
-            .concurrency(10, null, ConcurrencyScope.ENVIRONMENT)
+            .concurrency(10, "event.data.user_id", ConcurrencyScope.ENVIRONMENT)
 
     override fun execute(
         ctx: FunctionContext,

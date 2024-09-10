@@ -113,12 +113,20 @@ class InngestFunctionConfigBuilder {
         key: String? = null,
         scope: ConcurrencyScope? = null,
     ): InngestFunctionConfigBuilder {
+        when (scope) {
+            ConcurrencyScope.ENVIRONMENT -> if (key == null) throw InngestInvalidConfigurationException("Concurrency key required with environment scope")
+            ConcurrencyScope.ACCOUNT -> if (key == null) throw InngestInvalidConfigurationException("Concurrency key required with account scope")
+            ConcurrencyScope.FUNCTION -> {}
+            null -> {}
+        }
+
         val c = Concurrency(limit, key, scope)
-        // TODO - Limit concurrency length to 2
         if (this.concurrency == null) {
             this.concurrency = mutableListOf(c)
+        } else if (this.concurrency!!.size == 2) {
+            throw InngestInvalidConfigurationException("Maximum of 2 concurrency options allowed")
         } else {
-            this.concurrency?.add(c)
+            this.concurrency!!.add(c)
         }
         return this
     }
