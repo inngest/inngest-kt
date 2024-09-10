@@ -21,9 +21,7 @@ abstract class InngestFunction {
         return this.config(builder)
     }
 
-    fun id(): String {
-        return buildConfig().id!!
-    }
+    fun id(): String = buildConfig().id!!
 
     internal fun toInngestFunction(): InternalInngestFunction {
         val builder = InngestFunctionConfigBuilder()

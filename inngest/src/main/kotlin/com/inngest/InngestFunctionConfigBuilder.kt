@@ -115,8 +115,14 @@ class InngestFunctionConfigBuilder {
         scope: ConcurrencyScope? = null,
     ): InngestFunctionConfigBuilder {
         when (scope) {
-            ConcurrencyScope.ENVIRONMENT -> if (key == null) throw InngestInvalidConfigurationException("Concurrency key required with environment scope")
-            ConcurrencyScope.ACCOUNT -> if (key == null) throw InngestInvalidConfigurationException("Concurrency key required with account scope")
+            ConcurrencyScope.ENVIRONMENT ->
+                if (key == null) {
+                    throw InngestInvalidConfigurationException("Concurrency key required with environment scope")
+                }
+            ConcurrencyScope.ACCOUNT ->
+                if (key == null) {
+                    throw InngestInvalidConfigurationException("Concurrency key required with account scope")
+                }
             ConcurrencyScope.FUNCTION -> {}
             null -> {}
         }
