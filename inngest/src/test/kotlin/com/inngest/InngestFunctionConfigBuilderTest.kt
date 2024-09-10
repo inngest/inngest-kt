@@ -1,5 +1,7 @@
 package com.inngest
 
+import java.time.Duration
+import java.time.Instant
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -84,5 +86,24 @@ class InngestFunctionConfigBuilderTest {
                 .concurrency(9, "event.data.account_id", ConcurrencyScope.ACCOUNT)
                 .build("app-id", "https://mysite.com/api/inngest")
         }
+    }
+
+    @Test
+    fun testCancelOnTimeout() {
+        val durationConfig =
+            InngestFunctionConfigBuilder()
+                .id("test-id")
+                .cancelOn("cancel", null, Duration.ofSeconds(6000))
+                .build("app-id", "https://mysite.com/api/inngest")
+
+        assertEquals<List<Cancellation>?>(listOf(Cancellation("cancel", null, "\"6000s\"")), durationConfig.cancel)
+
+        val instantConfig =
+            InngestFunctionConfigBuilder()
+                .id("test-id")
+                .cancelOn("cancel", null, Instant.ofEpochSecond(1726056053))
+                .build("app-id", "https://mysite.com/api/inngest")
+
+        assertEquals<List<Cancellation>?>(listOf(Cancellation("cancel", null, "2024-09-11T12:00:53Z")), instantConfig.cancel)
     }
 }
