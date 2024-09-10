@@ -4,7 +4,7 @@ import com.inngest.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public class WithOnFailureFunction extends InngestFunction implements WithFailureHandler {
+public class WithOnFailureFunction extends InngestFunction {
     @NotNull
     @Override
     public InngestFunctionConfigBuilder config(InngestFunctionConfigBuilder builder) {

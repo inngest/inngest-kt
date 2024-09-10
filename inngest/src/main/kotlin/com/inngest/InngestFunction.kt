@@ -30,7 +30,9 @@ abstract class InngestFunction {
     }
 
     internal fun toFailureHandler(appId: String): InternalInngestFunction? {
-        if (this is WithFailureHandler) {
+        val onFailureMethod = this.javaClass.getMethod("onFailure", FunctionContext::class.java, Step::class.java)
+
+        if (onFailureMethod.declaringClass != InngestFunction::class.java) {
             val fnConfig = buildConfig()
             val fullyQualifiedId = "$appId-${fnConfig.id}"
             val fnName = fnConfig.name ?: fnConfig.id
@@ -45,4 +47,20 @@ abstract class InngestFunction {
         }
         return null
     }
+
+    /**
+     * Provide a function to be called if your function fails, meaning
+     * that it ran out of retries and was unable to complete successfully.
+     *
+     * This is useful for sending warning notifications or cleaning up
+     * after a failure and supports all the same functionality as a
+     * regular handler.
+     *
+     * @param ctx The function context including event(s) that triggered the function
+     * @param step A class with methods to define steps within the function
+     */
+    open fun onFailure(
+        ctx: FunctionContext,
+        step: Step,
+    ): Any? = null
 }

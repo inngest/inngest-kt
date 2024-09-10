@@ -2,9 +2,7 @@ package com.inngest.testserver
 
 import com.inngest.*
 
-class SlackFailureReport :
-    InngestFunction(),
-    WithFailureHandler {
+class SlackFailureReport : InngestFunction() {
     override fun config(builder: InngestFunctionConfigBuilder): InngestFunctionConfigBuilder =
         builder
             .id("always-fail-fn")

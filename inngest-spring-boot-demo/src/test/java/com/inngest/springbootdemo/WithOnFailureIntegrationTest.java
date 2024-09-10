@@ -19,11 +19,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 @IntegrationTest
 @Execution(ExecutionMode.CONCURRENT)
 class WithOnFailureIntegrationTest {
-    @BeforeAll
-    static void setup(@Autowired CommHandler handler) {
-        handler.register("http://localhost:8080");
-    }
-
     @Autowired
     private DevServerComponent devServer;
 
@@ -35,7 +30,7 @@ class WithOnFailureIntegrationTest {
     @Test
     void testWithOnFailureShouldCallOnFailure() throws Exception {
         String eventName = "test/with-on-failure";
-        String eventId = InngestFunctionTestHelpers.sendEvent(client, eventName).first();
+        String eventId = InngestFunctionTestHelpers.sendEvent(client, eventName).getIds()[0];
 
         Thread.sleep(sleepTime);
 
