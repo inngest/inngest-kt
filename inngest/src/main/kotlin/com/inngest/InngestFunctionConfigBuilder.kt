@@ -14,6 +14,7 @@ class InngestFunctionConfigBuilder {
     private var concurrency: MutableList<Concurrency>? = null
     private var retries = 3
     private var throttle: Throttle? = null
+    private var rateLimit: RateLimit? = null
     private var debounce: Debounce? = null
     private var priority: Priority? = null
     private var idempotency: String? = null
@@ -159,6 +160,21 @@ class InngestFunctionConfigBuilder {
     ): InngestFunctionConfigBuilder = apply { this.throttle = Throttle(limit, period, key, burst) }
 
     /**
+     * Configure function rate limit
+     *
+     * @param limit The number of times to allow the function to run per the given `period`.
+     * @param period The period of time to allow the function to run `limit` times. The period begins when the first matching event
+     * is received
+     * @param key An optional expression to use for rate limiting, similar to idempotency.
+     */
+    @JvmOverloads
+    fun rateLimit(
+        limit: Int,
+        period: Duration,
+        key: String? = null,
+    ): InngestFunctionConfigBuilder = apply { this.rateLimit = RateLimit(limit, period, key) }
+
+    /**
      * Debounce delays functions for the `period` specified. If an event is sent,
      * the function will not run until at least `period` has elapsed.
      *
@@ -235,6 +251,7 @@ class InngestFunctionConfigBuilder {
                 triggers,
                 concurrency,
                 throttle,
+                rateLimit,
                 debounce,
                 priority,
                 idempotency,
@@ -305,6 +322,16 @@ internal data class Throttle
         val key: String? = null,
         @Json(serializeNull = false)
         val burst: Int? = null,
+    )
+
+internal data class RateLimit
+    @JvmOverloads
+    constructor(
+        val limit: Int,
+        @KlaxonDuration
+        val period: Duration,
+        @Json(serializeNull = false)
+        val key: String? = null,
     )
 
 internal data class Debounce
