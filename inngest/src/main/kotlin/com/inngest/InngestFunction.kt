@@ -1,5 +1,7 @@
 package com.inngest
 
+const val FUNCTION_FAILED = "inngest/function.failed"
+
 abstract class InngestFunction {
     open fun config(builder: InngestFunctionConfigBuilder): InngestFunctionConfigBuilder = builder
 
@@ -19,9 +21,7 @@ abstract class InngestFunction {
         return this.config(builder)
     }
 
-    fun id(): String {
-        return buildConfig().id!!
-    }
+    fun id(): String = buildConfig().id!!
 
     internal fun toInngestFunction(): InternalInngestFunction {
         val builder = InngestFunctionConfigBuilder()
@@ -29,5 +29,39 @@ abstract class InngestFunction {
         return InternalInngestFunction(configBuilder, this::execute)
     }
 
-    // TODO - Add toFailureHandler method to generate a second function if configured
+    internal fun toFailureHandler(appId: String): InternalInngestFunction? {
+        val onFailureMethod = this.javaClass.getMethod("onFailure", FunctionContext::class.java, Step::class.java)
+
+        // Only generate the failure handler if the onFailure method was overridden
+        if (onFailureMethod.declaringClass != InngestFunction::class.java) {
+            val fnConfig = buildConfig()
+            val fullyQualifiedId = "$appId-${fnConfig.id}"
+            val fnName = fnConfig.name ?: fnConfig.id
+
+            val configBuilder =
+                InngestFunctionConfigBuilder()
+                    .id("${fnConfig.id}-failure")
+                    .name("$fnName (failure)")
+                    .triggerEventIf(FUNCTION_FAILED, "event.data.function_id == '$fullyQualifiedId'")
+
+            return InternalInngestFunction(configBuilder, this::onFailure)
+        }
+        return null
+    }
+
+    /**
+     * Provide a function to be called if your function fails, meaning
+     * that it ran out of retries and was unable to complete successfully.
+     *
+     * This is useful for sending warning notifications or cleaning up
+     * after a failure and supports all the same functionality as a
+     * regular handler.
+     *
+     * @param ctx The function context including event(s) that triggered the function
+     * @param step A class with methods to define steps within the function
+     */
+    open fun onFailure(
+        ctx: FunctionContext,
+        step: Step,
+    ): Any? = null
 }

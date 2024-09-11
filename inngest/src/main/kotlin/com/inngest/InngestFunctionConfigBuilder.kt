@@ -9,7 +9,7 @@ import java.time.Duration
 // TODO: Throw illegal argument exception
 class InngestFunctionConfigBuilder {
     var id: String? = null
-    private var name: String? = null
+    internal var name: String? = null
     private var triggers: MutableList<InngestFunctionTrigger> = mutableListOf()
     private var concurrency: MutableList<Concurrency>? = null
     private var retries = 3
@@ -115,8 +115,14 @@ class InngestFunctionConfigBuilder {
         scope: ConcurrencyScope? = null,
     ): InngestFunctionConfigBuilder {
         when (scope) {
-            ConcurrencyScope.ENVIRONMENT -> if (key == null) throw InngestInvalidConfigurationException("Concurrency key required with environment scope")
-            ConcurrencyScope.ACCOUNT -> if (key == null) throw InngestInvalidConfigurationException("Concurrency key required with account scope")
+            ConcurrencyScope.ENVIRONMENT ->
+                if (key == null) {
+                    throw InngestInvalidConfigurationException("Concurrency key required with environment scope")
+                }
+            ConcurrencyScope.ACCOUNT ->
+                if (key == null) {
+                    throw InngestInvalidConfigurationException("Concurrency key required with account scope")
+                }
             ConcurrencyScope.FUNCTION -> {}
             null -> {}
         }
