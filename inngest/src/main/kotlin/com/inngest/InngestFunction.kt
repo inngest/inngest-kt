@@ -32,6 +32,7 @@ abstract class InngestFunction {
     internal fun toFailureHandler(appId: String): InternalInngestFunction? {
         val onFailureMethod = this.javaClass.getMethod("onFailure", FunctionContext::class.java, Step::class.java)
 
+        // Only generate the failure handler if the onFailure method was overridden
         if (onFailureMethod.declaringClass != InngestFunction::class.java) {
             val fnConfig = buildConfig()
             val fullyQualifiedId = "$appId-${fnConfig.id}"

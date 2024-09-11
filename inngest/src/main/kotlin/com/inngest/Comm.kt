@@ -70,10 +70,9 @@ class CommHandler(
     private val framework: SupportedFrameworkName,
 ) {
     val headers = Environment.inngestHeaders(framework).plus(client.headers)
-    private val functions =
-        functions
-            .mapValues { (_, fn) -> fn.toInngestFunction() }
-            .plus(generateFailureFunctions(functions, client))
+
+    private val failureFunctions = generateFailureFunctions(functions, client)
+    private val functions = functions.mapValues { (_, fn) -> fn.toInngestFunction() }.plus(failureFunctions)
 
     fun callFunction(
         functionId: String,
