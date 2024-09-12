@@ -27,7 +27,7 @@ class IdempotentFunctionIntegrationTest {
         String eventWithIdempotencyKey = InngestFunctionTestHelpers.sendEvent(client, "test/idempotent", dataPayload).getIds()[0];
         String eventWithSameIdempotencyKey = InngestFunctionTestHelpers.sendEvent(client, "test/idempotent", dataPayload).getIds()[0];
 
-        Thread.sleep(2000);
+        Thread.sleep(4000);
 
         // With the same idempotency key, only one of the events should have run
         RunEntry<Object> firstRun = devServer.runsByEvent(eventWithIdempotencyKey).first();
@@ -41,7 +41,7 @@ class IdempotentFunctionIntegrationTest {
         Map differentDataPayload = Collections.singletonMap("companyId", 43);
         String eventWithDifferentIdempotencyKey = InngestFunctionTestHelpers.sendEvent(client, "test/idempotent", differentDataPayload).getIds()[0];
 
-        Thread.sleep(2000);
+        Thread.sleep(4000);
 
         // Event with a different idempotency key will run once
         RunEntry<Object> otherRun = devServer.runsByEvent(eventWithDifferentIdempotencyKey).first();
