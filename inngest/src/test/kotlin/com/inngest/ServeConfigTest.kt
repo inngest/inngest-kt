@@ -36,7 +36,6 @@ internal class ServeConfigTest {
         )
     }
 
-    // hasSigningKey()
     @Test
     fun `should return false if not set - dev`() {
         val config = ServeConfig(client = client)

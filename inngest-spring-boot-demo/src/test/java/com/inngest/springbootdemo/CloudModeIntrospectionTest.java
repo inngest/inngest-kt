@@ -52,7 +52,7 @@ class ProductionConfiguration extends InngestConfiguration {
 @ExtendWith(SystemStubsExtension.class)
 public class CloudModeIntrospectionTest {
 
-    private static final String productionSigningKey = "signkey-prod-2a89e554826a40672684e75eee6e34909b45aa4fd04fff5ff49bbe28c24ef424";
+    private static final String productionSigningKey = "signkey-prod-b2ed992186a5cb19f6668aade821f502c1d00970dfd0e35128d51bac4649916c";
     private static final String productionEventKey = "test";
     @SystemStub
     private static EnvironmentVariables environmentVariables;
