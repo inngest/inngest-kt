@@ -25,6 +25,6 @@ class LoopFunctionIntegrationTest {
         RunEntry<Object> loopRun = devServer.runsByEvent(loopEvent).first();
         assertEquals("Completed", loopRun.getStatus());
 
-        assertEquals(110, loopRun.getOutput());
+        assertEquals(170, loopRun.getOutput());
     }
 }

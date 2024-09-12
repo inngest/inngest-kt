@@ -27,21 +27,20 @@ class State(
     }
 
     private fun findNextAvailableStepId(id: String): String {
-        if (id !in stepIdsToNextStepNumber) {
-            stepIdsToNextStepNumber[id] = 1
+        if (id !in stepIds) {
             return id
         }
 
         // start with the seen count so far for current stepId
         // but loop over all seen stepIds to make sure a user didn't explicitly define
         // a step using the same step number
-        var stepNumber = stepIdsToNextStepNumber[id]
+        var stepNumber = stepIdsToNextStepNumber.getOrDefault(id, 1)
         while ("$id:$stepNumber" in stepIds) {
-            stepNumber = stepNumber!! + 1
+            stepNumber = stepNumber + 1
         }
         // now we know stepNumber is unused and can be used for the current stepId
         // save stepNumber + 1 to the hash for next time
-        stepIdsToNextStepNumber[id] = stepNumber!! + 1
+        stepIdsToNextStepNumber[id] = stepNumber + 1
 
         return "$id:$stepNumber"
     }
