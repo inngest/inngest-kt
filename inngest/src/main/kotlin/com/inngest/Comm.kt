@@ -152,7 +152,10 @@ class CommHandler(
         return configs
     }
 
-    fun register(origin: String): String {
+    fun register(
+        origin: String,
+        syncId: String?,
+    ): String {
         val registrationUrl = "${config.baseUrl()}/fn/register"
         val requestPayload = getRegistrationRequestPayload(origin)
 
@@ -166,7 +169,9 @@ class CommHandler(
                 null
             }
 
-        val request = httpClient.build(registrationUrl, requestPayload, authorizationHeaderRequestConfig)
+        val queryParams = syncId?.let { mapOf(InngestQueryParamKey.SyncId.value to it) } ?: emptyMap()
+
+        val request = httpClient.build(registrationUrl, requestPayload, queryParams, authorizationHeaderRequestConfig)
 
         httpClient.send(request) { response ->
             if (!response.isSuccessful) throw IOException("Unexpected code $response")

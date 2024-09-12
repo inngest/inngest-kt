@@ -72,8 +72,10 @@ fun Route.serve(
         }
 
         put("") {
+            val syncId = call.request.queryParameters[InngestQueryParamKey.SyncId.value]
+
             val origin = getOrigin(call)
-            val resp = comm.register(origin)
+            val resp = comm.register(origin, syncId)
             call.respond(HttpStatusCode.OK, resp)
         }
     }

@@ -3,6 +3,7 @@ package com.inngest.springboot;
 import com.inngest.CommHandler;
 import com.inngest.CommResponse;
 import com.inngest.InngestEnv;
+import com.inngest.InngestQueryParamKey;
 import com.inngest.signingkey.SignatureVerificationKt;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -48,7 +49,7 @@ public abstract class InngestController {
         if (this.serveOrigin != null && !this.serveOrigin.isEmpty()) {
             origin = this.serveOrigin;
         }
-        String response = commHandler.register(origin);
+        String response = commHandler.register(origin, request.getParameter(InngestQueryParamKey.SyncId.getValue()));
         return ResponseEntity.ok().headers(getHeaders()).body(response);
     }
 
