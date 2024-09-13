@@ -23,7 +23,7 @@ data class InngestEvent
         val name: String,
         val data: Map<String, Any>,
         @Json(serializeNull = false)
-        val user: Any? = null,
+        val user: Map<String, Any>? = null,
         @Json(serializeNull = false)
         val id: String? = null,
         @Json(serializeNull = false)
@@ -36,48 +36,26 @@ data class InngestEvent
  * Construct a new Inngest Event via builder
  */
 class InngestEventBuilder(
-    var id: String?,
-    var name: String?,
-    var data: Map<String, Any>?,
-    private var user: Any?,
-    private var ts: Long?,
-    private var v: String? = null,
+    val name: String,
+    val data: Map<String, Any>,
 ) {
-    fun id(id: String): InngestEventBuilder {
-        this.id = id
-        return this
-    }
+    private var id: String? = null
+    private var user: Map<String, Any>? = null
+    private var ts: Long? = null
+    private var v: String? = null
 
-    fun name(name: String): InngestEventBuilder {
-        this.name = name
-        return this
-    }
+    fun id(id: String): InngestEventBuilder = apply { this.id = id }
 
-    fun data(data: Map<String, Any>): InngestEventBuilder {
-        this.data = data
-        return this
-    }
+    fun ts(ts: Long): InngestEventBuilder = apply { this.ts = ts }
 
-    fun ts(ts: Long): InngestEventBuilder {
-        this.ts = ts
-        return this
-    }
+    fun user(user: Map<String, Any>) = apply { this.user = user }
 
-    fun v(v: String): InngestEventBuilder {
-        this.v = v
-        return this
-    }
+    fun v(v: String): InngestEventBuilder = apply { this.v = v }
 
     fun build(): InngestEvent {
-        if (name == null) {
-            throw IllegalArgumentException("name is required")
-        }
-        if (data == null) {
-            throw IllegalArgumentException("data is required")
-        }
         return InngestEvent(
-            name!!,
-            data!!,
+            name,
+            data,
             user,
             id,
             ts,
