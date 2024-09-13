@@ -9,8 +9,14 @@ class StateNotFound : Throwable("State not found for id")
 class State(
     private val payloadJson: String,
 ) {
+    private val stepIdsToNextStepNumber = mutableMapOf<String, Int>()
+    private val stepIds = mutableSetOf<String>()
+
     fun getHashFromId(id: String): String {
-        val bytes = id.toByteArray(Charsets.UTF_8)
+        val idToHash: String = findNextAvailableStepId(id)
+        stepIds.add(idToHash)
+
+        val bytes = idToHash.toByteArray(Charsets.UTF_8)
         val digest = MessageDigest.getInstance("SHA-1")
         val hashedBytes = digest.digest(bytes)
         val sb = StringBuilder()
@@ -18,6 +24,25 @@ class State(
             sb.append(String.format("%02x", byte))
         }
         return sb.toString()
+    }
+
+    private fun findNextAvailableStepId(id: String): String {
+        if (id !in stepIds) {
+            return id
+        }
+
+        // start with the seen count so far for current stepId
+        // but loop over all seen stepIds to make sure a user didn't explicitly define
+        // a step using the same step number
+        var stepNumber = stepIdsToNextStepNumber.getOrDefault(id, 1)
+        while ("$id:$stepNumber" in stepIds) {
+            stepNumber = stepNumber + 1
+        }
+        // now we know stepNumber is unused and can be used for the current stepId
+        // save stepNumber + 1 to the hash for next time
+        stepIdsToNextStepNumber[id] = stepNumber + 1
+
+        return "$id:$stepNumber"
     }
 
     inline fun <reified T> getState(
