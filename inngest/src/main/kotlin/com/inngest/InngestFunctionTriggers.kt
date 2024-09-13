@@ -11,7 +11,6 @@ abstract class InngestFunctionTrigger // or interface or data class
         @Json(serializeNull = false) val event: String? = null,
         @Json(serializeNull = false, name = "expression") val `if`: String? = null,
         @Json(serializeNull = false) val cron: String? = null,
-        // IDEA - Add timeout and re-use for cancelOn?
     )
 
 /**

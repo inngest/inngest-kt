@@ -89,6 +89,8 @@ internal class InternalFunctionConfig
         @Json(serializeNull = false)
         val idempotency: String? = null,
         @Json(serializeNull = false)
+        val cancel: MutableList<Cancellation>? = null,
+        @Json(serializeNull = false)
         val batchEvents: BatchEvents? = null,
         val steps: Map<String, StepConfig>,
     )

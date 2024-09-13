@@ -5,6 +5,7 @@ import com.beust.klaxon.Json
 import com.beust.klaxon.JsonValue
 import com.beust.klaxon.KlaxonException
 import java.time.Duration
+import java.time.Instant
 
 // TODO: Throw illegal argument exception
 class InngestFunctionConfigBuilder {
@@ -18,6 +19,7 @@ class InngestFunctionConfigBuilder {
     private var debounce: Debounce? = null
     private var priority: Priority? = null
     private var idempotency: String? = null
+    private var cancel: MutableList<Cancellation>? = null
     private var batchEvents: BatchEvents? = null
 
     /**
@@ -83,6 +85,68 @@ class InngestFunctionConfigBuilder {
         this.triggers.add(InngestFunctionTriggers.Cron(cron))
         return this
     }
+
+    /**
+     * Define events that can be used to cancel a running or sleeping function
+     *
+     * @param event   The name of the event that should cancel the function run.
+     * @param if      The CEL expression that must evaluate to true in order to cancel the function run. There
+     *                are two variables available in this expression:
+     *                - event, referencing the original function's event trigger
+     *                - async, referencing the new cancel event.
+     * @param timeout An optional timeout specified as a Duration that the cancel is valid for. If this isn't
+     *                specified, cancellation triggers are valid for up to a year or until the
+     *                function ends.
+     */
+    @JvmOverloads // Can only overload one of the cancelOn signatures because they would clash and not compile otherwise
+    fun cancelOn(
+        event: String,
+        `if`: String? = null,
+        timeout: Duration? = null,
+    ): InngestFunctionConfigBuilder {
+        return cancelOn(
+            Cancellation(
+                event,
+                `if`,
+                timeout?.let { durationConverter.toJson(it) },
+            ),
+        )
+    }
+
+    /**
+     * Define events that can be used to cancel a running or sleeping function
+     *
+     * @param event   The name of the event that should cancel the function run.
+     * @param if      The CEL expression that must evaluate to true in order to cancel the function run. There
+     *                are two variables available in this expression:
+     *                - event, referencing the original function's event trigger
+     *                - async, referencing the new cancel event.
+     * @param timeout An optional timeout specified as an Instant that the cancel is valid until. If this isn't
+     *                specified, cancellation triggers are valid for up to a year or until the
+     *                function ends.
+     */
+    fun cancelOn(
+        event: String,
+        `if`: String? = null,
+        timeout: Instant? = null,
+    ): InngestFunctionConfigBuilder {
+        return cancelOn(
+            Cancellation(
+                event,
+                `if`,
+                timeout?.let { timeout.toString() },
+            ),
+        )
+    }
+
+    internal fun cancelOn(cancellation: Cancellation): InngestFunctionConfigBuilder =
+        apply {
+            if (this.cancel == null) {
+                this.cancel = mutableListOf(cancellation)
+            } else {
+                this.cancel!!.add(cancellation)
+            }
+        }
 
     /**
      * Configure the function to be executed with batches of events (1 to n).
@@ -261,6 +325,7 @@ class InngestFunctionConfigBuilder {
                 debounce,
                 priority,
                 idempotency,
+                cancel,
                 batchEvents,
                 steps = buildSteps(serverUrl),
             )
@@ -355,6 +420,16 @@ internal data class Debounce
 internal data class Priority
     constructor(
         val run: String,
+    )
+
+internal data class Cancellation
+    @JvmOverloads
+    constructor(
+        val event: String,
+        @Json(serializeNull = false)
+        val `if`: String? = null,
+        @Json(serializeNull = false)
+        val timeout: String? = null,
     )
 
 internal data class BatchEvents
