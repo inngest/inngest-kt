@@ -71,7 +71,10 @@ public class SyncRequestTest {
 
             String serverUrl = mockWebServer.url("").toString();
 
-            environmentVariables.set("INNGEST_API_BASE_URL", serverUrl.substring(0, serverUrl.length() - 1));
+            // Remove the trailing slash from the serverUrl
+            serverUrl = serverUrl.substring(0, serverUrl.length() - 1);
+
+            environmentVariables.set("INNGEST_API_BASE_URL", serverUrl);
         }
 
         @AfterEach
@@ -80,12 +83,15 @@ public class SyncRequestTest {
         }
 
         private void assertThatPayloadDoesNotContainDeployId(RecordedRequest recordedRequest) throws Exception {
+            // The url in the sync payload should not contain the deployId.
+            // https://github.com/inngest/inngest/blob/main/docs/SDK_SPEC.md#432-syncing
             String requestBody = recordedRequest.getBody().readUtf8();
 
             ObjectMapper objectMapper = new ObjectMapper();
             JsonNode jsonNode = objectMapper.readTree(requestBody);
 
-            assertFalse(jsonNode.has("deployId"));
+            String url = jsonNode.get("url").asText();
+            assertFalse(url.contains("deployId"));
         }
 
         @Test
@@ -95,9 +101,9 @@ public class SyncRequestTest {
             mockWebServer.enqueue(new MockResponse().setBody("Success"));
 
             mockMvc.perform(put("/api/inngest")
-                    .header("Host", "localhost:8080")
-                    .param("deployId", "1"))
-                .andExpect(status().isOk());
+                            .header("Host", "localhost:8080")
+                            .param("deployId", "1"))
+                    .andExpect(status().isOk());
 
             RecordedRequest recordedRequest = mockWebServer.takeRequest();
 
@@ -106,8 +112,8 @@ public class SyncRequestTest {
             assertThatPayloadDoesNotContainDeployId(recordedRequest);
 
             mockMvc.perform(put("/api/inngest")
-                    .header("Host", "localhost:8080"))
-                .andExpect(status().isOk());
+                            .header("Host", "localhost:8080"))
+                    .andExpect(status().isOk());
 
             recordedRequest = mockWebServer.takeRequest();
 
@@ -116,9 +122,9 @@ public class SyncRequestTest {
             assertThatPayloadDoesNotContainDeployId(recordedRequest);
 
             mockMvc.perform(put("/api/inngest")
-                    .header("Host", "localhost:8080")
-                    .param("deployId", "3"))
-                .andExpect(status().isOk());
+                            .header("Host", "localhost:8080")
+                            .param("deployId", "3"))
+                    .andExpect(status().isOk());
 
             recordedRequest = mockWebServer.takeRequest();
 
