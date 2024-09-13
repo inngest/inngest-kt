@@ -11,10 +11,19 @@ object Environment {
         ).filterValues { (it is String) }.entries.associate { (k, v) -> k to v!! }
     }
 
+    private const val DUMMY_KEY_EVENT = "NO_EVENT_KEY_SET"
+
     fun inngestEventKey(key: String? = null): String {
         if (key != null) return key
-        return System.getenv(InngestSystem.EventKey.value) ?: "NO_EVENT_KEY_SET"
+        return System.getenv(InngestSystem.EventKey.value) ?: DUMMY_KEY_EVENT
     }
+
+    fun isInngestEventKeySet(value: String?) =
+        when {
+            value.isNullOrEmpty() -> false
+            value == DUMMY_KEY_EVENT -> false
+            else -> true
+        }
 
     fun inngestEventApiBaseUrl(
         env: InngestEnv,

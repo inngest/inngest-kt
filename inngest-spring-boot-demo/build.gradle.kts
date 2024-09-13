@@ -26,6 +26,12 @@ dependencies {
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")
+
+    if (JavaVersion.current().isJava11Compatible) {
+        testImplementation("uk.org.webcompere:system-stubs-jupiter:2.1.6")
+    } else {
+        testImplementation("uk.org.webcompere:system-stubs-jupiter:1.2.1")
+    }
 }
 
 dependencyManagement {
@@ -39,6 +45,11 @@ dependencyManagement {
 tasks.withType<Test> {
     useJUnitPlatform()
     systemProperty("junit.jupiter.execution.parallel.enabled", true)
+    systemProperty("test-group", "unit-test")
+
+    // Required by `system-stubs-jupiter` for JDK 21+ compatibility
+    // https://github.com/raphw/byte-buddy/issues/1396
+    jvmArgs = listOf("-Dnet.bytebuddy.experimental=true")
     testLogging {
         events =
             setOf(

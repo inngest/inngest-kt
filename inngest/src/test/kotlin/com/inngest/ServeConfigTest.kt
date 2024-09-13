@@ -1,5 +1,6 @@
 package com.inngest
 
+import org.junitpioneer.jupiter.SetEnvironmentVariable
 import kotlin.test.*
 
 internal class ServeConfigTest {
@@ -33,6 +34,20 @@ internal class ServeConfigTest {
             "signing key is required",
             { config.signingKey() },
         )
+    }
+
+    @Test
+    fun `should return false if not set - dev`() {
+        val config = ServeConfig(client = client)
+        assertFalse(config.hasSigningKey())
+    }
+
+    @Test
+    @SetEnvironmentVariable(key = "INNGEST_SIGNING_KEY", value = "signkey-prod-b2ed992186a5cb19f6668aade821f502c1d00970dfd0e35128d51bac4649916c")
+    fun `should return true if set - prod`() {
+        val prodClient = Inngest(appId = client.appId, env = "prod")
+        val config = ServeConfig(client = prodClient)
+        assertTrue(config.hasSigningKey())
     }
 
     // @Test

@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -27,22 +28,15 @@ public abstract class InngestController {
     @Value("${inngest.serveOrigin:}")
     private String serveOrigin;
 
-    @GetMapping()
+    @GetMapping
     public ResponseEntity<String> index(
         @RequestHeader(HttpHeaders.HOST) String hostHeader,
-        HttpServletRequest request
+        @RequestHeader(name = "X-Inngest-Signature", required = false) String signature,
+        @RequestHeader(name = "X-Inngest-Server-Kind", required = false) String serverKind
     ) {
-        if (commHandler.getClient().getEnv() != InngestEnv.Dev) {
-            // TODO: Return an UnauthenticatedIntrospection instead when app diagnostics are implemented
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                .body("Introspect endpoint is only available in development mode");
-        }
-        String origin = String.format("%s://%s", request.getScheme(), hostHeader);
-        if (this.serveOrigin != null && !this.serveOrigin.isEmpty()) {
-            origin = this.serveOrigin;
-        }
-        String response = commHandler.introspect(origin);
-        return ResponseEntity.ok().headers(getHeaders()).body(response);
+        String requestBody = "";
+        String response = commHandler.introspect(signature, requestBody, serverKind);
+        return ResponseEntity.ok().headers(getHeaders()).contentType(MediaType.APPLICATION_JSON).body(response);
     }
 
     @PutMapping()

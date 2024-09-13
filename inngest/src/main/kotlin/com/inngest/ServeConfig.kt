@@ -1,5 +1,7 @@
 package com.inngest
 
+const val DUMMY_SIGNING_KEY = "test"
+
 class ServeConfig
     @JvmOverloads
     constructor(
@@ -21,7 +23,7 @@ class ServeConfig
             if (signingKey != null) return signingKey
 
             return when (client.env) {
-                InngestEnv.Dev -> "test"
+                InngestEnv.Dev -> DUMMY_SIGNING_KEY
                 else -> {
                     val signingKey =
                         System.getenv(InngestSystem.SigningKey.value)
@@ -30,6 +32,13 @@ class ServeConfig
                 }
             }
         }
+
+        fun hasSigningKey() =
+            when (signingKey()) {
+                DUMMY_SIGNING_KEY -> false
+                "" -> false
+                else -> true
+            }
 
         fun baseUrl(): String {
             if (baseUrl != null) return baseUrl

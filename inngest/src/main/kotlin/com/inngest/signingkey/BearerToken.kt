@@ -15,7 +15,7 @@ val SIGNING_KEY_REGEX = Regex("""(?<prefix>^signkey-\w+-)(?<key>.*)""")
  * @throws InvalidSigningKeyException If signingKey is not in the form "signkey-<env>-<key>"
  */
 @OptIn(ExperimentalStdlibApi::class)
-private fun hashedSigningKey(signingKey: String): String {
+internal fun hashedSigningKey(signingKey: String): String {
     val matchResult = SIGNING_KEY_REGEX.matchEntire(signingKey) ?: throw InvalidSigningKeyException()
 
     // We aggressively assert non-null here because if `matchEntire` had failed (and thus these capture groups didn't

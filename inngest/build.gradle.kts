@@ -34,6 +34,7 @@ dependencies {
     implementation("io.ktor:ktor-server-core:2.3.5")
 
     testImplementation(kotlin("test"))
+    testImplementation("org.junit-pioneer:junit-pioneer:1.9.1")
 }
 
 publishing {
