@@ -31,7 +31,6 @@ public abstract class InngestController {
     @GetMapping
     public ResponseEntity<String> index(
         @RequestHeader(HttpHeaders.HOST) String hostHeader,
-        HttpServletRequest request,
         @RequestHeader(name = "X-Inngest-Signature", required = false) String signature,
         @RequestHeader(name = "X-Inngest-Server-Kind", required = false) String serverKind
     ) {

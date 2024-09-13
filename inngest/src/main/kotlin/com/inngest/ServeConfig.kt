@@ -33,7 +33,12 @@ class ServeConfig
             }
         }
 
-        fun hasSigningKey() = signingKey() !in listOf(DUMMY_SIGNING_KEY, "")
+        fun hasSigningKey() =
+            when (signingKey()) {
+                DUMMY_SIGNING_KEY -> false
+                "" -> false
+                else -> true
+            }
 
         fun baseUrl(): String {
             if (baseUrl != null) return baseUrl

@@ -18,7 +18,7 @@ object Environment {
         return System.getenv(InngestSystem.EventKey.value) ?: DUMMY_KEY_EVENT
     }
 
-    fun isInngestEventKeySet(value: String?): Boolean =
+    fun isInngestEventKeySet(value: String?) =
         when {
             value.isNullOrEmpty() -> false
             value == DUMMY_KEY_EVENT -> false

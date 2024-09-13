@@ -47,6 +47,8 @@ tasks.withType<Test> {
     systemProperty("junit.jupiter.execution.parallel.enabled", true)
     systemProperty("test-group", "unit-test")
 
+    // Required by `system-stubs-jupiter` for JDK 21+ compatibility
+    // https://github.com/raphw/byte-buddy/issues/1396
     jvmArgs = listOf("-Dnet.bytebuddy.experimental=true")
     testLogging {
         events =
