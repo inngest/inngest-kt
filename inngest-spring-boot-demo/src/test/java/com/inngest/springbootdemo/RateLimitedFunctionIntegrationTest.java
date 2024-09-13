@@ -20,12 +20,16 @@ class RateLimitedFunctionIntegrationTest {
     @Test
     void testFunctionIsRateLimited() throws Exception {
         String event1 = InngestFunctionTestHelpers.sendEvent(client, "test/rateLimit").getIds()[0];
-        Thread.sleep(500);
+        // Rate limit test function is limited to 2 over 6 seconds. Based on the simplistic description of GCRA in
+        // https://www.inngest.com/docs/guides/rate-limiting#how-rate-limiting-works
+        // we need to sleep at least 3 seconds here for the second event not to get rate limited
+        Thread.sleep(3500);
         String event2 = InngestFunctionTestHelpers.sendEvent(client, "test/rateLimit").getIds()[0];
-        Thread.sleep(500);
+        Thread.sleep(1000);
         String event3 = InngestFunctionTestHelpers.sendEvent(client, "test/rateLimit").getIds()[0];
 
-        Thread.sleep(4000);
+        // Sleep at least 6 seconds for the rate limit bucket to be completely cleared
+        Thread.sleep(6000);
 
         // Rate limit should only allow the first 2 events to run
         assertEquals("Completed", devServer.runsByEvent(event1).first().getStatus());

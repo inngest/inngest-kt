@@ -17,7 +17,7 @@ public class RateLimitedFunction extends InngestFunction {
             .id("RateLimitedFunction")
             .name("RateLimited Function")
             .triggerEvent("test/rateLimit")
-            .rateLimit(3, Duration.ofSeconds(2));
+            .rateLimit(2, Duration.ofSeconds(6));
     }
 
     @Override
