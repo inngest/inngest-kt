@@ -33,7 +33,7 @@ public class DevServerComponent {
                 try (Response response = httpClient.newCall(request).execute()) {
                     if (response.code() == 200) {
                         Thread.sleep(3000);
-                        commHandler.register("http://localhost:8080");
+                        commHandler.register("http://localhost:8080", null);
                         return;
                     }
                 }

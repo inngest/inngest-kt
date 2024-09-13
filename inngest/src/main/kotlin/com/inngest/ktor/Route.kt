@@ -72,16 +72,20 @@ fun Route.serve(
         }
 
         put("") {
+            val syncId = call.request.queryParameters[InngestQueryParamKey.SyncId.value]
+
             val origin = getOrigin(call)
-            val resp = comm.register(origin)
+            val resp = comm.register(origin, syncId)
             call.respond(HttpStatusCode.OK, resp)
         }
     }
 }
 
+val HTTP_PORTS = listOf(80, 443)
+
 fun getOrigin(call: ApplicationCall): String {
     var origin = String.format("%s://%s", call.request.origin.scheme, call.request.origin.serverHost)
-    if (call.request.origin.serverPort != 80 || call.request.origin.serverPort != 443) {
+    if (call.request.origin.serverPort !in HTTP_PORTS) {
         origin = String.format("%s:%s", origin, call.request.origin.serverPort)
     }
     return origin
