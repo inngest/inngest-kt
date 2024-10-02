@@ -23,7 +23,7 @@ repositories {
 }
 
 dependencies {
-    val pkg = if (System.getenv("RELEASE") != null) "com.inngest:inngest:[0.0.5, 0.1)" else project(":inngest")
+    val pkg = if (System.getenv("RELEASE") != null) "com.inngest:inngest:[0.0.5, 0.1]" else project(":inngest")
     api(pkg)
 
     implementation("org.springframework.boot:spring-boot-starter-web")
