@@ -1,7 +1,7 @@
 package com.inngest.testserver
 
+import com.fasterxml.jackson.annotation.JsonProperty
 import com.inngest.*
-import java.time.Duration
 
 /**
  * A demo function that accepts an event in a batch and invokes a child function
@@ -10,6 +10,23 @@ class PoolItemNotAvailableException(
     message: String,
     cause: Throwable? = null,
 ) : Exception(message, cause)
+
+
+open class Point(
+    @JsonProperty("x")
+    open val x: Int,
+    @JsonProperty("y")
+    open val y: Int,
+)
+
+class ThreeDPoint (
+    @JsonProperty("x")
+    override val x: Int,
+    @JsonProperty("y")
+    override val y: Int,
+    @JsonProperty("z")
+    val z: Int,
+) : Point(x, y)
 
 class ProcessAlbum : InngestFunction() {
     override fun config(builder: InngestFunctionConfigBuilder): InngestFunctionConfigBuilder =
@@ -23,18 +40,10 @@ class ProcessAlbum : InngestFunction() {
         ctx: FunctionContext,
         step: Step,
     ): LinkedHashMap<String, Any> {
-        try {
-            step.run<String>("process-album") {
-                throw PoolItemNotAvailableException("pool1", null)
-                "result"
-            }
-
-        } catch (e: Exception) { // throws UnrecognizedPropertyException
-//        } catch (e: StepError) { // this should successfully deserialize the exception
-            step.run("handle-error") {
-                e
-            }
+        step.run<Point>("process-album") {
+            ThreeDPoint(1, 1, 3)
         }
+
         return linkedMapOf("hello" to true)
     }
 }
