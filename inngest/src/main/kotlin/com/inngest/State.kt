@@ -1,7 +1,9 @@
 package com.inngest
 
+import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.node.ObjectNode
 import java.security.MessageDigest
 
 class StateNotFound : Throwable("State not found for id")
@@ -59,9 +61,18 @@ class State(
         val node: JsonNode = mapper.readTree(payloadJson)
         val stepResult = node.path("steps").get(hashedId) ?: throw StateNotFound()
 
+
         if (stepResult.has(fieldName)) {
             val dataNode = stepResult.get(fieldName)
-            return mapper.treeToValue(dataNode, type)
+            println("type in getState: " + type)
+            val objectNode = dataNode as ObjectNode
+            val classNode = objectNode.remove("class")
+            val klass = classNode.asText()
+
+//            mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+//            return mapper.treeToValue(objectNode, Class.forName(klass).javaClass)
+            val jsonString = mapper.writeValueAsString(objectNode)
+            return mapper.readValue(jsonString, Class.forName(klass)) as T
         } else if (stepResult.has("error")) {
             val error = mapper.treeToValue(stepResult.get("error"), StepError::class.java)
             throw error

@@ -1,6 +1,8 @@
 package com.inngest
 
 import com.beust.klaxon.Json
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.node.ObjectNode
 import java.util.function.BiFunction
 
 // TODO - Add an abstraction layer between the Function call response and the comm handler response
@@ -229,8 +231,15 @@ internal open class InternalInngestFunction(
             // NOTE - Currently this error could be caught in the user's own function
             // that wraps a
             // step.run() - how can we prevent that or warn?
+
+            val mapper = ObjectMapper()
+//            mapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false)
+            val jsonString = mapper.writeValueAsString(e.data)
+            val dataJson = mapper.readTree(jsonString) as ObjectNode
+            dataJson.put("class", e.data!!::class.qualifiedName)
+
             return StepResult(
-                data = e.data,
+                data = dataJson,
                 id = e.hashedId,
                 name = e.id,
                 op = OpCode.StepRun,

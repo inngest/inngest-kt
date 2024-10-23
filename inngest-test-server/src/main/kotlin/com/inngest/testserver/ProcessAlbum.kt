@@ -40,9 +40,15 @@ class ProcessAlbum : InngestFunction() {
         ctx: FunctionContext,
         step: Step,
     ): LinkedHashMap<String, Any> {
-        step.run<Point>("process-album") {
+//        val abc : Point = step.run("process-album") {
+//            ThreeDPoint(1, 1, 3)
+//        }
+
+        val xyz = step.run<Point>("process-album") {
             ThreeDPoint(1, 1, 3)
         }
+
+//        println(xyz as ThreeDPoint)
 
         return linkedMapOf("hello" to true)
     }
