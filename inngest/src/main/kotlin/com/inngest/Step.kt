@@ -125,7 +125,8 @@ class Step(
         try {
             val data = fn()
             println("what is data?: " + data)
-            println("what is data.class?: " + data!!::class.qualifiedName)
+            println("what is data.class?: " + data!!.javaClass.name)
+            println("what is data.kclass.qualifiedName?: " + data!!::class.qualifiedName)
             throw StepInterruptException(id, hashedId, data)
         } catch (exception: Exception) {
             when (exception) {

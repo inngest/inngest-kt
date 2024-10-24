@@ -1,6 +1,5 @@
 package com.inngest
 
-import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ObjectNode
@@ -61,18 +60,18 @@ class State(
         val node: JsonNode = mapper.readTree(payloadJson)
         val stepResult = node.path("steps").get(hashedId) ?: throw StateNotFound()
 
-
         if (stepResult.has(fieldName)) {
-            val dataNode = stepResult.get(fieldName)
-            println("type in getState: " + type)
-            val objectNode = dataNode as ObjectNode
-            val classNode = objectNode.remove("class")
-            val klass = classNode.asText()
+            val objectNode = stepResult.get(fieldName) as? ObjectNode
+            if(objectNode?.has("class") == true){
+                val klass = objectNode.remove("class").asText()
+                val value = mapper.treeToValue(objectNode, Class.forName(klass)) as T
+                println("what is received data.kclass.qualifiedName?: " + value!!::class.qualifiedName)
+                return value
+            }else{
+                // Handles primitive types
+                return mapper.treeToValue(stepResult.get(fieldName), type)
+            }
 
-//            mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-//            return mapper.treeToValue(objectNode, Class.forName(klass).javaClass)
-            val jsonString = mapper.writeValueAsString(objectNode)
-            return mapper.readValue(jsonString, Class.forName(klass)) as T
         } else if (stepResult.has("error")) {
             val error = mapper.treeToValue(stepResult.get("error"), StepError::class.java)
             throw error

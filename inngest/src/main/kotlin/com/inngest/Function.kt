@@ -233,13 +233,13 @@ internal open class InternalInngestFunction(
             // step.run() - how can we prevent that or warn?
 
             val mapper = ObjectMapper()
-//            mapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false)
             val jsonString = mapper.writeValueAsString(e.data)
-            val dataJson = mapper.readTree(jsonString) as ObjectNode
-            dataJson.put("class", e.data!!::class.qualifiedName)
+
+            val dataJson = mapper.readTree(jsonString) as? ObjectNode
+            dataJson?.put("class", e.data!!.javaClass.name)
 
             return StepResult(
-                data = dataJson,
+                data = dataJson ?: e.data,
                 id = e.hashedId,
                 name = e.id,
                 op = OpCode.StepRun,
