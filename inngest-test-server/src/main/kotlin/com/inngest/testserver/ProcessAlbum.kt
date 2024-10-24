@@ -11,7 +11,6 @@ class PoolItemNotAvailableException(
     cause: Throwable? = null,
 ) : Exception(message, cause)
 
-
 open class Point(
     @JsonProperty("x")
     open val x: Int,
@@ -19,7 +18,7 @@ open class Point(
     open val y: Int,
 )
 
-class ThreeDPoint (
+class ThreeDPoint(
     @JsonProperty("x")
     override val x: Int,
     @JsonProperty("y")
@@ -44,12 +43,14 @@ class ProcessAlbum : InngestFunction() {
 //            ThreeDPoint(1, 1, 3)
 //        }
 
-        val xyz = step.run<Point>("process-album") {
-            ThreeDPoint(1, 1, 3)
-        }
+        val xyz =
+            step.run("process-album") {
+                ThreeDPoint(1, 1, 3)
+                "42"
+            }
 
 //        println(xyz as ThreeDPoint)
 
-        return linkedMapOf("hello" to true)
+        return linkedMapOf("hello" to xyz)
     }
 }
