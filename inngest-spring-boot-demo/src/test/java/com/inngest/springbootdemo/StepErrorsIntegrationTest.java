@@ -50,4 +50,20 @@ class StepErrorsIntegrationTest {
         assertEquals("Something fatally went wrong", output);
     }
 
+    @Test
+    void testShouldCatchAndDeserializeExceptionWhenRunThrows() throws Exception {
+        String eventId = InngestFunctionTestHelpers.sendEvent(client, "test/try.catch.deserialize.exception").getIds()[0];
+
+        Thread.sleep(sleepTime);
+
+        RunEntry<Object> run = devServer.runsByEvent(eventId).first();
+        // If we aren't deserializing subclasses correctly, this run.getOutput will be a hash map of the Jackson exception and so we'll get this
+        // java.lang.ClassCastException: class java.util.LinkedHashMap cannot be cast to class java.lang.String (java.util.LinkedHashMap and java.lang.String are in module java.base of loader 'bootstrap')
+        String output = (String) run.getOutput();
+
+        assertEquals("Completed", run.getStatus());
+        assertNotNull(run.getEnded_at());
+
+        assertEquals("Something fatally went wrong", output);
+    }
 }
