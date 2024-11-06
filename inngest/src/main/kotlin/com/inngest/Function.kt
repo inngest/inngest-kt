@@ -1,6 +1,7 @@
 package com.inngest
 
 import com.beust.klaxon.Json
+import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ObjectNode
 import java.util.function.BiFunction
@@ -232,14 +233,8 @@ internal open class InternalInngestFunction(
             // that wraps a
             // step.run() - how can we prevent that or warn?
 
-            val mapper = ObjectMapper()
-            val jsonString = mapper.writeValueAsString(e.data)
-
-            val dataJson = mapper.readTree(jsonString) as? ObjectNode
-            dataJson?.put("class", e.data!!.javaClass.name)
-
             return StepResult(
-                data = dataJson ?: e.data,
+                data = serializeStepData(e.data),
                 id = e.hashedId,
                 name = e.id,
                 op = OpCode.StepRun,
@@ -263,5 +258,23 @@ internal open class InternalInngestFunction(
     ): InternalFunctionConfig {
         // TODO use URL objects for serveUrl instead of strings so we can fetch things like scheme
         return configBuilder.build(client.appId, serveUrl)
+    }
+
+    fun serializeStepData(stepData: Any?): JsonNode? {
+        if (stepData == null) {
+            return stepData
+        }
+
+        val mapper = ObjectMapper()
+        val jsonString = mapper.writeValueAsString(stepData)
+        val readOnlyJson = mapper.readTree(jsonString)
+
+        if (!readOnlyJson.isObject) {
+            return readOnlyJson
+        }
+
+        val writeableJson = mapper.readTree(jsonString) as ObjectNode
+        writeableJson.put("class", stepData.javaClass.name)
+        return writeableJson
     }
 }
