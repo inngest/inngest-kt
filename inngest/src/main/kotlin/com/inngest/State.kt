@@ -61,17 +61,7 @@ class State(
         val stepResult = node.path("steps").get(hashedId) ?: throw StateNotFound()
 
         if (stepResult.has(fieldName)) {
-            val objectNode = stepResult.get(fieldName) as? ObjectNode
-            if(objectNode?.has("class") == true){
-                val klass = objectNode.remove("class").asText()
-                val value = mapper.treeToValue(objectNode, Class.forName(klass)) as T
-                println("what is received data.kclass.qualifiedName?: " + value!!::class.qualifiedName)
-                return value
-            }else{
-                // Handles primitive types
-                return mapper.treeToValue(stepResult.get(fieldName), type)
-            }
-
+            return deserializeStepData(stepResult.get(fieldName), type)
         } else if (stepResult.has("error")) {
             val error = mapper.treeToValue(stepResult.get("error"), StepError::class.java)
             throw error
@@ -80,5 +70,17 @@ class State(
         // TODO - Investigate if sendEvents stores null as well.
         // TODO - Check the state is actually null
         return null
+    }
+
+    fun <T> deserializeStepData(serializedStepData: JsonNode?, type: Class<T>): T? {
+        val mapper = ObjectMapper()
+        if (serializedStepData == null || !serializedStepData.isObject || !serializedStepData.has("class")) {
+            // handles null and primitives
+            return mapper.treeToValue(serializedStepData, type)
+        }
+
+        val writeableJson = serializedStepData as ObjectNode
+        val className = writeableJson.remove("class").asText()
+        return mapper.treeToValue(writeableJson, Class.forName(className)) as T
     }
 }
