@@ -4,6 +4,8 @@ import com.inngest.InngestHeaderKey;
 import com.inngest.Version;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
+import org.junit.jupiter.api.parallel.Execution;
+import org.junit.jupiter.api.parallel.ExecutionMode;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
@@ -12,15 +14,13 @@ import org.springframework.test.web.servlet.MockMvc;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@Import(DemoTestConfiguration.class)
-@WebMvcTest(DemoController.class)
+@IntegrationTest
+@Execution(ExecutionMode.CONCURRENT)
 public class DevModeIntrospectionTest {
-
     @Autowired
     private MockMvc mockMvc;
 
     @Test
-    @EnabledIfSystemProperty(named = "test-group", matches = "unit-test")
     public void shouldReturnInsecureIntrospectPayload() throws Exception {
         mockMvc.perform(get("/api/inngest").header("Host", "localhost:8080"))
             .andExpect(status().isOk())

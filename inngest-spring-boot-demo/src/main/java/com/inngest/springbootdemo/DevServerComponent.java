@@ -15,10 +15,11 @@ public class DevServerComponent {
     static String baseUrl = "http://127.0.0.1:8288";
     OkHttpClient httpClient = new OkHttpClient();
 
+    Process devServerProcess;
+
     DevServerComponent(CommHandler commHandler) throws Exception {
         Runtime rt = Runtime.getRuntime();
-        rt.exec("pkill inngest-cli");
-        rt.exec("npx -y inngest-cli dev -u http://127.0.0.1:8080/api/inngest");
+        devServerProcess = rt.exec("npx -y inngest-cli@latest dev -u http://localhost:8080/api/inngest --port 8288 --no-discovery --no-poll --retry-interval 1");
 
         waitForStartup(commHandler);
     }
@@ -32,7 +33,7 @@ public class DevServerComponent {
 
                 try (Response response = httpClient.newCall(request).execute()) {
                     if (response.code() == 200) {
-                        Thread.sleep(3000);
+                        Thread.sleep(6000);
                         commHandler.register("http://localhost:8080", null);
                         return;
                     }
@@ -102,8 +103,9 @@ public class DevServerComponent {
 
 
     @PreDestroy
-    public void stop() throws Exception {
-        Runtime rt = Runtime.getRuntime();
-        rt.exec("pkill inngest-cli");
+    public void stop()  {
+        if (devServerProcess != null && devServerProcess.isAlive()) {
+            devServerProcess.destroy();
+        }
     }
 }
