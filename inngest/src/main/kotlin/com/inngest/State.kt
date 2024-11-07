@@ -72,10 +72,10 @@ class State(
         return null
     }
 
-    fun <T> deserializeStepData(serializedStepData: JsonNode?, type: Class<T>): T? {
+    private fun <T> deserializeStepData(serializedStepData: JsonNode?, type: Class<T>): T? {
         val mapper = ObjectMapper()
         if (serializedStepData == null || !serializedStepData.isObject || !serializedStepData.has("class")) {
-            // handles null and primitives
+            // null and primitives can be deserialized directly
             return mapper.treeToValue(serializedStepData, type)
         }
 

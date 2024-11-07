@@ -260,7 +260,7 @@ internal open class InternalInngestFunction(
         return configBuilder.build(client.appId, serveUrl)
     }
 
-    fun serializeStepData(stepData: Any?): JsonNode? {
+    private fun serializeStepData(stepData: Any?): JsonNode? {
         if (stepData == null) {
             return stepData
         }
@@ -270,6 +270,7 @@ internal open class InternalInngestFunction(
         val readOnlyJson = mapper.readTree(jsonString)
 
         if (!readOnlyJson.isObject) {
+            // primitives can be serialized directly
             return readOnlyJson
         }
 
