@@ -22,6 +22,8 @@ public class DemoTestConfiguration extends InngestConfiguration {
         addInngestFunction(functions, new RetriableErrorFunction());
         addInngestFunction(functions, new ZeroRetriesFunction());
         addInngestFunction(functions, new InvokeFailureFunction());
+        addInngestFunction(functions, new DeserializeSubclassFunction());
+        addInngestFunction(functions, new TryCatchGenericExceptionFunction());
         addInngestFunction(functions, new TryCatchRunFunction());
         addInngestFunction(functions, new ThrottledFunction());
         addInngestFunction(functions, new RateLimitedFunction());

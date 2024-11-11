@@ -1,6 +1,9 @@
 package com.inngest
 
 import com.beust.klaxon.Json
+import com.fasterxml.jackson.databind.JsonNode
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.node.ObjectNode
 import java.util.function.BiFunction
 
 // TODO - Add an abstraction layer between the Function call response and the comm handler response
@@ -229,8 +232,9 @@ internal open class InternalInngestFunction(
             // NOTE - Currently this error could be caught in the user's own function
             // that wraps a
             // step.run() - how can we prevent that or warn?
+
             return StepResult(
-                data = e.data,
+                data = serializeStepData(e.data),
                 id = e.hashedId,
                 name = e.id,
                 op = OpCode.StepRun,
@@ -254,5 +258,24 @@ internal open class InternalInngestFunction(
     ): InternalFunctionConfig {
         // TODO use URL objects for serveUrl instead of strings so we can fetch things like scheme
         return configBuilder.build(client.appId, serveUrl)
+    }
+
+    private fun serializeStepData(stepData: Any?): JsonNode? {
+        if (stepData == null) {
+            return stepData
+        }
+
+        val mapper = ObjectMapper()
+        val jsonString = mapper.writeValueAsString(stepData)
+        val readOnlyJson = mapper.readTree(jsonString)
+
+        if (!readOnlyJson.isObject) {
+            // primitives can be serialized directly
+            return readOnlyJson
+        }
+
+        val writeableJson = mapper.readTree(jsonString) as ObjectNode
+        writeableJson.put("class", stepData.javaClass.name)
+        return writeableJson
     }
 }
