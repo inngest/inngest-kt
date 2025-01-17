@@ -36,6 +36,7 @@ public class DemoTestConfiguration extends InngestConfiguration {
         addInngestFunction(functions, new LoopFunction());
         addInngestFunction(functions, new CancelOnEventFunction());
         addInngestFunction(functions, new CancelOnMatchFunction());
+        addInngestFunction(functions, new ReturnNullStepFunction());
 
         return functions;
     }
