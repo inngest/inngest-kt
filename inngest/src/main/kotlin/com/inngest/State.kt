@@ -2,6 +2,7 @@ package com.inngest
 
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.node.NullNode
 import com.fasterxml.jackson.databind.node.ObjectNode
 import java.security.MessageDigest
 
@@ -60,16 +61,13 @@ class State(
         val node: JsonNode = mapper.readTree(payloadJson)
         val stepResult = node.path("steps").get(hashedId) ?: throw StateNotFound()
 
-        if (stepResult.has(fieldName)) {
-            return deserializeStepData(stepResult.get(fieldName), type)
-        } else if (stepResult.has("error")) {
-            val error = mapper.treeToValue(stepResult.get("error"), StepError::class.java)
-            throw error
+        return when {
+            stepResult.has(fieldName) -> deserializeStepData(stepResult.get(fieldName), type)
+            stepResult.has("error") -> throw mapper.treeToValue(stepResult.get("error"), StepError::class.java)
+            // NOTE - Sleep steps will be stored as null
+            stepResult is NullNode -> null
+            else -> throw Exception("Unexpected step data structure")
         }
-        // NOTE - Sleep steps will be stored as null
-        // TODO - Investigate if sendEvents stores null as well.
-        // TODO - Check the state is actually null
-        return null
     }
 
     private fun <T> deserializeStepData(

@@ -102,10 +102,7 @@ class Step(
         val hashedId = state.getHashFromId(id)
 
         try {
-            val stepResult = state.getState(hashedId, type)
-            if (stepResult != null) {
-                return stepResult
-            }
+            return state.getState(hashedId, type) as T
         } catch (e: StateNotFound) {
             // If there is no existing result, run the lambda
             executeStep(id, hashedId, fn)
