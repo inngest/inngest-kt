@@ -16,4 +16,6 @@ make dev-spring-boot
 
 ## Releasing
 
-To release a new version, increment the version in each package's `VERSION` file. This will automatically trigger the GitHub workflow that publishes the given package to Maven central.
+To release a new version, increment the version in each package's `VERSION` file. This will automatically trigger the GitHub workflow that publishes the given package to Maven central and adds a git tag for the given package release.
+
+After the release process is complete, draft a new release via Github either generating the changelog or manually adding notes.
