@@ -1,7 +1,7 @@
 package com.inngest
 
 import com.beust.klaxon.Klaxon
-import java.io.IOException
+import java.net.ConnectException
 
 class Inngest
     @JvmOverloads
@@ -36,11 +36,58 @@ class Inngest
         fun send(events: Array<InngestEvent>): SendEventsResponse? {
             val request = httpClient.build("$baseUrl/e/$eventKey", events)
 
-            return httpClient.send(request) lambda@{ response ->
-                // TODO: Handle error case
-                if (!response.isSuccessful) throw IOException("Unexpected code $response")
+            try {
+                return httpClient.send(request) lambda@{ response ->
+                    if (!response.isSuccessful) {
+                        // TODO - Attempt to parse the HTTP response and get error from JSON body to pass here
+                        throw InngestSendEventBadResponseCodeException(response.code)
+                    }
 
-                return@lambda Klaxon().parse<SendEventsResponse>(response.body!!.charStream())
+                    val responseBody = response.body!!.charStream()
+                    try {
+                        val sendEventsResponse = Klaxon().parse<SendEventsResponse>(responseBody)
+                        if (sendEventsResponse != null) {
+                            return@lambda sendEventsResponse
+                        }
+                    } catch (e: Exception) {
+                        throw InngestSendEventInvalidResponseException(responseBody.toString())
+                    }
+                    // If we haven't successfully parsed and returned a valid SendEventsResponse
+                    // by this point, throw an exception
+                    throw InngestSendEventInvalidResponseException(responseBody.toString())
+                }
+            } catch (e: ConnectException) {
+                throw InngestSendEventConnectException(e.message!!)
+            } catch (e: Exception) {
+                throw InngestSendEventException(e.message!!)
             }
         }
     }
+
+/**
+ * A generic exception occurred while sending events
+ */
+open class InngestSendEventException(
+    message: String,
+) : Exception("Failed to send event: $message")
+
+/**
+ * A failure occurred establishing a connection to the Inngest Event API
+ */
+class InngestSendEventConnectException(
+    message: String,
+) : InngestSendEventException(message)
+
+/**
+ * The Inngest Event API returned a non-successful HTTP status code
+ */
+class InngestSendEventBadResponseCodeException(
+    code: Int,
+) : InngestSendEventException("Bad response code: $code")
+
+/**
+ * The Inngest Event API returned a response that was not parsable
+ */
+class InngestSendEventInvalidResponseException(
+    message: String,
+) : InngestSendEventException("Unable to parse response: $message")
