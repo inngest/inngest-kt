@@ -100,18 +100,6 @@ class TranscodeVideo : InngestFunction() {
 
 </details>
 
-## Contributing [WIP]
+## Contributing
 
-To build this in development, set up Java, Kotlin and Gradle locally and run the test server:
-
-```
-make dev-ktor
-```
-
-This runs a `ktor` web server to test the SDK against the dev server.
-
-To run the `spring-boot` test server:
-
-```
-make dev-spring-boot
-```
+[See the contributing guide for more information](./CONTRIBUTING.md)
