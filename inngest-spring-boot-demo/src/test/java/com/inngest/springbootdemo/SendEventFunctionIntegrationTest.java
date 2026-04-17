@@ -8,8 +8,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.time.Duration;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @IntegrationTest
 @Execution(ExecutionMode.CONCURRENT)
@@ -17,24 +19,38 @@ class SendEventFunctionIntegrationTest {
     @Autowired
     private DevServerComponent devServer;
 
-    static int sleepTime = 5000;
-
     @Autowired
     private Inngest client;
 
     @Test
     void testSendEventFunctionSendsEventSuccessfully() throws Exception {
+        Duration timeout = Duration.ofSeconds(20);
         String eventId = InngestFunctionTestHelpers.sendEvent(client, "test/send").getIds()[0];
 
-        Thread.sleep(sleepTime);
-
-        RunEntry<Object> run = devServer.runsByEvent(eventId).first();
+        RunEntry<Object> run = devServer.waitForRunStatus(
+            devServer.waitForEventRuns(eventId, timeout).first().getRun_id(),
+            "Completed",
+            timeout
+        );
 
         // Generic nested structures are frustrating to deserialize properly.
         LinkedHashMap<String, ArrayList<String>> output = (LinkedHashMap<String, ArrayList<String>>) run.getOutput();
         ArrayList<String> ids = output.get("ids");
+        EventEntry downstreamEvent = devServer.waitForEvent(
+            e -> "test/no-match".equals(e.getName()),
+            timeout
+        );
 
         assertEquals(run.getStatus(), "Completed");
-        assert !ids.isEmpty();
+        assertEquals(1, ids.size());
+        assertTrue(
+            ids.contains(downstreamEvent.getInternal_id()) || ids.contains(downstreamEvent.getId()),
+            String.format(
+                "Expected returned downstream event ids %s to include event %s/%s",
+                ids,
+                downstreamEvent.getInternal_id(),
+                downstreamEvent.getId()
+            )
+        );
     }
 }
