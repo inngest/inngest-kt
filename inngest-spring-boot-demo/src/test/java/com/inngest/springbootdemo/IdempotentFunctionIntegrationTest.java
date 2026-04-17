@@ -29,19 +29,18 @@ class IdempotentFunctionIntegrationTest {
         String eventWithIdempotencyKey = InngestFunctionTestHelpers.sendEvent(client, "test/idempotent", dataPayload).getIds()[0];
         String eventWithSameIdempotencyKey = InngestFunctionTestHelpers.sendEvent(client, "test/idempotent", dataPayload).getIds()[0];
 
-        // With the same idempotency key, only one of the events should have run
-        RunEntry<Object> firstRun = devServer.waitForRunStatus(
-            devServer.waitForEventRuns(eventWithIdempotencyKey, timeout).first().getRun_id(),
-            "Completed",
+        // With the same idempotency key, exactly one of the duplicate events should execute.
+        devServer.waitForCondition("exactly one duplicate idempotent event to execute", timeout, () -> {
+            int firstRunCount = runCount(devServer.runsByEvent(eventWithIdempotencyKey));
+            int secondRunCount = runCount(devServer.runsByEvent(eventWithSameIdempotencyKey));
+            return IdempotentFunction.getCounter() == 1
+                && firstRunCount + secondRunCount == 1;
+        });
+        RunEntry<Object> firstRun = completedRunForEitherDuplicate(
+            eventWithIdempotencyKey,
+            eventWithSameIdempotencyKey,
             timeout
         );
-        devServer.waitForCondition("duplicate idempotent event to be suppressed", timeout, () -> {
-            EventRunsResponse<Object> duplicateRuns = devServer.runsByEvent(eventWithSameIdempotencyKey);
-            return duplicateRuns != null
-                && duplicateRuns.getData() != null
-                && duplicateRuns.getData().length == 0
-                && IdempotentFunction.getCounter() == 1;
-        });
         assertEquals("Completed", firstRun.getStatus());
 
         // This would be 2 if the function was not idempotent
@@ -59,5 +58,31 @@ class IdempotentFunctionIntegrationTest {
         devServer.waitForCondition("distinct idempotency key to increment the counter", timeout, () -> IdempotentFunction.getCounter() == 2);
         assertEquals("Completed", otherRun.getStatus());
         assertEquals(2, IdempotentFunction.getCounter());
+    }
+
+    private RunEntry<Object> completedRunForEitherDuplicate(
+        String firstEventId,
+        String secondEventId,
+        Duration timeout
+    ) throws Exception {
+        EventRunsResponse<Object> firstRuns = devServer.runsByEvent(firstEventId);
+        if (runCount(firstRuns) > 0) {
+            return devServer.waitForRunStatus(firstRuns.first().getRun_id(), "Completed", timeout);
+        }
+
+        EventRunsResponse<Object> secondRuns = devServer.runsByEvent(secondEventId);
+        if (runCount(secondRuns) > 0) {
+            return devServer.waitForRunStatus(secondRuns.first().getRun_id(), "Completed", timeout);
+        }
+
+        throw new AssertionError("Expected one idempotent duplicate event to have a run");
+    }
+
+    private int runCount(EventRunsResponse<Object> runs) {
+        if (runs == null || runs.getData() == null) {
+            return 0;
+        }
+
+        return runs.getData().length;
     }
 }

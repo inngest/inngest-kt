@@ -66,7 +66,7 @@ public class DevServerComponent {
         int devServerPort
     ) {
         String explicitCliPath = System.getenv("INNGEST_CLI_PATH");
-        if (explicitCliPath != null && !explicitCliPath.isBlank()) {
+        if (hasText(explicitCliPath)) {
             return devServerCommand(explicitCliPath, appOrigin, devServerPort);
         }
 
@@ -100,7 +100,7 @@ public class DevServerComponent {
 
     private boolean isCommandOnPath(String command) {
         String path = System.getenv("PATH");
-        if (path == null || path.isBlank()) {
+        if (!hasText(path)) {
             return false;
         }
 
@@ -138,16 +138,20 @@ public class DevServerComponent {
     private String configuredDevServerBaseUrl() {
         String propertyKey = InngestSystem.ApiBaseUrl.getValue();
         String configuredBaseUrl = System.getProperty(propertyKey);
-        if (configuredBaseUrl != null && !configuredBaseUrl.isBlank()) {
+        if (hasText(configuredBaseUrl)) {
             return configuredBaseUrl;
         }
 
         String envBaseUrl = System.getenv(propertyKey);
-        if (envBaseUrl != null && !envBaseUrl.isBlank()) {
+        if (hasText(envBaseUrl)) {
             return envBaseUrl;
         }
 
         return "http://127.0.0.1:8288";
+    }
+
+    private boolean hasText(String value) {
+        return value != null && !value.trim().isEmpty();
     }
 
     // TODO: Figure out how to make this generic.
