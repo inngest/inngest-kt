@@ -1,31 +1,32 @@
 TEST_ARGS=--console=rich --warning-mode=all
+GRADLE=./gradlew
 
 .PHONY: dev-ktor
 dev-ktor:
-	gradle inngest-test-server:run
+	$(GRADLE) inngest-test-server:run
 
 .PHONY: dev-spring-boot
 dev-spring-boot:
-	gradle inngest-spring-boot-demo:bootRun
+	$(GRADLE) inngest-spring-boot-demo:bootRun
 
 .PHONY: test
 test: test-core test-ktor test-springboot-demo
 
 .PHONY: itest
 itest:
-	gradle test $(TEST_ARGS) -p inngest-spring-boot-demo integrationTest
+	$(GRADLE) test $(TEST_ARGS) -p inngest-spring-boot-demo integrationTest
 
 .PHONY: test-core
 test-core:
-	gradle test $(TEST_ARGS) -p inngest
+	$(GRADLE) test $(TEST_ARGS) -p inngest
 
 .PHONY: test-ktor
 test-ktor:
-	gradle test $(TEST_ARGS) -p inngest-test-server
+	$(GRADLE) test $(TEST_ARGS) -p inngest-test-server
 
 .PHONY: test-springboot-demo
 test-springboot-demo:
-	gradle test $(TEST_ARGS) -p inngest-spring-boot-demo
+	$(GRADLE) test $(TEST_ARGS) -p inngest-spring-boot-demo
 
 .PHONY: lint
 lint:

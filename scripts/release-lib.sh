@@ -194,7 +194,7 @@ publish_package() {
 
   (
     cd "$pkg"
-    gradle publish --info
+    ../gradlew publish --info
     ./maven-bundle
 
     auth="${MAVEN_USERNAME}:${MAVEN_PASSWORD}"
