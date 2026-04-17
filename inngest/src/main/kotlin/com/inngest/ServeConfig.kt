@@ -26,7 +26,8 @@ class ServeConfig
                 InngestEnv.Dev -> DUMMY_SIGNING_KEY
                 else -> {
                     val signingKey =
-                        System.getenv(InngestSystem.SigningKey.value)
+                        System.getProperty(InngestSystem.SigningKey.value)
+                            ?: System.getenv(InngestSystem.SigningKey.value)
                             ?: throw Exception("signing key is required")
                     signingKey
                 }
@@ -43,7 +44,7 @@ class ServeConfig
         fun baseUrl(): String {
             if (baseUrl != null) return baseUrl
 
-            val url = System.getenv(InngestSystem.ApiBaseUrl.value)
+            val url = System.getProperty(InngestSystem.ApiBaseUrl.value) ?: System.getenv(InngestSystem.ApiBaseUrl.value)
             if (url != null) {
                 return url
             }
@@ -56,16 +57,16 @@ class ServeConfig
 
         fun serveOrigin(): String? {
             if (serveOrigin != null) return serveOrigin
-            return System.getenv(InngestSystem.ServeOrigin.value)
+            return System.getProperty(InngestSystem.ServeOrigin.value) ?: System.getenv(InngestSystem.ServeOrigin.value)
         }
 
         fun servePath(): String? {
             if (servePath != null) return servePath
-            return System.getenv(InngestSystem.ServePath.value)
+            return System.getProperty(InngestSystem.ServePath.value) ?: System.getenv(InngestSystem.ServePath.value)
         }
 
         fun logLevel(): String {
             if (logLevel != null) return logLevel
-            return System.getenv(InngestSystem.LogLevel.value) ?: "info"
+            return System.getProperty(InngestSystem.LogLevel.value) ?: System.getenv(InngestSystem.LogLevel.value) ?: "info"
         }
     }
