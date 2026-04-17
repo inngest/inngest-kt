@@ -16,6 +16,10 @@ make dev-spring-boot
 
 ## Releasing
 
-To release a new version, increment the version in each package's `VERSION` file. This will automatically trigger the GitHub workflow that publishes the given package to Maven central and adds a git tag for the given package release.
+Releases follow the same high-level flow as `inngest-rs`, adapted for package-prefixed tags:
 
-After the release process is complete, draft a new release via Github either generating the changelog or manually adding notes.
+1. Pushes to `main` automatically create or update a `release/next` PR.
+2. That PR bumps each releasable package's `VERSION` file and regenerates its package changelog at `pkg/CHANGELOG.md`.
+3. Merging the release PR creates the matching package tags, publishes any package versions not yet on Maven Central, and creates or updates the GitHub releases using `git-cliff` notes.
+
+Release tags use the package-prefixed format, for example `inngest-0.2.2` and `inngest-spring-boot-adapter-0.2.1`.
