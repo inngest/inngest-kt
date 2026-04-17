@@ -90,12 +90,16 @@
             ktlint
             git-cliff
 
-            # For integration test
-            nodejs
-
             # LSP
             kotlin-language-server
           ];
+
+          shellHook = ''
+            if [ -z "''${JAVA_HOME:-}" ]; then
+              export JAVA_HOME="${pkgs.jdk8}"
+              export PATH="$JAVA_HOME/bin:$PATH"
+            fi
+          '';
         };
       }
     );
