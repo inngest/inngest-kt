@@ -1,0 +1,29 @@
+#+title: 006 Close Config And Env Gaps
+#+AUTHOR: Darwin D. Wu
+#+DATE: 2026-04-16
+#+STATUS: Draft
+
+* Goal
+- [ ] Bring configuration behavior in line with the spec for cloud/dev targeting and secret handling.
+
+* Scope
+- [ ] Environment variable support and precedence.
+- [ ] Serve origin/path handling.
+- [ ] Signing key fallback behavior.
+- [ ] Event API and API base URL targeting.
+
+* Checklist
+- [ ] Change default targeting to cloud unless dev mode is explicitly enabled.
+- [ ] Support =INNGEST_DEV= values of =1= and explicit origins.
+- [ ] Add support for =INNGEST_SIGNING_KEY_FALLBACK=.
+- [ ] Add support for =INNGEST_EVENT_API_BASE_URL=.
+- [ ] Implement =INNGEST_BASE_URL= as a shorthand with correct precedence rules.
+- [ ] Ensure outbound event/API requests include =X-Inngest-Env= when applicable.
+- [ ] Add =has_signing_key_fallback= and related fields accurately in introspection.
+- [ ] Improve serve origin/path resolution and centralize precedence between runtime config and env vars.
+- [ ] Add tests for env precedence and dev/cloud targeting resolution.
+- [ ] Add tests for signing-key fallback on authenticated outbound calls where applicable.
+
+* Exit Criteria
+- [ ] Config resolution is deterministic and spec-aligned.
+- [ ] The SDK can target cloud and dev servers correctly without hidden defaults.

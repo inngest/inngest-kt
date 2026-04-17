@@ -1,0 +1,29 @@
+#+title: 000 Lock Contract With Tests
+#+AUTHOR: Darwin D. Wu
+#+DATE: 2026-04-16
+#+STATUS: Draft
+
+* Goal
+- [ ] Freeze the current intended SDK contract in tests before broad refactors land.
+- [ ] Make spec regressions obvious in CI for sync, call handling, introspection, headers, and step responses.
+
+* Scope
+- [ ] Add spec-driven unit tests for shared core behavior in =inngest=.
+- [ ] Add adapter coverage for both Ktor and Spring Boot request handling.
+- [ ] Add golden-style assertions for JSON wire shapes where stability matters.
+
+* Checklist
+- [ ] Inventory current coverage in =inngest/src/test/kotlin= and identify missing protocol cases.
+- [ ] Add tests for sync request success and failure paths.
+- [ ] Add tests for introspection unauthenticated and authenticated payloads.
+- [ ] Add tests for call request success, retriable error, non-retriable error, and retry-after behavior.
+- [ ] Add tests asserting required response headers on call responses.
+- [ ] Add tests for step response payloads for =run=, =sleep=, =waitForEvent=, =invoke=, and =sendEvent=.
+- [ ] Add adapter tests proving Ktor and Spring route the same request semantics into shared core code.
+- [ ] Add fixtures/builders for execution request payloads to reduce copy-paste in later milestones.
+- [ ] Document any intentionally unsupported spec areas as skipped or pending tests.
+
+* Exit Criteria
+- [ ] Shared protocol behavior is covered by automated tests.
+- [ ] Ktor and Spring adapters have parity checks for their HTTP entrypoints.
+- [ ] The repo has stable fixtures that later milestones can extend instead of rebuilding payloads ad hoc.

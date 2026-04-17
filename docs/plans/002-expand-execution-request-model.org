@@ -1,0 +1,27 @@
+#+title: 002 Expand Execution Request Model
+#+AUTHOR: Darwin D. Wu
+#+DATE: 2026-04-16
+#+STATUS: Draft
+
+* Goal
+- [ ] Extend the execution request model to carry the full context required by the spec.
+- [ ] Stop encoding execution assumptions in scattered parsing logic.
+
+* Scope
+- [ ] Shared execution payload types.
+- [ ] Internal execution context threading.
+- [ ] Backward-compatible parsing for current tests and fixtures where feasible.
+
+* Checklist
+- [ ] Extend =ExecutionContext= to include =disable_immediate_execution=, =use_api=, and stack metadata.
+- [ ] Add =stepId= handling at the request boundary and thread it into execution.
+- [ ] Add =qi_id= support in the internal model even if checkpointing is deferred.
+- [ ] Introduce a dedicated internal execution context type if =FunctionContext= should stay user-facing and minimal.
+- [ ] Thread the richer execution context through =CommHandler= and the internal function engine.
+- [ ] Update fixtures and builders from milestone 000 to emit the richer request body.
+- [ ] Add tests for parsing and preserving the new request fields.
+- [ ] Audit direct JSON parsing assumptions in shared code and adapters.
+
+* Exit Criteria
+- [ ] Shared code can parse and carry all context required for payload recovery and planned-step execution.
+- [ ] Request parsing no longer blocks later milestones such as step planning or checkpointing.

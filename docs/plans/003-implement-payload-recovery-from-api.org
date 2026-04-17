@@ -1,0 +1,27 @@
+#+title: 003 Implement Payload Recovery From API
+#+AUTHOR: Darwin D. Wu
+#+DATE: 2026-04-16
+#+STATUS: Draft
+
+* Goal
+- [ ] Support large execution payloads by fetching events and step state from the Inngest API when =ctx.use_api= is true.
+
+* Scope
+- [ ] HTTP client support for GET requests and authenticated API calls.
+- [ ] Batch event retrieval.
+- [ ] Memoized step retrieval.
+
+* Checklist
+- [ ] Extend the internal HTTP client to support GET requests with shared headers and auth.
+- [ ] Implement =GET /v0/runs/:run_id/batch= retrieval.
+- [ ] Implement =GET /v0/runs/:run_id/actions= retrieval.
+- [ ] Add request signing/auth header support to these API calls using the same base config path as sync.
+- [ ] Replace the request payload =events= and =event= when the batch API succeeds.
+- [ ] Replace memoized step data when the actions API succeeds.
+- [ ] Return a protocol failure when either required fetch fails or returns non-200.
+- [ ] Add tests for =ctx.use_api=false= and =ctx.use_api=true= paths.
+- [ ] Add tests for failure handling and header propagation on recovery calls.
+
+* Exit Criteria
+- [ ] Large payload recovery works through shared core code.
+- [ ] Later execution milestones can assume the full payload is available before function execution starts.
