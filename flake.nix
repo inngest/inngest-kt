@@ -32,6 +32,7 @@
             detekt
             ktfmt
             ktlint
+            git-cliff
 
             # For integration test
             nodejs
