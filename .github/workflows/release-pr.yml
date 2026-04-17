@@ -1,0 +1,38 @@
+name: Auto-create Release PR
+
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - 'inngest/CHANGELOG.md'
+      - 'inngest/VERSION'
+      - 'inngest-spring-boot-adapter/CHANGELOG.md'
+      - 'inngest-spring-boot-adapter/VERSION'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: release-pr-main
+  cancel-in-progress: true
+
+jobs:
+  create-release-pr:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup git-cliff
+        uses: kenji-miyake/setup-git-cliff@v1
+
+      - name: Create or update release PR
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_BASE_BRANCH: ${{ github.event.repository.default_branch }}
+        run: ./scripts/release-pr.sh

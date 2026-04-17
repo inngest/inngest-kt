@@ -1,0 +1,28 @@
+#+title: 008 Add Middleware
+#+AUTHOR: Darwin D. Wu
+#+DATE: 2026-04-16
+#+STATUS: Draft
+
+* Goal
+- [ ] Introduce middleware on top of the corrected execution engine, not before it.
+
+* Scope
+- [ ] Client-level middleware.
+- [ ] Function-level middleware.
+- [ ] Required lifecycle hooks for function execution and event sending.
+
+* Checklist
+- [ ] Design a Kotlin-idiomatic middleware API for client and function registration.
+- [ ] Define lifecycle hook interfaces covering transform input, before execution, after execution, transform output, and event-send hooks.
+- [ ] Ensure client middleware always runs before function middleware.
+- [ ] Expose framework/raw request access at the correct point in the lifecycle.
+- [ ] Allow middleware to enrich execution context passed to user code.
+- [ ] Allow middleware to inspect and mutate memoized step data before function execution.
+- [ ] Allow middleware to inspect and mutate function/step outputs and errors before response serialization.
+- [ ] Allow middleware to inspect and mutate outbound events before send.
+- [ ] Add ordering and single-invocation tests for lifecycle hooks.
+- [ ] Add adapter integration tests proving raw request access works for both Ktor and Spring.
+
+* Exit Criteria
+- [ ] Middleware lifecycle ordering is tested and stable.
+- [ ] Middleware wraps shared execution code rather than duplicating behavior in adapters.

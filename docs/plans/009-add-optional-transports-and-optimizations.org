@@ -1,0 +1,28 @@
+#+title: 009 Add Optional Transports And Optimizations
+#+AUTHOR: Darwin D. Wu
+#+DATE: 2026-04-16
+#+STATUS: Draft
+
+* Goal
+- [ ] Add optional features only after the base execution model is correct and well-tested.
+
+* Scope
+- [ ] Connect transport.
+- [ ] Streaming.
+- [ ] Checkpointing.
+- [ ] Related introspection capabilities.
+
+* Checklist
+- [ ] Decide whether Connect support is in scope for this SDK generation or should remain deferred.
+- [ ] If in scope, design the transport boundary so WebSocket execution reuses the same shared engine as HTTP.
+- [ ] Add =INNGEST_CONNECT_MAX_WORKER_CONCURRENCY= handling if Connect is implemented.
+- [ ] Add =INNGEST_STREAMING= handling and adapter-specific streaming response support if implemented.
+- [ ] Implement checkpoint configuration models and sync payload serialization if checkpointing is implemented.
+- [ ] Add async checkpoint API calls and graceful fallback behavior if checkpointing is implemented.
+- [ ] Add introspection =capabilities= reporting for any shipped optional features.
+- [ ] Add benchmark or soak-style tests for any optimization feature that changes execution flow.
+- [ ] Document any deferred optional feature explicitly in repo docs and milestone notes.
+
+* Exit Criteria
+- [ ] Optional transports and optimizations either ship behind tested boundaries or are clearly documented as deferred.
+- [ ] No optional feature introduces a second, divergent execution engine.

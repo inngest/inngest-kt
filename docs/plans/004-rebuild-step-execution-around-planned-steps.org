@@ -1,0 +1,29 @@
+#+title: 004 Rebuild Step Execution Around Planned Steps
+#+AUTHOR: Darwin D. Wu
+#+DATE: 2026-04-16
+#+STATUS: Draft
+
+* Goal
+- [ ] Align the step engine with the spec’s planned-step execution model.
+- [ ] Support targeted step execution, recovery ordering, and future parallelism.
+
+* Scope
+- [ ] =stepId= aware execution.
+- [ ] =StepPlanned= and =StepNotFound= opcodes.
+- [ ] Recovery ordering based on =ctx.stack.stack=.
+- [ ] Immediate-execution rules.
+
+* Checklist
+- [ ] Introduce explicit opcode support for =StepPlanned= and =StepNotFound=.
+- [ ] Teach the engine to distinguish discovery requests from targeted step execution requests.
+- [ ] When =stepId != "step"=, search only for the targeted step and forbid planning/executing unrelated new steps.
+- [ ] Implement immediate-execution gating using =disable_immediate_execution= and =stepId= rules.
+- [ ] Rework memoization flow to respect =ctx.stack.stack= ordering before discovering new work.
+- [ ] Detect missing expected steps and return =StepNotFound= when a targeted step cannot be found.
+- [ ] Warn or surface deterministic-change diagnostics when stack ordering cannot be followed.
+- [ ] Add tests for single-step discovery, planned execution, targeted execution, missing targeted step, and ordered memoization.
+- [ ] Add tests for repeated step IDs in loops against the new planning flow.
+
+* Exit Criteria
+- [ ] The SDK can discover, plan, and execute steps using the spec’s step lifecycle.
+- [ ] The shared engine is ready for real parallel-step support rather than only sequential interruption semantics.

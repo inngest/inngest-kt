@@ -1,0 +1,27 @@
+#+title: 005 Normalize Wire Shapes
+#+AUTHOR: Darwin D. Wu
+#+DATE: 2026-04-16
+#+STATUS: Draft
+
+* Goal
+- [ ] Make the SDK’s serialized protocol payloads language-neutral and spec-aligned.
+- [ ] Remove JVM-specific data from memoized state and response bodies.
+
+* Scope
+- [ ] Step result serialization.
+- [ ] Error normalization.
+- [ ] Step response field names and payload structure.
+
+* Checklist
+- [ ] Replace JVM-specific =class= metadata in step serialization with plain JSON-compatible data.
+- [ ] Decide and implement a stable deserialization strategy for memoized step data without =Class.forName()= dependencies.
+- [ ] Normalize step errors to =name=, =message=, and optional =stack=.
+- [ ] Align step response fields with the spec, including display-name handling if needed.
+- [ ] Ensure =waitForEvent= memoizes full event payloads and timeout-to-null semantics cleanly.
+- [ ] Audit =sendEvent=, =invoke=, and sleep payload shapes against expected wire formats.
+- [ ] Add tests proving memoized data can round-trip without JVM type tags.
+- [ ] Add regression tests for step error replay into user code as =StepError=.
+
+* Exit Criteria
+- [ ] Wire payloads are not coupled to local JVM class names.
+- [ ] Step and error payloads are stable enough for cross-language compatibility expectations.

@@ -23,5 +23,3 @@ Changes:
 <!-- GitHub issues/PRs can be linked using shorthand. -->
 <!-- e.g. "- inngest/inngest#123" -->
 <!-- Feel free to remove this section if there are no applicable related links.-->
-
-- INN-

@@ -1,0 +1,27 @@
+#+title: 007 Fill Missing Function And Step Surface
+#+AUTHOR: Darwin D. Wu
+#+DATE: 2026-04-16
+#+STATUS: Draft
+
+* Goal
+- [ ] Close the largest public API gaps after the protocol core is stable.
+
+* Scope
+- [ ] Missing function config surface.
+- [ ] Missing step APIs.
+- [ ] Event shape improvements.
+
+* Checklist
+- [ ] Add missing function config for =singleton=.
+- [ ] Add missing function config for =timeouts=.
+- [ ] Review trigger/config validation against the spec and tighten obvious invalid combinations.
+- [ ] Expand send-event input support for optional event fields such as =id=, =user=, and =ts= where intended.
+- [ ] Improve time-string support beyond whole-second =Duration= serialization where required.
+- [ ] Add =match= support or a clear typed alternative for =waitForEvent= if kept in scope.
+- [ ] Implement gateway HTTP fetch step support or explicitly mark it deferred.
+- [ ] Implement AI gateway step support or explicitly mark it deferred.
+- [ ] Add tests for all new public API surface and sync payload serialization.
+
+* Exit Criteria
+- [ ] The public SDK surface covers the intended near-term spec subset.
+- [ ] Deferred areas are explicit rather than implicit gaps in the API.
