@@ -4,7 +4,6 @@ import com.inngest.*;
 import org.jetbrains.annotations.NotNull;
 
 public class RetriableErrorFunction extends InngestFunction {
-
     @NotNull
     @Override
     public InngestFunctionConfigBuilder config(InngestFunctionConfigBuilder builder) {
@@ -14,13 +13,10 @@ public class RetriableErrorFunction extends InngestFunction {
             .triggerEvent("test/retriable");
     }
 
-    static int retryCount = 0;
-
     @Override
     public String execute(FunctionContext ctx, Step step) {
-        retryCount++;
         step.run("retriable-step", () -> {
-            if (retryCount < 2) {
+            if (ctx.getAttempt() < 1) {
                 throw new RetryAfterError("something went wrong", 10000);
             }
             return "Success";

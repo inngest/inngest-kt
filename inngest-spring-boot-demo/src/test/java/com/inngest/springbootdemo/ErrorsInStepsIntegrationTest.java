@@ -6,6 +6,7 @@ import org.junit.jupiter.api.parallel.Execution;
 import org.junit.jupiter.api.parallel.ExecutionMode;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import java.time.Duration;
 import java.util.LinkedHashMap;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -56,22 +57,14 @@ class ErrorsInStepsIntegrationTest {
 
     @Test
     void testRetriableShouldSucceedAfterFirstAttempt() throws Exception {
+        Duration timeout = Duration.ofSeconds(30);
         String eventId = InngestFunctionTestHelpers.sendEvent(client, "test/retriable").getIds()[0];
+        String runId = devServer.waitForEventRuns(eventId, timeout).first().getRun_id();
 
-        Thread.sleep(5000);
-
-        RunEntry<Object> run1 = devServer.runsByEvent(eventId).first();
-
-        assertEquals(run1.getStatus(), "Running");
-
-        // The second attempt should succeed, so we wait for the second run to finish.
-        Thread.sleep(15000);
-
-        RunEntry<Object> run2 = devServer.runsByEvent(eventId).first();
-
-        assertEquals(run2.getStatus(), "Completed");
-        assertNotNull(run2.getEnded_at(), "Completed");
-        assertNotNull(run2.getOutput(), "Success");
+        RunEntry<Object> run = devServer.waitForRunStatus(runId, "Completed", timeout);
+        assertEquals("Completed", run.getStatus());
+        assertNotNull(run.getEnded_at());
+        assertEquals("Success", run.getOutput());
     }
 
 
