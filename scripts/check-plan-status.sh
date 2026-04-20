@@ -178,6 +178,10 @@ for plan in "${plans[@]}"; do
     title="${metadata%%$'\t'*}"
     status="${metadata#*$'\t'}"
 
+    if [[ -n "${title}" && "${title}" == "${plan_id} "* ]]; then
+        title="${title#${plan_id} }"
+    fi
+
     counts="$(read_checklist_counts "${plan}")"
     complete_count="${counts%% *}"
     total_count="${counts##* }"
