@@ -63,9 +63,12 @@ class State(
 
         return when {
             stepResult.has(fieldName) -> deserializeStepData(stepResult.get(fieldName), type)
+
             stepResult.has("error") -> throw mapper.treeToValue(stepResult.get("error"), StepError::class.java)
+
             // NOTE - Sleep steps will be stored as null
             stepResult is NullNode -> null
+
             else -> throw Exception("Unexpected step data structure")
         }
     }

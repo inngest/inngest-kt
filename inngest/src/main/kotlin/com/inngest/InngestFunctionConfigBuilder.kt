@@ -103,15 +103,14 @@ class InngestFunctionConfigBuilder {
         event: String,
         `if`: String? = null,
         timeout: Duration? = null,
-    ): InngestFunctionConfigBuilder {
-        return cancelOn(
+    ): InngestFunctionConfigBuilder =
+        cancelOn(
             Cancellation(
                 event,
                 `if`,
                 timeout?.let { durationConverter.toJson(it) },
             ),
         )
-    }
 
     /**
      * Define events that can be used to cancel a running or sleeping function
@@ -129,15 +128,14 @@ class InngestFunctionConfigBuilder {
         event: String,
         `if`: String? = null,
         timeout: Instant? = null,
-    ): InngestFunctionConfigBuilder {
-        return cancelOn(
+    ): InngestFunctionConfigBuilder =
+        cancelOn(
             Cancellation(
                 event,
                 `if`,
                 timeout?.let { timeout.toString() },
             ),
         )
-    }
 
     internal fun cancelOn(cancellation: Cancellation): InngestFunctionConfigBuilder =
         apply {
@@ -180,15 +178,20 @@ class InngestFunctionConfigBuilder {
         scope: ConcurrencyScope? = null,
     ): InngestFunctionConfigBuilder {
         when (scope) {
-            ConcurrencyScope.ENVIRONMENT ->
+            ConcurrencyScope.ENVIRONMENT -> {
                 if (key == null) {
                     throw InngestInvalidConfigurationException("Concurrency key required with environment scope")
                 }
-            ConcurrencyScope.ACCOUNT ->
+            }
+
+            ConcurrencyScope.ACCOUNT -> {
                 if (key == null) {
                     throw InngestInvalidConfigurationException("Concurrency key required with account scope")
                 }
+            }
+
             ConcurrencyScope.FUNCTION -> {}
+
             null -> {}
         }
 
@@ -345,8 +348,7 @@ val durationConverter =
         override fun canConvert(cls: Class<*>): Boolean = cls == Duration::class.java
 
         // TODO Implement this - parse 30s into duration of seconds
-        override fun fromJson(jv: JsonValue): Duration =
-            throw KlaxonException("Duration parse not implemented: ${jv.string}")
+        override fun fromJson(jv: JsonValue): Duration = throw KlaxonException("Duration parse not implemented: ${jv.string}")
 
         override fun toJson(value: Any): String = """"${(value as Duration).seconds}s""""
     }

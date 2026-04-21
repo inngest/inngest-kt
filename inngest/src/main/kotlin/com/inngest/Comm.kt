@@ -230,9 +230,11 @@ class CommHandler(
 
         val requestPayload =
             when (client.env) {
-                InngestEnv.Dev -> insecureIntrospection
+                InngestEnv.Dev -> {
+                    insecureIntrospection
+                }
 
-                else ->
+                else -> {
                     runCatching {
                         checkHeadersAndValidateSignature(signature, requestBody, serverKind, config)
 
@@ -257,6 +259,7 @@ class CommHandler(
                     }.getOrElse {
                         insecureIntrospection.apply { authenticationSucceeded = false }
                     }
+                }
             }
 
         return serializePayload(requestPayload)
@@ -291,11 +294,19 @@ class CommHandler(
 
     private fun syncFailureMessage(responseBody: String): String? =
         runCatching {
-            ObjectMapper().readTree(responseBody).path("error").takeIf { !it.isMissingNode && !it.isNull }?.asText()
+            ObjectMapper()
+                .readTree(responseBody)
+                .path("error")
+                .takeIf { !it.isMissingNode && !it.isNull }
+                ?.asText()
         }.getOrNull()
 
     private fun syncModified(responseBody: String): Boolean =
         runCatching {
-            ObjectMapper().readTree(responseBody).path("modified").takeIf { !it.isMissingNode && !it.isNull }?.asBoolean() ?: false
+            ObjectMapper()
+                .readTree(responseBody)
+                .path("modified")
+                .takeIf { !it.isMissingNode && !it.isNull }
+                ?.asBoolean() ?: false
         }.getOrDefault(false)
 }
