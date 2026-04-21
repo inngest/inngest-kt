@@ -68,12 +68,8 @@ internal class CommHandlerTest {
             commHandler(RunStepFunction())
                 .callFunction("run-step-fn", ProtocolFixtures.executionRequestPayloadJson("run-step-fn"))
 
-        val step = firstStep(response)
-
         assertEquals(ResultStatusCode.StepComplete, response.statusCode)
-        assertEquals("StepRun", step["op"].asText())
-        assertEquals("compute", step["name"].asText())
-        assertEquals(42, step["data"].asInt())
+        assertStepMatchesGolden(response, "protocol/steps/run-step.json")
     }
 
     @Test
@@ -82,12 +78,8 @@ internal class CommHandlerTest {
             commHandler(SleepStepFunction())
                 .callFunction("sleep-step-fn", ProtocolFixtures.executionRequestPayloadJson("sleep-step-fn"))
 
-        val step = firstStep(response)
-
         assertEquals(ResultStatusCode.StepComplete, response.statusCode)
-        assertEquals("Sleep", step["op"].asText())
-        assertEquals("pause", step["name"].asText())
-        assertEquals("9s", step["opts"]["duration"].asText())
+        assertStepMatchesGolden(response, "protocol/steps/sleep-step.json")
     }
 
     @Test
@@ -96,14 +88,8 @@ internal class CommHandlerTest {
             commHandler(WaitForEventStepFunction())
                 .callFunction("wait-step-fn", ProtocolFixtures.executionRequestPayloadJson("wait-step-fn"))
 
-        val step = firstStep(response)
-
         assertEquals(ResultStatusCode.StepComplete, response.statusCode)
-        assertEquals("WaitForEvent", step["op"].asText())
-        assertEquals("wait-for-user", step["name"].asText())
-        assertEquals("app/user.updated", step["opts"]["event"].asText())
-        assertEquals("10m", step["opts"]["timeout"].asText())
-        assertEquals("event.data.userId == async.data.userId", step["opts"]["if"].asText())
+        assertStepMatchesGolden(response, "protocol/steps/wait-for-event-step.json")
     }
 
     @Test
@@ -112,14 +98,8 @@ internal class CommHandlerTest {
             commHandler(InvokeStepFunction())
                 .callFunction("invoke-step-fn", ProtocolFixtures.executionRequestPayloadJson("invoke-step-fn"))
 
-        val step = firstStep(response)
-
         assertEquals(ResultStatusCode.StepComplete, response.statusCode)
-        assertEquals("InvokeFunction", step["op"].asText())
-        assertEquals("invoke-user", step["name"].asText())
-        assertEquals("target-app-target-fn", step["opts"]["function_id"].asText())
-        assertEquals("123", step["opts"]["payload"]["data"]["userId"].asText())
-        assertEquals("30s", step["opts"]["timeout"].asText())
+        assertStepMatchesGolden(response, "protocol/steps/invoke-step.json")
     }
 
     @Test
@@ -133,12 +113,8 @@ internal class CommHandlerTest {
             commHandler(SendEventStepFunction(), baseUrl = baseUrl)
                 .callFunction("send-step-fn", ProtocolFixtures.executionRequestPayloadJson("send-step-fn"))
 
-        val step = firstStep(response)
-
         assertEquals(ResultStatusCode.StepComplete, response.statusCode)
-        assertEquals("Step", step["op"].asText())
-        assertEquals("send-user", step["name"].asText())
-        assertEquals("evt-1", step["data"]["event_ids"][0].asText())
+        assertStepMatchesGolden(response, "protocol/steps/send-event-step.json")
     }
 
     private fun commHandler(
@@ -167,6 +143,19 @@ internal class CommHandlerTest {
         assertEquals(1, body.size())
         return body[0]
     }
+
+    private fun assertStepMatchesGolden(
+        response: CommResponse,
+        resourcePath: String,
+    ) {
+        assertEquals(loadGoldenJson(resourcePath), firstStep(response))
+    }
+
+    private fun loadGoldenJson(resourcePath: String): JsonNode =
+        mapper.readTree(
+            javaClass.classLoader.getResourceAsStream(resourcePath)
+                ?: error("Missing golden fixture: $resourcePath"),
+        )
 
     private class EchoFunction : InngestFunction() {
         override fun config(builder: InngestFunctionConfigBuilder): InngestFunctionConfigBuilder = builder.id("echo-fn")
