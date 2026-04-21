@@ -14,7 +14,7 @@
 
 * Checklist
 - [X] Inventory current coverage in =inngest/src/test/kotlin= and identify missing protocol cases.
-- [ ] Add tests for sync request success and failure paths.
+- [ ] Extend sync request tests from the current Spring success/deployId coverage to include explicit failure-path assertions.
 - [X] Add tests for introspection unauthenticated and authenticated payloads.
 - [ ] Add tests for call request success, retriable error, non-retriable error, and retry-after behavior.
 - [ ] Add tests asserting required response headers on call responses.
@@ -25,7 +25,8 @@
 
 * Current Baseline
 - [X] Spring Boot route coverage exists for dev-mode introspection, cloud introspection with valid and invalid signatures, and sync registration deployId handling.
-- [X] Demo integration coverage now exercises async function behavior for idempotency, cancellation, retries, sendEvent, invoke, waitForEvent, and matrix-shaped payloads.
+- [X] Demo integration coverage now exercises async function behavior for idempotency, cancellation, retries, sendEvent, invoke, waitForEvent, sleep, debounce, rate limiting, and matrix-shaped payloads.
+- [X] Demo integration coverage also covers custom/null step results, deserialization, multi-step execution, and step error behavior.
 - [ ] Ktor route parity, call-response header assertions, and shared golden fixtures are still open.
 
 * Exit Criteria
