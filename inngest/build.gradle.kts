@@ -7,6 +7,7 @@ version = file("VERSION").readText().trim()
 
 plugins {
     id("java-library")
+    id("java-test-fixtures")
     id("maven-publish")
     id("signing")
     id("org.jetbrains.kotlin.jvm") version "1.9.10"
@@ -33,7 +34,10 @@ dependencies {
 
     implementation("io.ktor:ktor-server-core:2.3.5")
 
+    testFixturesImplementation("com.fasterxml.jackson.core:jackson-databind:2.16.1")
+
     testImplementation(kotlin("test"))
+    testImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
     testImplementation("org.junit-pioneer:junit-pioneer:1.9.1")
 }
 

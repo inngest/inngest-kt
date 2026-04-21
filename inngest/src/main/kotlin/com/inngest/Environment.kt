@@ -9,6 +9,7 @@ object Environment {
             InngestHeaderKey.ContentType.value to "application/json",
             InngestHeaderKey.Sdk.value to sdk,
             InngestHeaderKey.UserAgent.value to sdk,
+            InngestHeaderKey.RequestVersion.value to "2",
             InngestHeaderKey.Framework.value to (framework?.value),
         ).filterValues { (it is String) }.entries.associate { (k, v) -> k to v!! }
     }
