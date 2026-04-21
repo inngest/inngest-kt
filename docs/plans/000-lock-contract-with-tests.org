@@ -1,7 +1,7 @@
-#+title: 000 Lock Contract With Tests
+#+title: Lock Contract With Tests
 #+AUTHOR: Darwin D. Wu
 #+DATE: 2026-04-16
-#+STATUS: Draft
+#+STATUS: Active
 
 * Goal
 - [ ] Freeze the current intended SDK contract in tests before broad refactors land.
@@ -13,15 +13,20 @@
 - [ ] Add golden-style assertions for JSON wire shapes where stability matters.
 
 * Checklist
-- [ ] Inventory current coverage in =inngest/src/test/kotlin= and identify missing protocol cases.
+- [X] Inventory current coverage in =inngest/src/test/kotlin= and identify missing protocol cases.
 - [ ] Add tests for sync request success and failure paths.
-- [ ] Add tests for introspection unauthenticated and authenticated payloads.
+- [X] Add tests for introspection unauthenticated and authenticated payloads.
 - [ ] Add tests for call request success, retriable error, non-retriable error, and retry-after behavior.
 - [ ] Add tests asserting required response headers on call responses.
 - [ ] Add tests for step response payloads for =run=, =sleep=, =waitForEvent=, =invoke=, and =sendEvent=.
 - [ ] Add adapter tests proving Ktor and Spring route the same request semantics into shared core code.
 - [ ] Add fixtures/builders for execution request payloads to reduce copy-paste in later milestones.
 - [ ] Document any intentionally unsupported spec areas as skipped or pending tests.
+
+* Current Baseline
+- [X] Spring Boot route coverage exists for dev-mode introspection, cloud introspection with valid and invalid signatures, and sync registration deployId handling.
+- [X] Demo integration coverage now exercises async function behavior for idempotency, cancellation, retries, sendEvent, invoke, waitForEvent, and matrix-shaped payloads.
+- [ ] Ktor route parity, call-response header assertions, and shared golden fixtures are still open.
 
 * Exit Criteria
 - [ ] Shared protocol behavior is covered by automated tests.

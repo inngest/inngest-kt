@@ -1,6 +1,8 @@
 package com.inngest
 
 object Environment {
+    private fun systemValue(key: String): String? = System.getProperty(key) ?: System.getenv(key)
+
     fun inngestHeaders(framework: SupportedFrameworkName? = null): RequestHeaders {
         val sdk = "inngest-kt:${Version.getVersion()}"
         return mapOf(
@@ -15,7 +17,7 @@ object Environment {
 
     fun inngestEventKey(key: String? = null): String {
         if (key != null) return key
-        return System.getenv(InngestSystem.EventKey.value) ?: DUMMY_KEY_EVENT
+        return systemValue(InngestSystem.EventKey.value) ?: DUMMY_KEY_EVENT
     }
 
     fun isInngestEventKeySet(value: String?) =
@@ -31,7 +33,7 @@ object Environment {
     ): String {
         if (url != null) return url
 
-        val baseUrl = System.getenv(InngestSystem.EventApiBaseUrl.value)
+        val baseUrl = systemValue(InngestSystem.EventApiBaseUrl.value)
         if (baseUrl != null) {
             return baseUrl
         }
@@ -53,7 +55,7 @@ object Environment {
                 false -> InngestEnv.Prod
             }
         }
-        val sysDev = System.getenv(InngestSystem.Dev.value)
+        val sysDev = systemValue(InngestSystem.Dev.value)
         if (sysDev != null) {
             return when (sysDev) {
                 "0" -> InngestEnv.Prod
@@ -81,7 +83,7 @@ object Environment {
         }
 
         // Read from environment variable
-        return when (val inngestEnv = System.getenv(InngestSystem.Env.value)) {
+        return when (val inngestEnv = systemValue(InngestSystem.Env.value)) {
             null -> InngestEnv.Dev
             "dev" -> InngestEnv.Dev
             "development" -> InngestEnv.Dev

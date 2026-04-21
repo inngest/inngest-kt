@@ -56,9 +56,9 @@ jobs:
           java-version: ${{ matrix.java }}
           java-package: jdk
           cache: gradle
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 24
+      - uses: DeterminateSystems/nix-installer-action@v22
+      - name: Initialize Nix dev shell
+        run: nix develop -c true
 
       - name: Test
-        run: make itest
+        run: nix develop -c make itest

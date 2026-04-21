@@ -38,4 +38,4 @@ fmt:
 
 .PHONY: inngest-dev
 inngest-dev:
-	inngest-cli dev -v -u http://127.0.0.1:8080/api/inngest
+	inngest dev -v -u http://127.0.0.1:8080/api/inngest

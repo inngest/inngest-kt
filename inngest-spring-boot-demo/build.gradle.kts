@@ -97,4 +97,5 @@ tasks.withType<Test> {
 
 tasks.register<Test>("integrationTest") {
     systemProperty("test-group", "integration-test")
+    systemProperty("junit.jupiter.execution.parallel.enabled", false)
 }
