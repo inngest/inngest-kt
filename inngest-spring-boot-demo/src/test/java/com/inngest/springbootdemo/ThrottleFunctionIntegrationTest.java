@@ -1,7 +1,6 @@
 package com.inngest.springbootdemo;
 
 import com.inngest.Inngest;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.parallel.Execution;
 import org.junit.jupiter.api.parallel.ExecutionMode;
@@ -14,7 +13,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @IntegrationTest
-@Disabled("Throttle timing in the dev server is not stable enough to assert from this integration harness yet.")
 @Execution(ExecutionMode.CONCURRENT)
 class ThrottleFunctionIntegrationTest {
     @Autowired
@@ -43,8 +41,8 @@ class ThrottleFunctionIntegrationTest {
         assertEquals("Completed", firstRun.getStatus());
         assertEquals("Completed", secondRun.getStatus());
         assertTrue(
-            Duration.between(Instant.parse(firstRun.getRun_started_at()), Instant.parse(secondRun.getRun_started_at())).toMillis() >= 4000,
-            "Expected throttling to delay the second run start by at least 4 seconds"
+            Duration.between(Instant.parse(firstRun.getEnded_at()), Instant.parse(secondRun.getEnded_at())).toMillis() >= 8000,
+            "Expected throttling to delay the second run completion by at least 8 seconds"
         );
     }
 }
