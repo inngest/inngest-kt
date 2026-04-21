@@ -5,6 +5,12 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public class WithOnFailureFunction extends InngestFunction {
+    private static final java.util.concurrent.atomic.AtomicInteger onFailureCallCount = new java.util.concurrent.atomic.AtomicInteger(0);
+
+    public static int getOnFailureCallCount() {
+        return onFailureCallCount.get();
+    }
+
     @NotNull
     @Override
     public InngestFunctionConfigBuilder config(InngestFunctionConfigBuilder builder) {
@@ -26,6 +32,7 @@ public class WithOnFailureFunction extends InngestFunction {
     @Nullable
     @Override
     public String onFailure(@NotNull FunctionContext ctx, @NotNull Step step) {
+        onFailureCallCount.incrementAndGet();
         return "On Failure Success";
     }
 }

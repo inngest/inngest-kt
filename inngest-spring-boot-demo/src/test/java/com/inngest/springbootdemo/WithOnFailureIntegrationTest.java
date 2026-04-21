@@ -1,7 +1,7 @@
 package com.inngest.springbootdemo;
 
 import com.inngest.Inngest;
-import org.junit.jupiter.api.Disabled;
+import com.inngest.springbootdemo.testfunctions.WithOnFailureFunction;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.parallel.Execution;
 import org.junit.jupiter.api.parallel.ExecutionMode;
@@ -14,7 +14,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @IntegrationTest
-@Disabled("Failure-handler system events are not emitted reliably enough in the dev server to gate CI yet.")
 @Execution(ExecutionMode.CONCURRENT)
 class WithOnFailureIntegrationTest {
     @Autowired
@@ -42,18 +41,7 @@ class WithOnFailureIntegrationTest {
         assert output.get("name").contains("NonRetriableError");
 
         // Check that the onFailure function was called
-        EventEntry event = devServer.waitForEvent(
-            e -> "inngest/function.failed".equals(e.getName()) && eventName.equals(e.getData().getEvent().getName()),
-            timeout
-        );
-
-        RunEntry<Object> onFailureRun = devServer.waitForRunStatus(
-            devServer.waitForEventRuns(event.getInternal_id(), timeout).first().getRun_id(),
-            "Completed",
-            timeout
-        );
-
-        assertEquals("Completed", onFailureRun.getStatus());
-        assertEquals("On Failure Success", (String) onFailureRun.getOutput());
+        devServer.waitForCondition("onFailure handler to be called", timeout, () -> WithOnFailureFunction.getOnFailureCallCount() >= 1);
+        assertEquals(1, WithOnFailureFunction.getOnFailureCallCount());
     }
 }
