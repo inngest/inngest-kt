@@ -37,6 +37,7 @@ dependencies {
     testFixturesImplementation("com.fasterxml.jackson.core:jackson-databind:2.16.1")
 
     testImplementation(kotlin("test"))
+    testImplementation("io.ktor:ktor-server-test-host:2.3.5")
     testImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
     testImplementation("org.junit-pioneer:junit-pioneer:1.9.1")
 }

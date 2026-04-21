@@ -1,6 +1,7 @@
 package com.inngest.ktor
 
 import com.inngest.*
+import com.inngest.signingkey.checkHeadersAndValidateSignature
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.plugins.*
@@ -59,6 +60,10 @@ fun Route.serve(
             } else {
                 val body = call.receiveText()
                 try {
+                    val signature = call.request.headers[InngestHeaderKey.Signature.value]
+                    val serverKind = call.request.headers[InngestHeaderKey.ServerKind.value]
+                    checkHeadersAndValidateSignature(signature, body, serverKind, comm.config)
+
                     val response = comm.callFunction(fnId, body)
                     response.headers.forEach({ (k, v) -> call.response.header(k, v) })
                     call.response.status(
@@ -73,10 +78,12 @@ fun Route.serve(
 
         put("") {
             val syncId = call.request.queryParameters[InngestQueryParamKey.SyncId.value]
+            val serverKind = call.request.headers[InngestHeaderKey.ServerKind.value]
 
             val origin = getOrigin(call)
-            val resp = comm.register(origin, syncId)
-            call.respond(HttpStatusCode.OK, resp)
+            val response = comm.register(origin, syncId, serverKind)
+            response.headers.forEach { (k, v) -> call.response.header(k, v) }
+            call.respondText(response.body, ContentType.Application.Json, HttpStatusCode.fromValue(response.statusCode))
         }
     }
 }

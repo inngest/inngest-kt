@@ -7,7 +7,6 @@ import com.fasterxml.jackson.databind.SerializationFeature
 import com.inngest.signingkey.checkHeadersAndValidateSignature
 import com.inngest.signingkey.getAuthorizationHeader
 import com.inngest.signingkey.hashedSigningKey
-import java.io.IOException
 import java.security.MessageDigest
 
 data class ExecutionRequestPayload(
@@ -43,6 +42,12 @@ internal data class RegistrationRequestPayload
 data class CommResponse(
     val body: String,
     val statusCode: ResultStatusCode,
+    val headers: Map<String, String>,
+)
+
+data class SyncResponse(
+    val body: String,
+    val statusCode: Int,
     val headers: Map<String, String>,
 )
 
@@ -152,34 +157,59 @@ class CommHandler(
         return configs
     }
 
+    @JvmOverloads
     fun register(
         origin: String,
         syncId: String?,
-    ): String {
+        expectedServerKind: String? = null,
+    ): SyncResponse {
         val registrationUrl = "${config.baseUrl()}/fn/register"
         val requestPayload = getRegistrationRequestPayload(origin)
 
         val httpClient = client.httpClient
 
         val signingKey = config.signingKey()
-        val authorizationHeaderRequestConfig =
-            if (config.client.env != InngestEnv.Dev) {
-                RequestConfig(getAuthorizationHeader(signingKey))
-            } else {
-                null
-            }
-
-        val queryParams = syncId?.let { mapOf(InngestQueryParamKey.SyncId.value to it) } ?: emptyMap()
-
-        val request = httpClient.build(registrationUrl, requestPayload, queryParams, authorizationHeaderRequestConfig)
-
-        httpClient.send(request) { response ->
-            if (!response.isSuccessful) throw IOException("Unexpected code $response")
+        val requestHeaders = mutableMapOf<String, String>()
+        if (config.client.env != InngestEnv.Dev) {
+            requestHeaders.putAll(getAuthorizationHeader(signingKey))
+        }
+        if (expectedServerKind != null) {
+            requestHeaders[InngestHeaderKey.ExpectedServerKind.value] = expectedServerKind
         }
 
-        // TODO - Add headers to output
-        val body: Map<String, Any?> = mapOf()
-        return parseRequestBody(body)
+        val queryParams = syncId?.let { mapOf(InngestQueryParamKey.SyncId.value to it) } ?: emptyMap()
+        val requestConfig = if (requestHeaders.isEmpty()) null else RequestConfig(requestHeaders)
+
+        val request = httpClient.build(registrationUrl, requestPayload, queryParams, requestConfig)
+
+        return httpClient.send(request) { response ->
+            val responseBody = response.body?.string().orEmpty()
+            if (!response.isSuccessful) {
+                return@send SyncResponse(
+                    body =
+                        parseRequestBody(
+                            mapOf(
+                                "message" to (syncFailureMessage(responseBody) ?: "Unexpected code $response"),
+                                "modified" to false,
+                            ),
+                        ),
+                    statusCode = 500,
+                    headers = headers,
+                )
+            }
+
+            SyncResponse(
+                body =
+                    parseRequestBody(
+                        mapOf(
+                            "message" to "Successfully synced.",
+                            "modified" to syncModified(responseBody),
+                        ),
+                    ),
+                statusCode = 200,
+                headers = headers,
+            )
+        }
     }
 
     // TODO
@@ -258,4 +288,14 @@ class CommHandler(
                     .digest(it.toByteArray())
                     .joinToString("") { byte -> "%02x".format(byte) }
             }
+
+    private fun syncFailureMessage(responseBody: String): String? =
+        runCatching {
+            ObjectMapper().readTree(responseBody).path("error").takeIf { !it.isMissingNode && !it.isNull }?.asText()
+        }.getOrNull()
+
+    private fun syncModified(responseBody: String): Boolean =
+        runCatching {
+            ObjectMapper().readTree(responseBody).path("modified").takeIf { !it.isMissingNode && !it.isNull }?.asBoolean() ?: false
+        }.getOrDefault(false)
 }

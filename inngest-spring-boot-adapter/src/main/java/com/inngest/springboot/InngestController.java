@@ -4,6 +4,7 @@ import com.inngest.CommHandler;
 import com.inngest.CommResponse;
 import com.inngest.InngestEnv;
 import com.inngest.InngestQueryParamKey;
+import com.inngest.SyncResponse;
 import com.inngest.signingkey.SignatureVerificationKt;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -43,14 +44,23 @@ public abstract class InngestController {
     @PutMapping()
     public ResponseEntity<String> put(
         @RequestHeader(HttpHeaders.HOST) String hostHeader,
+        @RequestHeader(name = "X-Inngest-Server-Kind", required = false) String serverKind,
         HttpServletRequest request
     ) {
         String origin = String.format("%s://%s", request.getScheme(), hostHeader);
         if (this.serveOrigin != null && !this.serveOrigin.isEmpty()) {
             origin = this.serveOrigin;
         }
-        String response = commHandler.register(origin, request.getParameter(InngestQueryParamKey.SyncId.getValue()));
-        return ResponseEntity.ok().headers(getHeaders()).body(response);
+        SyncResponse response = commHandler.register(
+            origin,
+            request.getParameter(InngestQueryParamKey.SyncId.getValue()),
+            serverKind
+        );
+
+        HttpHeaders headers = new HttpHeaders();
+        response.getHeaders().forEach(headers::add);
+
+        return ResponseEntity.status(response.getStatusCode()).headers(headers).body(response.getBody());
     }
 
     @PostMapping()
