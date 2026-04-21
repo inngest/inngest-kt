@@ -14,20 +14,21 @@
 
 * Checklist
 - [X] Inventory current coverage in =inngest/src/test/kotlin= and identify missing protocol cases.
-- [ ] Extend sync request tests from the current Spring success/deployId coverage to include explicit failure-path assertions.
+- [X] Extend sync request tests from the current Spring success/deployId coverage to include explicit failure-path assertions.
 - [X] Add tests for introspection unauthenticated and authenticated payloads.
-- [ ] Add tests for call request success, retriable error, non-retriable error, and retry-after behavior.
-- [ ] Add tests asserting required response headers on call responses.
-- [ ] Add tests for step response payloads for =run=, =sleep=, =waitForEvent=, =invoke=, and =sendEvent=.
-- [ ] Add adapter tests proving Ktor and Spring route the same request semantics into shared core code.
-- [ ] Add fixtures/builders for execution request payloads to reduce copy-paste in later milestones.
+- [X] Add tests for call request success, retriable error, non-retriable error, and retry-after behavior.
+- [X] Add tests asserting required response headers on call responses.
+- [X] Add tests for step response payloads for =run=, =sleep=, =waitForEvent=, =invoke=, and =sendEvent=.
+- [X] Add adapter tests proving Ktor and Spring route the same request semantics into shared core code.
+- [X] Add fixtures/builders for execution request payloads to reduce copy-paste in later milestones.
 - [ ] Document any intentionally unsupported spec areas as skipped or pending tests.
 
 * Current Baseline
 - [X] Spring Boot route coverage exists for dev-mode introspection, cloud introspection with valid and invalid signatures, and sync registration deployId handling.
 - [X] Demo integration coverage now exercises async function behavior for idempotency, cancellation, retries, sendEvent, invoke, waitForEvent, sleep, debounce, rate limiting, and matrix-shaped payloads.
 - [X] Demo integration coverage also covers custom/null step results, deserialization, multi-step execution, and step error behavior.
-- [ ] Ktor route parity, call-response header assertions, and shared golden fixtures are still open.
+- [X] Shared protocol fixtures now drive =CommHandler= contract tests plus Ktor and Spring adapter route tests for call and sync behavior.
+- [ ] Explicit skipped coverage for intentionally unsupported protocol areas is still open.
 
 * Exit Criteria
 - [ ] Shared protocol behavior is covered by automated tests.
