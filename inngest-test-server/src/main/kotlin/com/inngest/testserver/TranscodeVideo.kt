@@ -30,11 +30,13 @@ class TranscodeVideo : InngestFunction() {
                 "Hi there, My name is Jamie..." // dummy example content
             }
 
-        step.run("save-results") {
-            // Save summary, to your database
-            // database.save(event.data["videoId"], transcription, summary)
-        }
+        val saved =
+            step.run("save-results") {
+                // Save summary, to your database
+                // database.save(event.data["videoId"], transcription, summary)
+                mapOf("transcription" to transcription, "summary" to summary)
+            }
 
-        return hashMapOf("restored" to false)
+        return hashMapOf("restored" to false, "transcription" to transcription, "summary" to summary, "saved" to saved)
     }
 }
