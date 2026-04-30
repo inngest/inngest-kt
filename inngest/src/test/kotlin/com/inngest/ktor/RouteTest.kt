@@ -57,6 +57,35 @@ internal class RouteTest {
         }
 
     @Test
+    fun `post route returns JSON protocol failure when signature is missing in cloud`() =
+        testApplication {
+            application {
+                routing {
+                    serve(
+                        "/api/inngest",
+                        Inngest("test-app", eventKey = "evt-key", isDev = false),
+                        listOf(EchoFunction()),
+                        signingKey = "signkey-test-12345678",
+                    )
+                }
+            }
+
+            val response =
+                client.post("/api/inngest?fnId=echo-fn") {
+                    header(InngestHeaderKey.ServerKind.value, "cloud")
+                    contentType(ContentType.Application.Json)
+                    setBody(ProtocolFixtures.executionRequestPayloadJson("echo-fn"))
+                }
+
+            val body = mapper.readTree(response.bodyAsText())
+
+            assertEquals(HttpStatusCode.InternalServerError, response.status)
+            assertEquals("2", response.headers[InngestHeaderKey.RequestVersion.value])
+            assertEquals("Using cloud inngest but did not receive X-Inngest-Signature", body["message"].asText())
+            assertTrue(body["__serialized"].asBoolean())
+        }
+
+    @Test
     fun `put route returns successful sync response and forwards expected server kind`() =
         testApplication {
             val server = MockWebServer()

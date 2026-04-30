@@ -46,9 +46,18 @@ public class InngestControllerTest {
 
     @BeforeEach
     void setUp() {
+        setUpController(true, null);
+    }
+
+    private void setUpController(boolean isDev, String signingKey) {
         TestController controller = new TestController();
-        Inngest client = new Inngest("test-app", null, "evt-key", null, true);
-        controller.commHandler = new CommHandler(FUNCTIONS, client, new ServeConfig(client), SupportedFrameworkName.SpringBoot);
+        Inngest client = new Inngest("test-app", null, "evt-key", null, isDev);
+        controller.commHandler = new CommHandler(
+            FUNCTIONS,
+            client,
+            new ServeConfig(client, null, signingKey, null, null, null, null),
+            SupportedFrameworkName.SpringBoot
+        );
         mockMvc = MockMvcBuilders.standaloneSetup(controller).build();
     }
 
@@ -75,6 +84,27 @@ public class InngestControllerTest {
             .getContentAsString();
 
         assertEquals("\"done\"", responseBody);
+    }
+
+    @Test
+    void postRouteReturnsJsonProtocolFailureWhenSignatureIsMissingInCloud() throws Exception {
+        setUpController(false, "signkey-test-12345678");
+
+        String responseBody = mockMvc.perform(post("/api/inngest")
+                .queryParam("fnId", "echo-fn")
+                .header(InngestHeaderKey.ServerKind.getValue(), "cloud")
+                .contentType("application/json")
+                .content(ProtocolFixtures.executionRequestPayloadJson("echo-fn")))
+            .andExpect(status().isInternalServerError())
+            .andExpect(header().string(InngestHeaderKey.RequestVersion.getValue(), "2"))
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+
+        JsonNode body = MAPPER.readTree(responseBody);
+
+        assertEquals("Using cloud inngest but did not receive X-Inngest-Signature", body.get("message").asText());
+        assertTrue(body.get("__serialized").asBoolean());
     }
 
     @Test

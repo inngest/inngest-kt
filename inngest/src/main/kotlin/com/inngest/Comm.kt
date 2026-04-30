@@ -137,25 +137,33 @@ class CommHandler(
             val statusCode =
                 if (retryDecision.shouldRetry) ResultStatusCode.RetriableError else ResultStatusCode.NonRetriableError
 
-            val err =
-                CommError(
-                    name = e.toString(),
-                    message = e.message,
-                    stack = e.stackTrace.joinToString(separator = "\n"),
-                )
             return CommResponse(
-                body = parseRequestBody(err),
+                body = parseRequestBody(commError(e)),
                 statusCode = statusCode,
                 headers = headers.plus(retryDecision.headers),
             )
         }
     }
 
+    fun protocolErrorResponse(e: Throwable): CommResponse =
+        CommResponse(
+            body = parseRequestBody(commError(e)),
+            statusCode = ResultStatusCode.RetriableError,
+            headers = headers,
+        )
+
     private fun parseRequestBody(requestBody: Any?): String {
         val mapper = ObjectMapper()
         mapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false)
         return mapper.writeValueAsString(requestBody)
     }
+
+    private fun commError(e: Throwable): CommError =
+        CommError(
+            name = e.toString(),
+            message = e.message,
+            stack = e.stackTrace.joinToString(separator = "\n"),
+        )
 
     private fun serializePayload(payload: Any?): String {
         try {

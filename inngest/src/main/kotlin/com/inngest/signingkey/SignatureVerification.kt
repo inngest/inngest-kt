@@ -41,9 +41,9 @@ private fun signRequest(
 
 class InvalidSignatureHeaderException(
     message: String,
-) : Throwable(message)
+) : Exception(message)
 
-class ExpiredSignatureHeaderException : Throwable("signature header has expired")
+class ExpiredSignatureHeaderException : Exception("signature header has expired")
 
 const val FIVE_MINUTES_IN_SECONDS = 5L * 60
 
