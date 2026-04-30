@@ -71,6 +71,23 @@ private fun generateFailureFunctions(
             fn.toFailureHandler(client.appId)?.let { it.id()!! to it }
         }.toMap()
 
+private fun compositeFunctionId(
+    appId: String,
+    functionId: String,
+): String = "$appId-$functionId"
+
+private fun indexFunctions(
+    functions: Map<String, InternalInngestFunction>,
+    appId: String,
+): Map<String, InternalInngestFunction> =
+    functions
+        .flatMap { (functionId, function) ->
+            listOf(
+                functionId to function,
+                compositeFunctionId(appId, functionId) to function,
+            )
+        }.toMap()
+
 class CommHandler(
     functions: Map<String, InngestFunction>,
     val client: Inngest,
@@ -79,8 +96,10 @@ class CommHandler(
 ) {
     val headers = Environment.inngestHeaders(framework).plus(client.headers)
 
+    private val baseFunctions = functions.mapValues { (_, fn) -> fn.toInngestFunction() }
     private val failureFunctions = generateFailureFunctions(functions, client)
-    private val functions = functions.mapValues { (_, fn) -> fn.toInngestFunction() }.plus(failureFunctions)
+    private val allFunctions = baseFunctions.plus(failureFunctions)
+    private val functionsById = indexFunctions(allFunctions, client.appId)
 
     fun callFunction(
         functionId: String,
@@ -89,7 +108,7 @@ class CommHandler(
         try {
             val payload = Klaxon().parse<ExecutionRequestPayload>(requestBody)
             // TODO - check that payload is not null and throw error
-            val function = functions[functionId] ?: throw Exception("Function not found")
+            val function = functionsById[functionId] ?: throw Exception("Function not found")
 
             val ctx =
                 FunctionContext(
@@ -153,7 +172,7 @@ class CommHandler(
 
     private fun getFunctionConfigs(origin: String): List<InternalFunctionConfig> {
         val configs: MutableList<InternalFunctionConfig> = mutableListOf()
-        functions.forEach { entry -> configs.add(entry.value.getFunctionConfig(getServeUrl(origin), client)) }
+        allFunctions.forEach { entry -> configs.add(entry.value.getFunctionConfig(getServeUrl(origin), client)) }
         return configs
     }
 
@@ -222,7 +241,7 @@ class CommHandler(
     ): String {
         val insecureIntrospection =
             InsecureIntrospection(
-                functionCount = functions.size,
+                functionCount = allFunctions.size,
                 hasEventKey = Environment.isInngestEventKeySet(client.eventKey),
                 hasSigningKey = config.hasSigningKey(),
                 mode = if (client.env == InngestEnv.Dev) "dev" else "cloud",
@@ -239,7 +258,7 @@ class CommHandler(
                         checkHeadersAndValidateSignature(signature, requestBody, serverKind, config)
 
                         SecureIntrospection(
-                            functionCount = functions.size,
+                            functionCount = allFunctions.size,
                             hasEventKey = Environment.isInngestEventKeySet(client.eventKey),
                             hasSigningKey = config.hasSigningKey(),
                             authenticationSucceeded = true,
@@ -269,7 +288,7 @@ class CommHandler(
         RegistrationRequestPayload(
             appName = config.appId(),
             framework = framework.value,
-            sdk = "java:v${Version.getVersion()}",
+            sdk = Environment.inngestSdk(),
             url = getServeUrl(origin),
             v = "0.1",
             functions = getFunctionConfigs(origin),

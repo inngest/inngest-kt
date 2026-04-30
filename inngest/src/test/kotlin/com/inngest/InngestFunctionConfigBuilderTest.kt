@@ -17,6 +17,19 @@ class InngestFunctionConfigBuilderTest {
     }
 
     @Test
+    fun testStepRuntimeUsesHttpAndCompositeFunctionId() {
+        val config =
+            InngestFunctionConfigBuilder()
+                .id("test-id")
+                .build("app-id", "https://mysite.com/api/inngest")
+
+        val runtime = config.steps["step"]!!.runtime
+
+        assertEquals("http", runtime["type"])
+        assertEquals("https://mysite.com/api/inngest?fnId=app-id-test-id&stepId=step", runtime["url"])
+    }
+
+    @Test
     fun testMissingId() {
         assertFailsWith<InngestInvalidConfigurationException> {
             InngestFunctionConfigBuilder()

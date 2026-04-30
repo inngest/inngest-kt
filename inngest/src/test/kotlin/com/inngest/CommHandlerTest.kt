@@ -35,6 +35,16 @@ internal class CommHandlerTest {
     }
 
     @Test
+    fun `callFunction accepts composite function ids`() {
+        val response =
+            commHandler(EchoFunction())
+                .callFunction("test-app-echo-fn", ProtocolFixtures.executionRequestPayloadJson("echo-fn"))
+
+        assertEquals(ResultStatusCode.FunctionComplete, response.statusCode)
+        assertEquals("done", mapper.readValue(response.body, String::class.java))
+    }
+
+    @Test
     fun `callFunction marks non-retriable errors correctly`() {
         val response =
             commHandler(NonRetriableFailureFunction())

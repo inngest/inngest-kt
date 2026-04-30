@@ -83,6 +83,9 @@ internal class RouteTest {
 
             val body = mapper.readTree(response.bodyAsText())
             val recordedRequest = server.takeRequest()
+            val requestBody = mapper.readTree(recordedRequest.body.readUtf8())
+            val function = requestBody["functions"][0]
+            val runtime = function["steps"]["step"]["runtime"]
 
             assertEquals(HttpStatusCode.OK, response.status)
             assertEquals("Successfully synced.", body["message"].asText())
@@ -90,6 +93,10 @@ internal class RouteTest {
             assertEquals("/fn/register?deployId=deploy-1", recordedRequest.path)
             assertEquals("cloud", recordedRequest.getHeader(InngestHeaderKey.ExpectedServerKind.value))
             assertEquals("2", recordedRequest.getHeader(InngestHeaderKey.RequestVersion.value))
+            assertEquals(recordedRequest.getHeader(InngestHeaderKey.Sdk.value), requestBody["sdk"].asText())
+            assertEquals("test-app-echo-fn", function["id"].asText())
+            assertEquals("http", runtime["type"].asText())
+            assertEquals("${requestBody["url"].asText()}?fnId=test-app-echo-fn&stepId=step", runtime["url"].asText())
         }
 
     @Test
