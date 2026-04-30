@@ -295,8 +295,8 @@ class InngestFunctionConfigBuilder {
     private fun buildSteps(
         serveUrl: String,
         functionId: String,
-    ): Map<String, StepConfig> {
-        return mapOf(
+    ): Map<String, StepConfig> =
+        mapOf(
             "step" to
                 StepConfig(
                     id = "step",
@@ -309,7 +309,6 @@ class InngestFunctionConfigBuilder {
                         ),
                 ),
         )
-    }
 
     internal fun build(
         appId: String,
