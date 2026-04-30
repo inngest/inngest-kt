@@ -7,16 +7,21 @@ internal data class RetryDecision(
     companion object {
         internal fun fromException(exception: Exception): RetryDecision =
             when (exception) {
-                is RetryAfterError ->
+                is RetryAfterError -> {
                     RetryDecision(
                         true,
                         mapOf(InngestHeaderKey.RetryAfter.value to exception.retryAfter, noRetryFalse),
                     )
+                }
 
-                is NonRetriableError -> RetryDecision(false, mapOf(InngestHeaderKey.NoRetry.value to "true"))
+                is NonRetriableError -> {
+                    RetryDecision(false, mapOf(InngestHeaderKey.NoRetry.value to "true"))
+                }
 
                 // Any other error should have the default retry behavior.
-                else -> RetryDecision(true, mapOf(noRetryFalse))
+                else -> {
+                    RetryDecision(true, mapOf(noRetryFalse))
+                }
             }
     }
 }

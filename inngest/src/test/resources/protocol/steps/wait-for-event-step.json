@@ -1,0 +1,11 @@
+{
+  "id": "6ec8f90b43a653be0aa3c340fbbf82e2849632cc",
+  "name": "wait-for-user",
+  "op": "WaitForEvent",
+  "statusCode": "StepComplete",
+  "opts": {
+    "event": "app/user.updated",
+    "timeout": "10m",
+    "if": "event.data.userId == async.data.userId"
+  }
+}

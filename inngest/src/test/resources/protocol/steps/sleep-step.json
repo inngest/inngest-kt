@@ -1,0 +1,9 @@
+{
+  "id": "ef8d29955a725c39916a4626f3921a0104242439",
+  "name": "pause",
+  "op": "Sleep",
+  "statusCode": "StepComplete",
+  "opts": {
+    "duration": "9s"
+  }
+}

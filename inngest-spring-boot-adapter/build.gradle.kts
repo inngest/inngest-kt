@@ -27,7 +27,9 @@ dependencies {
     api(pkg)
 
     implementation("org.springframework.boot:spring-boot-starter-web")
+    testImplementation(testFixtures(project(":inngest")))
     testImplementation("org.springframework.boot:spring-boot-starter-test")
+    testImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
 }
 
 dependencyManagement {

@@ -9,6 +9,7 @@ object Environment {
             InngestHeaderKey.ContentType.value to "application/json",
             InngestHeaderKey.Sdk.value to sdk,
             InngestHeaderKey.UserAgent.value to sdk,
+            InngestHeaderKey.RequestVersion.value to "2",
             InngestHeaderKey.Framework.value to (framework?.value),
         ).filterValues { (it is String) }.entries.associate { (k, v) -> k to v!! }
     }
@@ -58,8 +59,14 @@ object Environment {
         val sysDev = systemValue(InngestSystem.Dev.value)
         if (sysDev != null) {
             return when (sysDev) {
-                "0" -> InngestEnv.Prod
-                "1" -> InngestEnv.Dev
+                "0" -> {
+                    InngestEnv.Prod
+                }
+
+                "1" -> {
+                    InngestEnv.Dev
+                }
+
                 else -> {
                     val other = InngestEnv.Other
                     other.value = sysDev
@@ -70,10 +77,22 @@ object Environment {
 
         if (env != null) {
             return when (env) {
-                "dev" -> InngestEnv.Dev
-                "development" -> InngestEnv.Dev
-                "prod" -> InngestEnv.Prod
-                "production" -> InngestEnv.Prod
+                "dev" -> {
+                    InngestEnv.Dev
+                }
+
+                "development" -> {
+                    InngestEnv.Dev
+                }
+
+                "prod" -> {
+                    InngestEnv.Prod
+                }
+
+                "production" -> {
+                    InngestEnv.Prod
+                }
+
                 else -> {
                     val other = InngestEnv.Other
                     other.value = env
@@ -84,11 +103,25 @@ object Environment {
 
         // Read from environment variable
         return when (val inngestEnv = systemValue(InngestSystem.Env.value)) {
-            null -> InngestEnv.Dev
-            "dev" -> InngestEnv.Dev
-            "development" -> InngestEnv.Dev
-            "prod" -> InngestEnv.Prod
-            "production" -> InngestEnv.Prod
+            null -> {
+                InngestEnv.Dev
+            }
+
+            "dev" -> {
+                InngestEnv.Dev
+            }
+
+            "development" -> {
+                InngestEnv.Dev
+            }
+
+            "prod" -> {
+                InngestEnv.Prod
+            }
+
+            "production" -> {
+                InngestEnv.Prod
+            }
 
             else -> {
                 val other = InngestEnv.Other

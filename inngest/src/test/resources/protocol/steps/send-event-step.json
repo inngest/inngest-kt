@@ -1,0 +1,12 @@
+{
+  "id": "229b582fd9c3c15b1eb37497ad06bc933db37306",
+  "name": "send-user",
+  "op": "Step",
+  "statusCode": "StepComplete",
+  "data": {
+    "event_ids": [
+      "evt-1"
+    ]
+  },
+  "error": null
+}

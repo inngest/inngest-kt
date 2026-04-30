@@ -23,7 +23,10 @@ class ServeConfig
             if (signingKey != null) return signingKey
 
             return when (client.env) {
-                InngestEnv.Dev -> DUMMY_SIGNING_KEY
+                InngestEnv.Dev -> {
+                    DUMMY_SIGNING_KEY
+                }
+
                 else -> {
                     val signingKey =
                         System.getProperty(InngestSystem.SigningKey.value)

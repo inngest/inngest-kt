@@ -1,0 +1,8 @@
+{
+  "id": "24989d8ee41c1575924630844ad094b55e6b1445",
+  "name": "compute",
+  "op": "StepRun",
+  "statusCode": "StepComplete",
+  "data": 42,
+  "error": null
+}

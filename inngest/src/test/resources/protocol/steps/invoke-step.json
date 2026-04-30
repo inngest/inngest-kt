@@ -1,0 +1,15 @@
+{
+  "id": "bc850242362ed6d68bea1403ff2dcc40d5483657",
+  "name": "invoke-user",
+  "op": "InvokeFunction",
+  "statusCode": "StepComplete",
+  "opts": {
+    "function_id": "target-app-target-fn",
+    "payload": {
+      "data": {
+        "userId": "123"
+      }
+    },
+    "timeout": "30s"
+  }
+}
