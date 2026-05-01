@@ -5,26 +5,6 @@ import java.time.Duration
 typealias MemoizedRecord = HashMap<String, Any>
 typealias MemoizedState = HashMap<String, MemoizedRecord>
 
-data class InngestEvent(
-    val name: String,
-    val data: Any,
-)
-
-data class SendEventsResponse(
-    val ids: Array<String>,
-) {
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (javaClass != other?.javaClass) return false
-
-        other as SendEventsResponse
-
-        return ids.contentEquals(other.ids)
-    }
-
-    override fun hashCode(): Int = ids.contentHashCode()
-}
-
 class StepInvalidStateTypeException(
     val id: String,
     val hashedId: String,
@@ -231,7 +211,7 @@ class Step(
             val stepState = state.getState<Array<String>>(hashedId, "event_ids")
 
             if (stepState != null) {
-                return SendEventsResponse(stepState)
+                return SendEventsResponse(stepState, 200)
             }
             throw Exception("step state expected sendEvent, got something else")
         } catch (e: StateNotFound) {

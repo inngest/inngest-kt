@@ -3,7 +3,7 @@ package com.inngest.springbootdemo;
 import com.inngest.*;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.LinkedHashMap;
+import java.util.Map;
 
 public class FollowupFunction extends InngestFunction {
 
@@ -18,7 +18,7 @@ public class FollowupFunction extends InngestFunction {
     }
 
     @Override
-    public LinkedHashMap<String, Object> execute(@NotNull FunctionContext ctx, @NotNull Step step) {
+    public Map<String, Object> execute(@NotNull FunctionContext ctx, @NotNull Step step) {
         System.out.println("-> follow up handler called " + ctx.getEvent().getName());
         return ctx.getEvent().getData();
     }
