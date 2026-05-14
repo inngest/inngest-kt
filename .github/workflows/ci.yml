@@ -58,7 +58,7 @@ jobs:
 
   itest:
     name: Integration Test (Java ${{ matrix.java }}, Spring Boot ${{ matrix.spring-boot }})
-    runs-on: ubuntu-latest
+    runs-on: depot-ubuntu-22.04-4
     strategy:
       fail-fast: false
       matrix:
