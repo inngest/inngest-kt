@@ -1,6 +1,7 @@
 # Inngest Kotlin SDK
 
 [![Maven Central Version - inngest](https://img.shields.io/maven-central/v/com.inngest/inngest?label=com.inngest%2Finngest)](https://central.sonatype.com/artifact/com.inngest/inngest)
+[![Maven Central Version - inngest-ktor-adapter](https://img.shields.io/maven-central/v/com.inngest/inngest-ktor-adapter?label=com.inngest%2Finngest-ktor-adapter)](https://central.sonatype.com/artifact/com.inngest/inngest-ktor-adapter)
 [![Maven Central Version - inngest-spring-boot-adapter](https://img.shields.io/maven-central/v/com.inngest/inngest-spring-boot-adapter?label=com.inngest%2Finngest-spring-boot-adapter)](https://central.sonatype.com/artifact/com.inngest/inngest-spring-boot-adapter)
 [![Discord](https://img.shields.io/discord/842170679536517141)](https://www.inngest.com/discord)
 

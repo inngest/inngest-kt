@@ -8,6 +8,8 @@ This repository is the Inngest SDK for Kotlin with Java interoperability. It is
 a Gradle multi-project build with these modules:
 
 - `inngest` - core SDK package published as `com.inngest:inngest`.
+- `inngest-ktor-adapter` - Ktor adapter published as
+  `com.inngest:inngest-ktor-adapter`.
 - `inngest-spring-boot-adapter` - Spring Boot adapter published as
   `com.inngest:inngest-spring-boot-adapter`.
 - `inngest-test-server` - Ktor development/test server for exercising the SDK.
@@ -62,12 +64,13 @@ expect it.
 Releases are package-prefixed. The releasable packages keep their versions in:
 
 - `inngest/VERSION`
+- `inngest-ktor-adapter/VERSION`
 - `inngest-spring-boot-adapter/VERSION`
 
-Release tags use package-prefixed names such as `inngest-0.2.2` and
-`inngest-spring-boot-adapter-0.2.1`. Release automation and package changelog
-generation are implemented by the scripts in `scripts/` and the GitHub
-workflows in `.github/workflows/`.
+Release tags use package-prefixed names such as `inngest-0.2.2`,
+`inngest-ktor-adapter-0.2.1`, and `inngest-spring-boot-adapter-0.2.1`.
+Release automation and package changelog generation are implemented by the
+scripts in `scripts/` and the GitHub workflows in `.github/workflows/`.
 
 ## Development Commands
 
@@ -77,10 +80,13 @@ workflows in `.github/workflows/`.
   `SPRING_BOOT_VERSION` defaulting to `2.7.18`.
 - `make inngest-dev` starts the local Inngest dev server pointed at
   `http://127.0.0.1:8080/api/inngest`.
-- `make test` runs the core, Ktor, Spring adapter, and Spring demo tests.
+- `make test` runs the core, Ktor adapter/test server, Spring adapter, and
+  Spring demo tests.
 - `make itest` runs Spring demo integration tests.
 - `make test-core` runs tests for `inngest`.
-- `make test-ktor` runs tests for `inngest-test-server`.
+- `make test-ktor` runs tests for the Ktor adapter and `inngest-test-server`.
+- `make test-ktor-adapter` runs tests for `inngest-ktor-adapter`.
+- `make test-ktor-server` runs tests for `inngest-test-server`.
 - `make test-springboot-adapter` runs tests for `inngest-spring-boot-adapter`.
 - `make test-springboot-demo` runs tests for `inngest-spring-boot-demo`.
 - `make lint` runs `ktlint --color`.
@@ -95,11 +101,12 @@ coverage in addition to the default `2.7.18`.
 - `inngest/src/main/kotlin/com/inngest/` contains the core SDK API, function
   configuration, event and step handling, request handling, environment logic,
   HTTP client behavior, and signing key verification.
-- `inngest/src/main/kotlin/com/inngest/ktor/` contains Ktor route integration.
 - `inngest/src/test/kotlin/` and `inngest/src/test/resources/protocol/` contain
   shared SDK and protocol contract tests and fixtures.
 - `inngest/src/testFixtures/` exposes reusable Java test fixtures for adapter
   tests.
+- `inngest-ktor-adapter/src/main/kotlin/com/inngest/ktor/` contains Ktor route
+  integration.
 - `inngest-spring-boot-adapter/src/main/java/com/inngest/springboot/` contains
   the Spring Boot controller and configuration layer.
 - `inngest-spring-boot-demo/` exercises the adapter and hosts integration tests.

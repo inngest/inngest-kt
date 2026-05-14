@@ -2,12 +2,15 @@
 
 set -euo pipefail
 
-readonly RELEASE_PACKAGES=("inngest" "inngest-spring-boot-adapter")
+readonly RELEASE_PACKAGES=("inngest" "inngest-ktor-adapter" "inngest-spring-boot-adapter")
 
 package_tag_pattern() {
   case "$1" in
     inngest)
       printf '%s\n' '^inngest-[0-9]+\.[0-9]+\.[0-9]+$'
+      ;;
+    inngest-ktor-adapter)
+      printf '%s\n' '^inngest-ktor-adapter-[0-9]+\.[0-9]+\.[0-9]+$'
       ;;
     inngest-spring-boot-adapter)
       printf '%s\n' '^inngest-spring-boot-adapter-[0-9]+\.[0-9]+\.[0-9]+$'
@@ -23,6 +26,9 @@ package_include_path() {
   case "$1" in
     inngest)
       printf '%s\n' 'inngest/**'
+      ;;
+    inngest-ktor-adapter)
+      printf '%s\n' 'inngest-ktor-adapter/**'
       ;;
     inngest-spring-boot-adapter)
       printf '%s\n' 'inngest-spring-boot-adapter/**'
