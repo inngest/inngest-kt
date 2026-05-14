@@ -29,12 +29,17 @@ jobs:
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: ${{ matrix.java }}
+          java-version: "21"
           java-package: jdk
           cache: gradle
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ matrix.java }}
+          java-package: jdk
 
       - name: Test
-        run: make test SPRING_BOOT_VERSION=${{ matrix.spring-boot }}
+        run: JAVA_HOME="${JAVA_HOME_21_X64}" PATH="${JAVA_HOME_21_X64}/bin:${PATH}" make test SPRING_BOOT_VERSION=${{ matrix.spring-boot }} TEST_JAVA_VERSION=${{ matrix.java }}
 
   lint:
     name: Lint
@@ -73,12 +78,17 @@ jobs:
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: ${{ matrix.java }}
+          java-version: "21"
           java-package: jdk
           cache: gradle
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ matrix.java }}
+          java-package: jdk
       - uses: DeterminateSystems/nix-installer-action@v22
       - name: Initialize Nix dev shell
         run: nix develop -c true
 
       - name: Test
-        run: nix develop -c make itest SPRING_BOOT_VERSION=${{ matrix.spring-boot }}
+        run: JAVA_HOME="${JAVA_HOME_21_X64}" PATH="${JAVA_HOME_21_X64}/bin:${PATH}" nix develop -c make itest SPRING_BOOT_VERSION=${{ matrix.spring-boot }} TEST_JAVA_VERSION=${{ matrix.java }}

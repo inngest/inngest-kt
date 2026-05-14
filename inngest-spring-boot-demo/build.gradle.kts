@@ -30,6 +30,8 @@ repositories {
     mavenCentral()
 }
 
+val testJavaVersion = providers.gradleProperty("testJavaVersion").map { it.toInt() }
+
 dependencies {
     implementation(project(":inngest-spring-boot-adapter"))
 
@@ -47,7 +49,8 @@ dependencies {
     testImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 
-    if (JavaVersion.current().isJava11Compatible) {
+    val effectiveTestJavaVersion = testJavaVersion.orNull ?: JavaVersion.current().majorVersion.toInt()
+    if (effectiveTestJavaVersion >= 11) {
         testImplementation("uk.org.webcompere:system-stubs-jupiter:2.1.6")
     } else {
         testImplementation("uk.org.webcompere:system-stubs-jupiter:1.2.1")
@@ -63,6 +66,15 @@ dependencyManagement {
 }
 
 tasks.withType<Test> {
+    testJavaVersion.orNull?.let { version ->
+        val minimumVersion = if (springBootMajorVersion.get() >= 3) 17 else 8
+        javaLauncher.set(
+            javaToolchains.launcherFor {
+                languageVersion.set(JavaLanguageVersion.of(maxOf(version, minimumVersion)))
+            },
+        )
+    }
+
     useJUnitPlatform()
     systemProperty("junit.jupiter.execution.parallel.enabled", true)
     systemProperty("test-group", "unit-test")

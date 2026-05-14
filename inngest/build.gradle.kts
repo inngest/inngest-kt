@@ -25,6 +25,8 @@ repositories {
     mavenCentral()
 }
 
+val testJavaVersion = providers.gradleProperty("testJavaVersion").map { it.toInt() }
+
 dependencies {
     implementation("com.beust:klaxon:5.5")
     implementation("com.fasterxml.jackson.core:jackson-core:2.16.1")
@@ -131,6 +133,21 @@ tasks.javadoc {
 }
 
 tasks.named<Test>("test") {
+    val effectiveTestJavaVersion = testJavaVersion.orNull?.let { maxOf(it, 8) } ?: 8
+    testJavaVersion.orNull?.let { version ->
+        javaLauncher.set(
+            javaToolchains.launcherFor {
+                languageVersion.set(JavaLanguageVersion.of(maxOf(version, 8)))
+            },
+        )
+    }
+    if (effectiveTestJavaVersion >= 17) {
+        jvmArgs(
+            "--add-opens=java.base/java.lang=ALL-UNNAMED",
+            "--add-opens=java.base/java.util=ALL-UNNAMED",
+        )
+    }
+
     // Use JUnit Platform for unit tests.
     useJUnitPlatform()
 

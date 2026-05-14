@@ -42,6 +42,8 @@ dependencies {
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
+val testJavaVersion = providers.gradleProperty("testJavaVersion").map { it.toInt() }
+
 dependencyManagement {
     imports {
         mavenBom("org.springframework.boot:spring-boot-dependencies:${springBootVersion.get()}") {
@@ -139,6 +141,15 @@ tasks.javadoc {
 }
 
 tasks.withType<Test> {
+    testJavaVersion.orNull?.let { version ->
+        val minimumVersion = if (springBootMajorVersion.get() >= 3) 17 else 8
+        javaLauncher.set(
+            javaToolchains.launcherFor {
+                languageVersion.set(JavaLanguageVersion.of(maxOf(version, minimumVersion)))
+            },
+        )
+    }
+
     useJUnitPlatform()
 
     testLogging {

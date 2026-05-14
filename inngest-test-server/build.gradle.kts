@@ -32,6 +32,8 @@ dependencies {
     implementation("com.fasterxml.jackson.core:jackson-annotations:2.16.1")
 }
 
+val testJavaVersion = providers.gradleProperty("testJavaVersion").map { it.toInt() }
+
 // Apply a specific Java toolchain to ease working on different environments.
 java { toolchain { languageVersion.set(JavaLanguageVersion.of(17)) } }
 
@@ -41,6 +43,14 @@ application {
 }
 
 tasks.named<Test>("test") {
+    testJavaVersion.orNull?.let { version ->
+        javaLauncher.set(
+            javaToolchains.launcherFor {
+                languageVersion.set(JavaLanguageVersion.of(maxOf(version, 17)))
+            },
+        )
+    }
+
     // Use JUnit Platform for unit tests.
     useJUnitPlatform()
 
