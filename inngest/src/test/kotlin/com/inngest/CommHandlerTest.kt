@@ -35,6 +35,43 @@ internal class CommHandlerTest {
     }
 
     @Test
+    fun `callFunction accepts event payload without optional id and timestamp`() {
+        val response =
+            commHandler(EchoFunction())
+                .callFunction(
+                    "echo-fn",
+                    """
+                    {
+                      "ctx": {
+                        "attempt": 0,
+                        "fn_id": "echo-fn",
+                        "run_id": "run-test",
+                        "env": "test"
+                      },
+                      "event": {
+                        "name": "test/run",
+                        "data": {
+                          "message": "hello"
+                        }
+                      },
+                      "events": [
+                        {
+                          "name": "test/run",
+                          "data": {
+                            "message": "hello"
+                          }
+                        }
+                      ],
+                      "steps": {}
+                    }
+                    """.trimIndent(),
+                )
+
+        assertEquals(ResultStatusCode.FunctionComplete, response.statusCode, response.body)
+        assertEquals("done", mapper.readValue(response.body, String::class.java))
+    }
+
+    @Test
     fun `callFunction accepts composite function ids`() {
         val response =
             commHandler(EchoFunction())

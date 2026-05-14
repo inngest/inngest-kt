@@ -1,11 +1,11 @@
 package com.inngest
 
 data class Event(
-    val id: String,
+    val id: String? = null,
     val name: String,
     val data: LinkedHashMap<String, Any>,
     val user: LinkedHashMap<String, Any>? = null,
-    val ts: Long,
+    val ts: Long? = null,
     val v: Any? = null,
 )
 
