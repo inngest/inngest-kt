@@ -72,7 +72,9 @@ public class CloudModeIntrospectionTest {
         }
     }
 
-    // The nested class is useful for setting the environment variables before the configuration class (Beans) runs.
+    // Keep the production config nested so full-app demo tests do not component-scan it and
+    // collide with DemoTestConfiguration's CommHandler bean. The nested test also lets
+    // system-stubs set environment variables before Spring creates the beans.
     // https://www.baeldung.com/java-system-stubs#environment-and-property-overrides-for-junit-5-spring-tests
     @WebAppConfiguration
     @ContextConfiguration(classes = {DemoController.class, ProductionConfiguration.class, TestWebMvcConfiguration.class})

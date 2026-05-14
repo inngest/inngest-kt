@@ -7,6 +7,8 @@ val springBootMajorVersion = springBootVersion.map { it.substringBefore(".").toI
 plugins {
     java
     application
+    // Use the dependency-management plugin plus a local bootRun task below.
+    // Applying the Spring Boot Gradle plugin would break Boot 2.7 on Gradle 9.
     id("io.spring.dependency-management") version "1.1.7"
 }
 
@@ -14,6 +16,8 @@ group = "com.inngest"
 version = "0.0.1-SNAPSHOT"
 
 java {
+    // Spring Boot 3+ requires Java 17, while Boot 2.x can still compile for
+    // Java 8. This demo follows the selected Boot version's baseline.
     sourceCompatibility =
         if (springBootMajorVersion.get() >= 3) {
             JavaVersion.VERSION_17
@@ -44,12 +48,15 @@ dependencies {
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     if (springBootMajorVersion.get() >= 4) {
+        // Spring Boot 4 moved MVC test support out of starter-test.
         testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test")
     }
     testImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 
     val effectiveTestJavaVersion = testJavaVersion.orNull ?: JavaVersion.current().majorVersion.toInt()
+    // system-stubs 2.x requires Java 11. Keep 1.2.1 available for the Boot 2
+    // / Java 8 matrix entries.
     if (effectiveTestJavaVersion >= 11) {
         testImplementation("uk.org.webcompere:system-stubs-jupiter:2.1.6")
     } else {
@@ -59,6 +66,8 @@ dependencies {
 
 dependencyManagement {
     imports {
+        // Import the BOM directly so the selected Spring Boot version controls
+        // dependency alignment without applying version-specific Boot tasks.
         mavenBom("org.springframework.boot:spring-boot-dependencies:${springBootVersion.get()}") {
             bomProperty("kotlin.version", "1.9.10")
         }
@@ -67,6 +76,8 @@ dependencyManagement {
 
 tasks.withType<Test> {
     testJavaVersion.orNull?.let { version ->
+        // CI includes Java 8/11 entries for compatibility, but Boot 3/4 cannot
+        // run below Java 17. Use the requested JVM unless the Boot baseline is higher.
         val minimumVersion = if (springBootMajorVersion.get() >= 3) 17 else 8
         javaLauncher.set(
             javaToolchains.launcherFor {
@@ -129,6 +140,9 @@ tasks.withType<Test> {
 tasks.register<Test>("integrationTest") {
     description = "Runs Spring Boot demo integration tests."
     group = "verification"
+    // Reuse the standard test source set and switch groups with a system
+    // property. Creating a separate source set makes these tests disappear
+    // under the current Gradle 9 setup.
     testClassesDirs = sourceSets["test"].output.classesDirs
     classpath = sourceSets["test"].runtimeClasspath
     shouldRunAfter(tasks.test)
@@ -139,6 +153,8 @@ tasks.register<Test>("integrationTest") {
 tasks.register<JavaExec>("bootRun") {
     group = "application"
     description = "Runs the Spring Boot demo application."
+    // Local replacement for the Spring Boot plugin's bootRun task so the demo
+    // can still be exercised against Boot 2.7 on Gradle 9.
     classpath = sourceSets["main"].runtimeClasspath
     mainClass.set(application.mainClass)
 }

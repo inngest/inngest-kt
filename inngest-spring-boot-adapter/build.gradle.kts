@@ -16,6 +16,8 @@ plugins {
 }
 
 java {
+    // Spring Boot 3+ moved its runtime baseline to Java 17. Keep Boot 2.x
+    // publishing on Java 8 so the adapter remains usable by legacy apps.
     sourceCompatibility =
         if (springBootMajorVersion.get() >= 3) {
             JavaVersion.VERSION_17
@@ -46,6 +48,8 @@ val testJavaVersion = providers.gradleProperty("testJavaVersion").map { it.toInt
 
 dependencyManagement {
     imports {
+        // Import the Spring Boot BOM directly instead of applying the Boot
+        // Gradle plugin; the Boot 2.7 plugin is not compatible with Gradle 9.
         mavenBom("org.springframework.boot:spring-boot-dependencies:${springBootVersion.get()}") {
             bomProperty("kotlin.version", "1.9.10")
         }
@@ -142,6 +146,8 @@ tasks.javadoc {
 
 tasks.withType<Test> {
     testJavaVersion.orNull?.let { version ->
+        // The CI matrix asks for each Java version explicitly. Boot 3/4 tests
+        // still need at least Java 17, so clamp older requested JVMs upward.
         val minimumVersion = if (springBootMajorVersion.get() >= 3) 17 else 8
         javaLauncher.set(
             javaToolchains.launcherFor {

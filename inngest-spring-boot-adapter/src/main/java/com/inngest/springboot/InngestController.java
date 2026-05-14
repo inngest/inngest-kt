@@ -70,6 +70,8 @@ public abstract class InngestController {
         }
 
         try {
+            // Avoid referencing servlet request types directly here: Spring
+            // Boot 2 exposes javax.servlet, while Boot 3/4 expose jakarta.servlet.
             Object scheme = nativeRequest.getClass().getMethod("getScheme").invoke(nativeRequest);
             if (scheme instanceof String && !((String) scheme).isEmpty()) {
                 return (String) scheme;
