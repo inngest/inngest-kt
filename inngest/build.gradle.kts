@@ -10,7 +10,7 @@ plugins {
     id("java-test-fixtures")
     id("maven-publish")
     id("signing")
-    id("org.jetbrains.kotlin.jvm") version "1.9.10"
+    id("org.jetbrains.kotlin.jvm") version "2.2.21"
 }
 
 // TODO - Move this to share conventions gradle file
@@ -24,6 +24,8 @@ repositories {
     // Use Maven Central for resolving dependencies.
     mavenCentral()
 }
+
+val testJavaVersion = providers.gradleProperty("testJavaVersion").map { it.toInt() }
 
 dependencies {
     implementation("com.beust:klaxon:5.5")
@@ -131,6 +133,21 @@ tasks.javadoc {
 }
 
 tasks.named<Test>("test") {
+    val effectiveTestJavaVersion = testJavaVersion.orNull?.let { maxOf(it, 8) } ?: 8
+    testJavaVersion.orNull?.let { version ->
+        javaLauncher.set(
+            javaToolchains.launcherFor {
+                languageVersion.set(JavaLanguageVersion.of(maxOf(version, 8)))
+            },
+        )
+    }
+    if (effectiveTestJavaVersion >= 17) {
+        jvmArgs(
+            "--add-opens=java.base/java.lang=ALL-UNNAMED",
+            "--add-opens=java.base/java.util=ALL-UNNAMED",
+        )
+    }
+
     // Use JUnit Platform for unit tests.
     useJUnitPlatform()
 

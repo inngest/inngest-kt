@@ -4,16 +4,23 @@ import com.inngest.*;
 import com.inngest.signingkey.BearerTokenKt;
 import com.inngest.signingkey.SignatureVerificationKt;
 import com.inngest.springboot.InngestConfiguration;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
+import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.web.context.WebApplicationContext;
+import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
 import uk.org.webcompere.systemstubs.jupiter.SystemStub;
 import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
@@ -22,32 +29,6 @@ import java.util.HashMap;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
-
-class ProductionConfiguration extends InngestConfiguration {
-
-    public static final String INNGEST_APP_ID = "spring_test_prod_demo";
-
-    @Override
-    protected HashMap<String, InngestFunction> functions() {
-        return new HashMap<>();
-    }
-
-    @Override
-    protected Inngest inngestClient() {
-        return new Inngest(INNGEST_APP_ID);
-    }
-
-    @Override
-    protected ServeConfig serve(Inngest client) {
-        return new ServeConfig(client);
-    }
-
-    @Bean
-    protected CommHandler commHandler(@Autowired Inngest inngestClient) {
-        ServeConfig serveConfig = new ServeConfig(inngestClient);
-        return new CommHandler(functions(), inngestClient, serveConfig, SupportedFrameworkName.SpringBoot);
-    }
-}
 
 @ExtendWith(SystemStubsExtension.class)
 public class CloudModeIntrospectionTest {
@@ -64,15 +45,53 @@ public class CloudModeIntrospectionTest {
         environmentVariables.set("INNGEST_EVENT_KEY", productionEventKey);
     }
 
-    // The nested class is useful for setting the environment variables before the configuration class (Beans) runs.
+    @Configuration
+    static class ProductionConfiguration extends InngestConfiguration {
+
+        public static final String INNGEST_APP_ID = "spring_test_prod_demo";
+
+        @Override
+        protected HashMap<String, InngestFunction> functions() {
+            return new HashMap<>();
+        }
+
+        @Override
+        protected Inngest inngestClient() {
+            return new Inngest(INNGEST_APP_ID);
+        }
+
+        @Override
+        protected ServeConfig serve(Inngest client) {
+            return new ServeConfig(client);
+        }
+
+        @Bean
+        protected CommHandler commHandler(@Autowired Inngest inngestClient) {
+            ServeConfig serveConfig = new ServeConfig(inngestClient);
+            return new CommHandler(functions(), inngestClient, serveConfig, SupportedFrameworkName.SpringBoot);
+        }
+    }
+
+    // Keep the production config nested so full-app demo tests do not component-scan it and
+    // collide with DemoTestConfiguration's CommHandler bean. The nested test also lets
+    // system-stubs set environment variables before Spring creates the beans.
     // https://www.baeldung.com/java-system-stubs#environment-and-property-overrides-for-junit-5-spring-tests
+    @WebAppConfiguration
+    @ContextConfiguration(classes = {DemoController.class, ProductionConfiguration.class, TestWebMvcConfiguration.class})
     @Import(ProductionConfiguration.class)
-    @WebMvcTest(DemoController.class)
+    @ExtendWith(SpringExtension.class)
     @Nested
     @EnabledIfSystemProperty(named = "test-group", matches = "unit-test")
     class InnerSpringTest {
         @Autowired
+        private WebApplicationContext webApplicationContext;
+
         private MockMvc mockMvc;
+
+        @BeforeEach
+        void setUpMockMvc() {
+            mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build();
+        }
 
         @Test
         public void shouldReturnInsecureIntrospectionWhenSignatureIsMissing() throws Exception {
@@ -135,5 +154,10 @@ public class CloudModeIntrospectionTest {
                     .andExpect(jsonPath("$.sdk_version").value(Version.Companion.getVersion()))
                     .andExpect(jsonPath("$.signing_key_hash").value(expectedSigningKeyHash));
         }
+    }
+
+    @Configuration
+    @EnableWebMvc
+    static class TestWebMvcConfiguration {
     }
 }

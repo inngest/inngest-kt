@@ -5,7 +5,7 @@ description = "Inngest Test Server"
 
 plugins {
     // Apply the org.jetbrains.kotlin.jvm Plugin to add support for Kotlin.
-    id("org.jetbrains.kotlin.jvm") version "1.9.10"
+    id("org.jetbrains.kotlin.jvm") version "2.2.21"
 
     // Apply the application plugin to add support for building a CLI application in Java.
     application
@@ -32,6 +32,8 @@ dependencies {
     implementation("com.fasterxml.jackson.core:jackson-annotations:2.16.1")
 }
 
+val testJavaVersion = providers.gradleProperty("testJavaVersion").map { it.toInt() }
+
 // Apply a specific Java toolchain to ease working on different environments.
 java { toolchain { languageVersion.set(JavaLanguageVersion.of(17)) } }
 
@@ -41,6 +43,14 @@ application {
 }
 
 tasks.named<Test>("test") {
+    testJavaVersion.orNull?.let { version ->
+        javaLauncher.set(
+            javaToolchains.launcherFor {
+                languageVersion.set(JavaLanguageVersion.of(maxOf(version, 17)))
+            },
+        )
+    }
+
     // Use JUnit Platform for unit tests.
     useJUnitPlatform()
 

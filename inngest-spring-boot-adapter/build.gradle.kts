@@ -5,15 +5,25 @@ group = "com.inngest"
 description = "Spring Boot adapter for Inngest SDK"
 version = file("VERSION").readText().trim()
 
+val springBootVersion = providers.gradleProperty("springBootVersion").orElse("2.7.18")
+val springBootMajorVersion = springBootVersion.map { it.substringBefore(".").toInt() }
+
 plugins {
     id("java-library")
     id("maven-publish")
     id("signing")
-    id("io.spring.dependency-management") version "1.1.4"
+    id("io.spring.dependency-management") version "1.1.7"
 }
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_1_8
+    // Spring Boot 3+ moved its runtime baseline to Java 17. Keep Boot 2.x
+    // publishing on Java 8 so the adapter remains usable by legacy apps.
+    sourceCompatibility =
+        if (springBootMajorVersion.get() >= 3) {
+            JavaVersion.VERSION_17
+        } else {
+            JavaVersion.VERSION_1_8
+        }
     withJavadocJar()
     withSourcesJar()
 }
@@ -29,12 +39,18 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-web")
     testImplementation(testFixtures(project(":inngest")))
     testImplementation("org.springframework.boot:spring-boot-starter-test")
+    testImplementation("com.fasterxml.jackson.core:jackson-databind")
     testImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
+
+val testJavaVersion = providers.gradleProperty("testJavaVersion").map { it.toInt() }
 
 dependencyManagement {
     imports {
-        mavenBom("org.springframework.boot:spring-boot-dependencies:2.7.18") {
+        // Import the Spring Boot BOM directly instead of applying the Boot
+        // Gradle plugin; the Boot 2.7 plugin is not compatible with Gradle 9.
+        mavenBom("org.springframework.boot:spring-boot-dependencies:${springBootVersion.get()}") {
             bomProperty("kotlin.version", "1.9.10")
         }
     }
@@ -129,6 +145,17 @@ tasks.javadoc {
 }
 
 tasks.withType<Test> {
+    testJavaVersion.orNull?.let { version ->
+        // The CI matrix asks for each Java version explicitly. Boot 3/4 tests
+        // still need at least Java 17, so clamp older requested JVMs upward.
+        val minimumVersion = if (springBootMajorVersion.get() >= 3) 17 else 8
+        javaLauncher.set(
+            javaToolchains.launcherFor {
+                languageVersion.set(JavaLanguageVersion.of(maxOf(version, minimumVersion)))
+            },
+        )
+    }
+
     useJUnitPlatform()
 
     testLogging {
