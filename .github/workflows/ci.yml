@@ -9,7 +9,7 @@ on:
 jobs:
   test:
     name: Test Core and Ktor (Java ${{ matrix.java }})
-    runs-on: ubuntu-latest
+    runs-on: depot-ubuntu-22.04
     strategy:
       fail-fast: false
       matrix:
@@ -33,7 +33,7 @@ jobs:
 
   test-spring-boot:
     name: Test Spring Boot (Java ${{ matrix.java }}, Spring Boot ${{ matrix.spring-boot }})
-    runs-on: ubuntu-latest
+    runs-on: depot-ubuntu-22.04
     strategy:
       fail-fast: false
       matrix:
@@ -69,7 +69,7 @@ jobs:
 
   lint:
     name: Lint
-    runs-on: ubuntu-latest
+    runs-on: depot-ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
       - name: ktlint
