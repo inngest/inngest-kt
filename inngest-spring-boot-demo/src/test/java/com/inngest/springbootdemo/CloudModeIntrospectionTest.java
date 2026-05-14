@@ -30,33 +30,6 @@ import java.util.HashMap;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@Configuration
-class ProductionConfiguration extends InngestConfiguration {
-
-    public static final String INNGEST_APP_ID = "spring_test_prod_demo";
-
-    @Override
-    protected HashMap<String, InngestFunction> functions() {
-        return new HashMap<>();
-    }
-
-    @Override
-    protected Inngest inngestClient() {
-        return new Inngest(INNGEST_APP_ID);
-    }
-
-    @Override
-    protected ServeConfig serve(Inngest client) {
-        return new ServeConfig(client);
-    }
-
-    @Bean
-    protected CommHandler commHandler(@Autowired Inngest inngestClient) {
-        ServeConfig serveConfig = new ServeConfig(inngestClient);
-        return new CommHandler(functions(), inngestClient, serveConfig, SupportedFrameworkName.SpringBoot);
-    }
-}
-
 @ExtendWith(SystemStubsExtension.class)
 public class CloudModeIntrospectionTest {
 
@@ -70,6 +43,33 @@ public class CloudModeIntrospectionTest {
         environmentVariables.set("INNGEST_DEV", "0");
         environmentVariables.set("INNGEST_SIGNING_KEY", productionSigningKey);
         environmentVariables.set("INNGEST_EVENT_KEY", productionEventKey);
+    }
+
+    @Configuration
+    static class ProductionConfiguration extends InngestConfiguration {
+
+        public static final String INNGEST_APP_ID = "spring_test_prod_demo";
+
+        @Override
+        protected HashMap<String, InngestFunction> functions() {
+            return new HashMap<>();
+        }
+
+        @Override
+        protected Inngest inngestClient() {
+            return new Inngest(INNGEST_APP_ID);
+        }
+
+        @Override
+        protected ServeConfig serve(Inngest client) {
+            return new ServeConfig(client);
+        }
+
+        @Bean
+        protected CommHandler commHandler(@Autowired Inngest inngestClient) {
+            ServeConfig serveConfig = new ServeConfig(inngestClient);
+            return new CommHandler(functions(), inngestClient, serveConfig, SupportedFrameworkName.SpringBoot);
+        }
     }
 
     // The nested class is useful for setting the environment variables before the configuration class (Beans) runs.
