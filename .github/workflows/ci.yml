@@ -24,6 +24,8 @@ jobs:
             spring-boot: "3.5.14"
           - java: "11"
             spring-boot: "4.0.6"
+          - java: "25"
+            spring-boot: "2.7.18"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
@@ -73,6 +75,8 @@ jobs:
             spring-boot: "3.5.14"
           - java: "11"
             spring-boot: "4.0.6"
+          - java: "25"
+            spring-boot: "2.7.18"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
