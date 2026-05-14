@@ -6,14 +6,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.inngest.CommHandler;
 import com.inngest.InngestSystem;
 import okhttp3.Request;
-import javax.annotation.PreDestroy;
 import okhttp3.OkHttpClient;
 import okhttp3.Response;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
-import org.springframework.boot.web.context.WebServerApplicationContext;
+import org.springframework.beans.factory.DisposableBean;
 import org.springframework.context.event.EventListener;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -24,7 +24,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.function.Predicate;
 
-public class DevServerComponent {
+public class DevServerComponent implements DisposableBean {
     @FunctionalInterface
     interface CheckedBooleanSupplier {
         boolean getAsBoolean() throws Exception;
@@ -47,8 +47,7 @@ public class DevServerComponent {
             return;
         }
 
-        WebServerApplicationContext applicationContext = (WebServerApplicationContext) event.getApplicationContext();
-        int appPort = applicationContext.getWebServer().getPort();
+        int appPort = getWebServerPort(event);
         String appOrigin = "http://127.0.0.1:" + appPort;
         this.baseUrl = configuredDevServerBaseUrl();
         int devServerPort = URI.create(baseUrl).getPort();
@@ -59,6 +58,22 @@ public class DevServerComponent {
 
         waitForStartup(appOrigin);
         started = true;
+    }
+
+    private int getWebServerPort(ApplicationReadyEvent event) {
+        Object applicationContext = event.getApplicationContext();
+
+        try {
+            Object webServer = applicationContext.getClass().getMethod("getWebServer").invoke(applicationContext);
+            Object port = webServer.getClass().getMethod("getPort").invoke(webServer);
+            if (port instanceof Number) {
+                return ((Number) port).intValue();
+            }
+        } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
+            throw new IllegalStateException("Application context does not expose an embedded web server port", e);
+        }
+
+        throw new IllegalStateException("Application context returned a non-numeric embedded web server port");
     }
 
     private List<String> devServerCommand(
@@ -303,8 +318,8 @@ public class DevServerComponent {
     }
 
 
-    @PreDestroy
-    public void stop()  {
+    @Override
+    public void destroy() {
         if (devServerProcess != null && devServerProcess.isAlive()) {
             devServerProcess.destroy();
         }

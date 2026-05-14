@@ -1,7 +1,6 @@
 package com.inngest.springbootdemo;
 
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ContextConfiguration;
@@ -14,6 +13,5 @@ import java.lang.annotation.RetentionPolicy;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Import(DemoTestConfiguration.class)
 @ContextConfiguration(initializers = IntegrationTestInitializer.class)
-@AutoConfigureMockMvc
 public @interface IntegrationTest {
 }

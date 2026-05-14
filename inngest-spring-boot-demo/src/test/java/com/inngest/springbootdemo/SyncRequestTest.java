@@ -11,10 +11,16 @@ import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
+import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.web.context.WebApplicationContext;
+import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
 import uk.org.webcompere.systemstubs.jupiter.SystemStub;
 import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
@@ -28,6 +34,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @ExtendWith(SystemStubsExtension.class)
 public class SyncRequestTest {
+    @Configuration
     static class SyncInngestConfiguration extends InngestConfiguration {
         protected HashMap<String, InngestFunction> functions() {
             return new HashMap<>();
@@ -55,17 +62,22 @@ public class SyncRequestTest {
 
     public static MockWebServer mockWebServer;
 
+    @WebAppConfiguration
+    @ContextConfiguration(classes = {DemoController.class, SyncInngestConfiguration.class, TestWebMvcConfiguration.class})
     @Import(SyncInngestConfiguration.class)
-    @WebMvcTest(DemoController.class)
+    @ExtendWith(SpringExtension.class)
     @Nested
     @EnabledIfSystemProperty(named = "test-group", matches = "unit-test")
     @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
     class InnerSpringTest {
         @Autowired
+        private WebApplicationContext webApplicationContext;
+
         private MockMvc mockMvc;
 
         @BeforeEach
         void BeforeEach() throws Exception {
+            mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build();
             mockWebServer = new MockWebServer();
             mockWebServer.start();
 
@@ -132,5 +144,10 @@ public class SyncRequestTest {
             assertEquals("3", recordedRequest.getRequestUrl().queryParameter("deployId"));
             assertThatPayloadDoesNotContainDeployId(recordedRequest);
         }
+    }
+
+    @Configuration
+    @EnableWebMvc
+    static class TestWebMvcConfiguration {
     }
 }
