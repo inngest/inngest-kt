@@ -12,8 +12,9 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.context.request.NativeWebRequest;
 
-import javax.servlet.http.HttpServletRequest;
+import java.lang.reflect.InvocationTargetException;
 
 public abstract class InngestController {
     @Autowired
@@ -44,9 +45,9 @@ public abstract class InngestController {
     public ResponseEntity<String> put(
         @RequestHeader(HttpHeaders.HOST) String hostHeader,
         @RequestHeader(name = "X-Inngest-Server-Kind", required = false) String serverKind,
-        HttpServletRequest request
+        NativeWebRequest request
     ) {
-        String origin = String.format("%s://%s", request.getScheme(), hostHeader);
+        String origin = String.format("%s://%s", getRequestScheme(request), hostHeader);
         if (this.serveOrigin != null && !this.serveOrigin.isEmpty()) {
             origin = this.serveOrigin;
         }
@@ -60,6 +61,24 @@ public abstract class InngestController {
         response.getHeaders().forEach(headers::add);
 
         return ResponseEntity.status(response.getStatusCode()).headers(headers).body(response.getBody());
+    }
+
+    private String getRequestScheme(NativeWebRequest request) {
+        Object nativeRequest = request.getNativeRequest();
+        if (nativeRequest == null) {
+            return "http";
+        }
+
+        try {
+            Object scheme = nativeRequest.getClass().getMethod("getScheme").invoke(nativeRequest);
+            if (scheme instanceof String && !((String) scheme).isEmpty()) {
+                return (String) scheme;
+            }
+        } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException ignored) {
+            return "http";
+        }
+
+        return "http";
     }
 
     @PostMapping()
