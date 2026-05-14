@@ -15,6 +15,10 @@ permissions:
   contents: write
   pull-requests: write
 
+env:
+  # Use the release bot token so release/next pushes and PR updates trigger normal workflow fanout.
+  GH_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+
 concurrency:
   group: release-pr-main
   cancel-in-progress: true
@@ -23,16 +27,23 @@ jobs:
   create-release-pr:
     runs-on: ubuntu-latest
     steps:
+      - name: Validate release token
+        run: |
+          if [ -z "${GH_TOKEN}" ]; then
+            echo "::error title=Missing RELEASE_TOKEN::Configure the release bot token as the RELEASE_TOKEN repository secret."
+            exit 1
+          fi
+
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          token: ${{ env.GH_TOKEN }}
 
       - name: Setup git-cliff
         uses: kenji-miyake/setup-git-cliff@v1
 
       - name: Create or update release PR
         env:
-          GH_TOKEN: ${{ github.token }}
           RELEASE_BASE_BRANCH: ${{ github.event.repository.default_branch }}
         run: ./scripts/release-pr.sh

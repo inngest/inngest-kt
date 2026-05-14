@@ -14,17 +14,28 @@ concurrency:
 
 env:
   RELEASE: true
+  # Use the release bot token so tag pushes and release updates are performed by the release bot.
+  RELEASE_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+  GH_TOKEN: ${{ secrets.RELEASE_TOKEN }}
 
 jobs:
   release:
     if: github.event.pull_request.merged == true && github.event.pull_request.head.ref == 'release/next' && github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     steps:
+      - name: Validate release token
+        run: |
+          if [ -z "${RELEASE_TOKEN}" ]; then
+            echo "::error title=Missing RELEASE_TOKEN::Configure the release bot token as the RELEASE_TOKEN repository secret."
+            exit 1
+          fi
+
       - name: Checkout merged release commit
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.merge_commit_sha }}
+          token: ${{ env.RELEASE_TOKEN }}
 
       - name: Setup Java
         uses: actions/setup-java@v3
@@ -40,7 +51,6 @@ jobs:
 
       - name: Tag and release packages
         env:
-          GH_TOKEN: ${{ github.token }}
           MERGE_COMMIT_SHA: ${{ github.event.pull_request.merge_commit_sha }}
           MAVEN_USERNAME: ${{ secrets.MAVEN_USERNAME }}
           MAVEN_PASSWORD: ${{ secrets.MAVEN_PASSWORD }}
