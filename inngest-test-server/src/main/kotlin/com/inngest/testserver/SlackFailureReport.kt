@@ -13,9 +13,12 @@ class SlackFailureReport : InngestFunction() {
         ctx: FunctionContext,
         step: Step,
     ): String {
-        step.run("throw exception") {
-            throw RuntimeException("This function always fails")
-            "Step result"
+        step.run<String>("throw exception") {
+            if (ctx.event.data["forceSuccess"] == true) {
+                "Step result"
+            } else {
+                throw RuntimeException("This function always fails")
+            }
         }
 
         return "Success"

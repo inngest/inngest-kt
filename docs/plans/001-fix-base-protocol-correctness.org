@@ -1,31 +1,41 @@
 #+title: 001 Fix Base Protocol Correctness
 #+AUTHOR: Darwin D. Wu
 #+DATE: 2026-04-16
-#+STATUS: Draft
+#+STATUS: Done
 
 * Goal
-- [ ] Bring the baseline HTTP protocol into compliance before adding new execution features.
-- [ ] Remove correctness and security gaps that affect every request.
+- [X] Bring the baseline HTTP protocol into compliance before adding new execution features.
+- [X] Remove correctness and security gaps that affect every request.
 
 * Scope
-- [ ] Required headers and SDK identity.
-- [ ] Signature verification parity across adapters.
-- [ ] Sync request and sync response semantics.
-- [ ] Composite function identifiers and runtime metadata.
+- [X] Required headers and SDK identity.
+- [X] Signature verification parity across adapters.
+- [X] Sync request and sync response semantics.
+- [X] Composite function identifiers and runtime metadata.
 
 * Checklist
-- [ ] Add =X-Inngest-Req-Version: 2= to call responses and outbound SDK-to-Inngest requests.
-- [ ] Ensure the sync payload =sdk= value matches the =X-Inngest-Sdk= header value.
-- [ ] Fix Ktor call handling to validate =X-Inngest-Signature= before execution.
-- [ ] Normalize Spring and Ktor error handling so protocol failures return the intended status and body shape.
-- [ ] Return spec-shaped sync responses with =message= and =modified= fields.
-- [ ] Parse Inngest sync success/failure responses and map them to local sync responses.
-- [ ] Forward =X-Inngest-Expected-Server-Kind= during sync when present on the incoming request.
-- [ ] Ensure function runtime URLs use the composite function ID in =fnId=.
-- [ ] Fix sync runtime metadata so HTTP runtime =type= is =http= rather than the URL scheme.
-- [ ] Add or update tests for all corrected protocol fields.
+- [X] Add =X-Inngest-Req-Version: 2= to call responses and outbound SDK-to-Inngest requests.
+- [X] Ensure the sync payload =sdk= value matches the =X-Inngest-Sdk= header value.
+- [X] Fix Ktor call handling to validate =X-Inngest-Signature= before execution.
+- [X] Normalize Spring and Ktor error handling so protocol failures return the intended status and body shape.
+- [X] Return spec-shaped sync responses with =message= and =modified= fields.
+- [X] Parse Inngest sync success/failure responses and map them to local sync responses.
+- [X] Forward =X-Inngest-Expected-Server-Kind= during sync when present on the incoming request.
+- [X] Ensure function runtime URLs use the composite function ID in =fnId=.
+- [X] Fix sync runtime metadata so HTTP runtime =type= is =http= rather than the URL scheme.
+- [X] Add or update tests for all corrected protocol fields.
 
 * Exit Criteria
-- [ ] Both adapters enforce request verification for call requests.
-- [ ] Sync payloads and sync responses match the intended protocol shape.
-- [ ] Required headers are consistently present on responses and outbound requests.
+- [X] Both adapters enforce request verification for call requests.
+- [X] Sync payloads and sync responses match the intended protocol shape.
+- [X] Required headers are consistently present on responses and outbound requests.
+
+* Current Notes
+- [X] Spring and Ktor call responses include =X-Inngest-Req-Version: 2= via shared SDK headers.
+- [X] Outbound SDK requests include =X-Inngest-Req-Version: 2= via the shared =Inngest= HTTP client headers.
+- [X] Ktor and Spring both validate =X-Inngest-Signature= before call execution.
+- [X] Sync responses now map upstream success and failure bodies into local =message= and =modified= fields.
+- [X] Sync forwards incoming =X-Inngest-Server-Kind= as =X-Inngest-Expected-Server-Kind=.
+- [X] Sync registration payload now reports the same =sdk= value as =X-Inngest-Sdk=.
+- [X] Runtime metadata now uses =type= =http= and the composite function ID in =fnId=.
+- [X] Adapter protocol failures now return normalized JSON error bodies instead of plain exception strings.

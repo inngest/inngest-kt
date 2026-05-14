@@ -6,6 +6,8 @@
 
 [Inngest](https://www.inngest.com) SDK for Kotlin with Java interoperability.
 
+This SDK tracks the canonical [Inngest SDK specification](https://github.com/inngest/inngest/blob/main/docs/SDK_SPEC.md).
+
 ## Defining a function
 
 <details open>

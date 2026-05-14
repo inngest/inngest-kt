@@ -15,7 +15,9 @@ class PushToSlackChannel : InngestFunction() {
     ): String =
         step.run("push-to-slack-channel") {
             // Call Slack API to push the image to a channel
-            throw NonRetriableError("Failed to push image to Slack channel ${ctx.event.data["image"]}")
+            if (ctx.event.data["forceFail"] == true) {
+                throw NonRetriableError("Failed to push image to Slack channel ${ctx.event.data["image"]}")
+            }
 
             "Image pushed to Slack channel"
         }

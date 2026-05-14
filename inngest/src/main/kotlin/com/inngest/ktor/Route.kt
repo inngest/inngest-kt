@@ -56,7 +56,8 @@ fun Route.serve(
         post("") {
             val fnId = call.request.queryParameters["fnId"]
             if (fnId == null) {
-                call.respond(HttpStatusCode.BadRequest, "Missing fnId parameter")
+                val response = comm.protocolErrorResponse(IllegalArgumentException("Missing fnId parameter"))
+                call.respondComm(response)
             } else {
                 val body = call.receiveText()
                 try {
@@ -65,13 +66,10 @@ fun Route.serve(
                     checkHeadersAndValidateSignature(signature, body, serverKind, comm.config)
 
                     val response = comm.callFunction(fnId, body)
-                    response.headers.forEach({ (k, v) -> call.response.header(k, v) })
-                    call.response.status(
-                        HttpStatusCode(response.statusCode.code, response.statusCode.message),
-                    )
-                    call.respondText(response.body)
+                    call.respondComm(response)
                 } catch (e: Exception) {
-                    call.respond(HttpStatusCode.InternalServerError, e.toString())
+                    val response = comm.protocolErrorResponse(e)
+                    call.respondComm(response)
                 }
             }
         }
@@ -86,6 +84,15 @@ fun Route.serve(
             call.respondText(response.body, ContentType.Application.Json, HttpStatusCode.fromValue(response.statusCode))
         }
     }
+}
+
+private suspend fun ApplicationCall.respondComm(response: CommResponse) {
+    response.headers.forEach { (k, v) -> this.response.header(k, v) }
+    respondText(
+        response.body,
+        ContentType.Application.Json,
+        HttpStatusCode(response.statusCode.code, response.statusCode.message),
+    )
 }
 
 val HTTP_PORTS = listOf(80, 443)

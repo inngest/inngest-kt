@@ -57,6 +57,35 @@ internal class RouteTest {
         }
 
     @Test
+    fun `post route returns JSON protocol failure when signature is missing in cloud`() =
+        testApplication {
+            application {
+                routing {
+                    serve(
+                        "/api/inngest",
+                        Inngest("test-app", eventKey = "evt-key", isDev = false),
+                        listOf(EchoFunction()),
+                        signingKey = "signkey-test-12345678",
+                    )
+                }
+            }
+
+            val response =
+                client.post("/api/inngest?fnId=echo-fn") {
+                    header(InngestHeaderKey.ServerKind.value, "cloud")
+                    contentType(ContentType.Application.Json)
+                    setBody(ProtocolFixtures.executionRequestPayloadJson("echo-fn"))
+                }
+
+            val body = mapper.readTree(response.bodyAsText())
+
+            assertEquals(HttpStatusCode.InternalServerError, response.status)
+            assertEquals("2", response.headers[InngestHeaderKey.RequestVersion.value])
+            assertEquals("Using cloud inngest but did not receive X-Inngest-Signature", body["message"].asText())
+            assertTrue(body["__serialized"].asBoolean())
+        }
+
+    @Test
     fun `put route returns successful sync response and forwards expected server kind`() =
         testApplication {
             val server = MockWebServer()
@@ -83,6 +112,9 @@ internal class RouteTest {
 
             val body = mapper.readTree(response.bodyAsText())
             val recordedRequest = server.takeRequest()
+            val requestBody = mapper.readTree(recordedRequest.body.readUtf8())
+            val function = requestBody["functions"][0]
+            val runtime = function["steps"]["step"]["runtime"]
 
             assertEquals(HttpStatusCode.OK, response.status)
             assertEquals("Successfully synced.", body["message"].asText())
@@ -90,6 +122,10 @@ internal class RouteTest {
             assertEquals("/fn/register?deployId=deploy-1", recordedRequest.path)
             assertEquals("cloud", recordedRequest.getHeader(InngestHeaderKey.ExpectedServerKind.value))
             assertEquals("2", recordedRequest.getHeader(InngestHeaderKey.RequestVersion.value))
+            assertEquals(recordedRequest.getHeader(InngestHeaderKey.Sdk.value), requestBody["sdk"].asText())
+            assertEquals("test-app-echo-fn", function["id"].asText())
+            assertEquals("http", runtime["type"].asText())
+            assertEquals("${requestBody["url"].asText()}?fnId=test-app-echo-fn&stepId=step", runtime["url"].asText())
         }
 
     @Test

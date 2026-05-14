@@ -9,7 +9,6 @@ import com.inngest.signingkey.SignatureVerificationKt;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -67,22 +66,29 @@ public abstract class InngestController {
     public ResponseEntity<String> handleRequest(
         @RequestHeader(name = "X-Inngest-Signature", required = false) String signature,
         @RequestHeader(name = "X-Inngest-Server-Kind", required = false) String serverKind,
-        @RequestParam(name = "fnId") String functionId,
+        @RequestParam(name = "fnId", required = false) String functionId,
         @RequestBody String body
     ) {
         try {
+            if (functionId == null) {
+                return commResponse(commHandler.protocolErrorResponse(new IllegalArgumentException("Missing fnId parameter")));
+            }
+
             SignatureVerificationKt.checkHeadersAndValidateSignature(signature, body, serverKind, commHandler.getConfig());
 
             CommResponse response = commHandler.callFunction(functionId, body);
 
-            HttpHeaders headers = new HttpHeaders();
-            response.getHeaders().forEach(headers::add);
-
-            return ResponseEntity.status(response.getStatusCode().getCode()).headers(headers)
-                .body(response.getBody());
+            return commResponse(response);
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(e.toString());
+            return commResponse(commHandler.protocolErrorResponse(e));
         }
+    }
+
+    private ResponseEntity<String> commResponse(CommResponse response) {
+        HttpHeaders headers = new HttpHeaders();
+        response.getHeaders().forEach(headers::add);
+
+        return ResponseEntity.status(response.getStatusCode().getCode()).headers(headers)
+            .body(response.getBody());
     }
 }

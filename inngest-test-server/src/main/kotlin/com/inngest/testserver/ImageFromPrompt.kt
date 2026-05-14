@@ -17,7 +17,9 @@ class ImageFromPrompt : InngestFunction() {
             try {
                 step.run("generate-image-dall-e") {
                     // Call the DALL-E model to generate an image
-                    throw Exception("Failed to generate image")
+                    if (ctx.event.data["forceFallback"] == true) {
+                        throw StepError("Failed to generate image")
+                    }
 
                     "example.com/image-dall-e.jpg"
                 }

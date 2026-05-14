@@ -292,9 +292,11 @@ class InngestFunctionConfigBuilder {
      */
     fun idempotency(idempotencyKey: String): InngestFunctionConfigBuilder = apply { this.idempotency = idempotencyKey }
 
-    private fun buildSteps(serveUrl: String): Map<String, StepConfig> {
-        val scheme = serveUrl.split("://")[0]
-        return mapOf(
+    private fun buildSteps(
+        serveUrl: String,
+        functionId: String,
+    ): Map<String, StepConfig> =
+        mapOf(
             "step" to
                 StepConfig(
                     id = "step",
@@ -302,12 +304,11 @@ class InngestFunctionConfigBuilder {
                     retries = mapOf("attempts" to this.retries),
                     runtime =
                         hashMapOf(
-                            "type" to scheme,
-                            "url" to "$serveUrl?fnId=$id&stepId=step",
+                            "type" to "http",
+                            "url" to "$serveUrl?fnId=$functionId&stepId=step",
                         ),
                 ),
         )
-    }
 
     internal fun build(
         appId: String,
@@ -330,7 +331,7 @@ class InngestFunctionConfigBuilder {
                 idempotency,
                 cancel,
                 batchEvents,
-                steps = buildSteps(serverUrl),
+                steps = buildSteps(serverUrl, globalId),
             )
         return config
     }

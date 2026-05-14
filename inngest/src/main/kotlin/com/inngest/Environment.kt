@@ -3,8 +3,10 @@ package com.inngest
 object Environment {
     private fun systemValue(key: String): String? = System.getProperty(key) ?: System.getenv(key)
 
+    fun inngestSdk(): String = "inngest-kt:${Version.getVersion()}"
+
     fun inngestHeaders(framework: SupportedFrameworkName? = null): RequestHeaders {
-        val sdk = "inngest-kt:${Version.getVersion()}"
+        val sdk = inngestSdk()
         return mapOf(
             InngestHeaderKey.ContentType.value to "application/json",
             InngestHeaderKey.Sdk.value to sdk,
