@@ -25,7 +25,14 @@ test-core:
 	$(GRADLE) test $(TEST_ARGS) $(TEST_JAVA_ARGS) -p inngest
 
 .PHONY: test-ktor
-test-ktor:
+test-ktor: test-ktor-adapter test-ktor-server
+
+.PHONY: test-ktor-adapter
+test-ktor-adapter:
+	$(GRADLE) test $(TEST_ARGS) $(TEST_JAVA_ARGS) -p inngest-ktor-adapter
+
+.PHONY: test-ktor-server
+test-ktor-server:
 	$(GRADLE) test $(TEST_ARGS) $(TEST_JAVA_ARGS) -p inngest-test-server
 
 .PHONY: test-springboot-demo

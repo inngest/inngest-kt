@@ -7,6 +7,8 @@ on:
     paths-ignore:
       - 'inngest/CHANGELOG.md'
       - 'inngest/VERSION'
+      - 'inngest-ktor-adapter/CHANGELOG.md'
+      - 'inngest-ktor-adapter/VERSION'
       - 'inngest-spring-boot-adapter/CHANGELOG.md'
       - 'inngest-spring-boot-adapter/VERSION'
   workflow_dispatch:

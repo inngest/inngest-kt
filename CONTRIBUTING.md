@@ -22,4 +22,4 @@ Releases follow the same high-level flow as `inngest-rs`, adapted for package-pr
 2. That PR bumps each releasable package's `VERSION` file and regenerates its package changelog at `pkg/CHANGELOG.md`.
 3. Merging the release PR creates the matching package tags, publishes any package versions not yet on Maven Central, and creates or updates the GitHub releases using `git-cliff` notes.
 
-Release tags use the package-prefixed format, for example `inngest-0.2.2` and `inngest-spring-boot-adapter-0.2.1`.
+Release tags use the package-prefixed format, for example `inngest-0.2.2`, `inngest-ktor-adapter-0.2.1`, and `inngest-spring-boot-adapter-0.2.1`.

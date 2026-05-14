@@ -27,6 +27,7 @@ rootProject.name = "inngest-sdk"
 
 include(
     "inngest",
+    "inngest-ktor-adapter",
     "inngest-test-server",
     "inngest-spring-boot-adapter",
     "inngest-spring-boot-demo",

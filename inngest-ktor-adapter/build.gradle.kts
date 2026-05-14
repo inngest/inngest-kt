@@ -2,18 +2,16 @@ import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.gradle.api.tasks.testing.logging.TestLogEvent
 
 group = "com.inngest"
-description = "Inngest SDK"
+description = "Ktor adapter for Inngest SDK"
 version = file("VERSION").readText().trim()
 
 plugins {
     id("java-library")
-    id("java-test-fixtures")
     id("maven-publish")
     id("signing")
     id("org.jetbrains.kotlin.jvm") version "2.2.21"
 }
 
-// TODO - Move this to share conventions gradle file
 java {
     toolchain { languageVersion.set(JavaLanguageVersion.of(8)) }
     withJavadocJar()
@@ -21,25 +19,23 @@ java {
 }
 
 repositories {
-    // Use Maven Central for resolving dependencies.
     mavenCentral()
 }
 
-val testJavaVersion = providers.gradleProperty("testJavaVersion").map { it.toInt() }
-
 dependencies {
-    implementation("com.beust:klaxon:5.5")
-    implementation("com.fasterxml.jackson.core:jackson-core:2.16.1")
+    val pkg = if (System.getenv("RELEASE") != null) "com.inngest:inngest:[0.2.0, 0.3.0)" else project(":inngest")
+    api(pkg)
 
-    implementation("com.fasterxml.jackson.core:jackson-databind:2.16.1")
-    implementation("com.squareup.okhttp3:okhttp:4.12.0")
-
-    testFixturesImplementation("com.fasterxml.jackson.core:jackson-databind:2.16.1")
+    implementation("io.ktor:ktor-server-core:2.3.5")
 
     testImplementation(kotlin("test"))
+    testImplementation(testFixtures(project(":inngest")))
+    testImplementation("com.fasterxml.jackson.core:jackson-databind:2.16.1")
+    testImplementation("io.ktor:ktor-server-test-host:2.3.5")
     testImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
-    testImplementation("org.junit-pioneer:junit-pioneer:1.9.1")
 }
+
+val testJavaVersion = providers.gradleProperty("testJavaVersion").map { it.toInt() }
 
 publishing {
     repositories {
@@ -71,12 +67,12 @@ publishing {
         }
     }
     publications {
-        register<MavenPublication>("inngest") {
+        register<MavenPublication>("inngest-ktor-adapter") {
             from(components["java"])
 
             pom {
                 name.set(project.name)
-                description.set("Inngest SDK for Kotlin/Java")
+                description.set(project.description)
                 url.set("https://github.com/inngest/inngest-kt")
                 inceptionYear.set("2024")
 
@@ -130,7 +126,6 @@ tasks.javadoc {
 }
 
 tasks.named<Test>("test") {
-    val effectiveTestJavaVersion = testJavaVersion.orNull?.let { maxOf(it, 8) } ?: 8
     testJavaVersion.orNull?.let { version ->
         javaLauncher.set(
             javaToolchains.launcherFor {
@@ -138,14 +133,7 @@ tasks.named<Test>("test") {
             },
         )
     }
-    if (effectiveTestJavaVersion >= 17) {
-        jvmArgs(
-            "--add-opens=java.base/java.lang=ALL-UNNAMED",
-            "--add-opens=java.base/java.util=ALL-UNNAMED",
-        )
-    }
 
-    // Use JUnit Platform for unit tests.
     useJUnitPlatform()
 
     testLogging {
@@ -162,7 +150,6 @@ tasks.named<Test>("test") {
         showCauses = true
         showStackTraces = true
 
-        // set options for log level DEBUG and INFO
         debug {
             events =
                 setOf(
@@ -179,15 +166,5 @@ tasks.named<Test>("test") {
 
         info.events = debug.events
         info.exceptionFormat = debug.exceptionFormat
-
-        afterSuite(
-            KotlinClosure2({ desc: TestDescriptor, result: TestResult ->
-                if (desc.parent == null) { // will match the outermost suite
-                    println(
-                        "Results: ${result.resultType} (${result.testCount} tests, ${result.successfulTestCount} successes, ${result.failedTestCount} failures, ${result.skippedTestCount} skipped)",
-                    )
-                }
-            }),
-        )
     }
 }
