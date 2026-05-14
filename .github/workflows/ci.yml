@@ -8,7 +8,31 @@ on:
 
 jobs:
   test:
-    name: Test (Java ${{ matrix.java }}, Spring Boot ${{ matrix.spring-boot }})
+    name: Test Core and Ktor (Java ${{ matrix.java }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        java: ["8", "11", "17", "21", "25"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          java-package: jdk
+          cache: gradle
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ matrix.java }}
+          java-package: jdk
+
+      - name: Test
+        run: JAVA_HOME="${JAVA_HOME_21_X64}" PATH="${JAVA_HOME_21_X64}/bin:${PATH}" make test-core test-ktor TEST_JAVA_VERSION=${{ matrix.java }}
+
+  test-spring-boot:
+    name: Test Spring Boot (Java ${{ matrix.java }}, Spring Boot ${{ matrix.spring-boot }})
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -41,7 +65,7 @@ jobs:
           java-package: jdk
 
       - name: Test
-        run: JAVA_HOME="${JAVA_HOME_21_X64}" PATH="${JAVA_HOME_21_X64}/bin:${PATH}" make test SPRING_BOOT_VERSION=${{ matrix.spring-boot }} TEST_JAVA_VERSION=${{ matrix.java }}
+        run: JAVA_HOME="${JAVA_HOME_21_X64}" PATH="${JAVA_HOME_21_X64}/bin:${PATH}" make test-springboot-adapter test-springboot-demo SPRING_BOOT_VERSION=${{ matrix.spring-boot }} TEST_JAVA_VERSION=${{ matrix.java }}
 
   lint:
     name: Lint
