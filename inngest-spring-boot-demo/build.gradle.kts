@@ -1,9 +1,12 @@
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.gradle.api.tasks.testing.logging.TestLogEvent
 
+val springBootVersion = providers.gradleProperty("springBootVersion").orElse("2.7.18")
+val springBootMajorVersion = springBootVersion.map { it.substringBefore(".").toInt() }
+
 plugins {
     java
-    id("org.springframework.boot") version "2.7.18"
+    id("org.springframework.boot")
     id("io.spring.dependency-management") version "1.1.4"
     id("io.freefair.lombok") version "8.6"
 }
@@ -12,7 +15,12 @@ group = "com.inngest"
 version = "0.0.1-SNAPSHOT"
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_1_8
+    sourceCompatibility =
+        if (springBootMajorVersion.get() >= 3) {
+            JavaVersion.VERSION_17
+        } else {
+            JavaVersion.VERSION_1_8
+        }
 }
 
 repositories {
@@ -23,10 +31,15 @@ dependencies {
     implementation(project(":inngest-spring-boot-adapter"))
 
     implementation("org.springframework.boot:spring-boot-starter-web")
+    implementation("com.fasterxml.jackson.core:jackson-databind")
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")
+    if (springBootMajorVersion.get() >= 4) {
+        testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test")
+    }
     testImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 
     if (JavaVersion.current().isJava11Compatible) {
         testImplementation("uk.org.webcompere:system-stubs-jupiter:2.1.6")
@@ -37,7 +50,7 @@ dependencies {
 
 dependencyManagement {
     imports {
-        mavenBom("org.springframework.boot:spring-boot-dependencies:2.7.18") {
+        mavenBom("org.springframework.boot:spring-boot-dependencies:${springBootVersion.get()}") {
             bomProperty("kotlin.version", "1.9.10")
         }
     }

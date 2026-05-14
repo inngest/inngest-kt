@@ -1,5 +1,7 @@
 TEST_ARGS=--console=rich --warning-mode=all
 GRADLE=./gradlew
+SPRING_BOOT_VERSION?=2.7.18
+SPRING_BOOT_ARGS=-PspringBootVersion=$(SPRING_BOOT_VERSION)
 
 .PHONY: dev-ktor
 dev-ktor:
@@ -7,14 +9,14 @@ dev-ktor:
 
 .PHONY: dev-spring-boot
 dev-spring-boot:
-	$(GRADLE) inngest-spring-boot-demo:bootRun
+	$(GRADLE) $(SPRING_BOOT_ARGS) inngest-spring-boot-demo:bootRun
 
 .PHONY: test
-test: test-core test-ktor test-springboot-demo
+test: test-core test-ktor test-springboot-adapter test-springboot-demo
 
 .PHONY: itest
 itest:
-	$(GRADLE) test $(TEST_ARGS) -p inngest-spring-boot-demo integrationTest
+	$(GRADLE) test $(TEST_ARGS) $(SPRING_BOOT_ARGS) -p inngest-spring-boot-demo integrationTest
 
 .PHONY: test-core
 test-core:
@@ -26,7 +28,11 @@ test-ktor:
 
 .PHONY: test-springboot-demo
 test-springboot-demo:
-	$(GRADLE) test $(TEST_ARGS) -p inngest-spring-boot-demo
+	$(GRADLE) test $(TEST_ARGS) $(SPRING_BOOT_ARGS) -p inngest-spring-boot-demo
+
+.PHONY: test-springboot-adapter
+test-springboot-adapter:
+	$(GRADLE) test $(TEST_ARGS) $(SPRING_BOOT_ARGS) -p inngest-spring-boot-adapter
 
 .PHONY: lint
 lint:

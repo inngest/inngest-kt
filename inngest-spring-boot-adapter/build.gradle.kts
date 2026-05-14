@@ -5,6 +5,9 @@ group = "com.inngest"
 description = "Spring Boot adapter for Inngest SDK"
 version = file("VERSION").readText().trim()
 
+val springBootVersion = providers.gradleProperty("springBootVersion").orElse("2.7.18")
+val springBootMajorVersion = springBootVersion.map { it.substringBefore(".").toInt() }
+
 plugins {
     id("java-library")
     id("maven-publish")
@@ -13,7 +16,12 @@ plugins {
 }
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_1_8
+    sourceCompatibility =
+        if (springBootMajorVersion.get() >= 3) {
+            JavaVersion.VERSION_17
+        } else {
+            JavaVersion.VERSION_1_8
+        }
     withJavadocJar()
     withSourcesJar()
 }
@@ -29,12 +37,14 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-web")
     testImplementation(testFixtures(project(":inngest")))
     testImplementation("org.springframework.boot:spring-boot-starter-test")
+    testImplementation("com.fasterxml.jackson.core:jackson-databind")
     testImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
 dependencyManagement {
     imports {
-        mavenBom("org.springframework.boot:spring-boot-dependencies:2.7.18") {
+        mavenBom("org.springframework.boot:spring-boot-dependencies:${springBootVersion.get()}") {
             bomProperty("kotlin.version", "1.9.10")
         }
     }
