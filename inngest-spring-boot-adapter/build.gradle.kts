@@ -12,7 +12,7 @@ plugins {
     id("java-library")
     id("maven-publish")
     id("signing")
-    id("io.spring.dependency-management") version "1.1.4"
+    id("io.spring.dependency-management") version "1.1.7"
 }
 
 java {

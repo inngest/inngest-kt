@@ -10,7 +10,7 @@ plugins {
     id("java-test-fixtures")
     id("maven-publish")
     id("signing")
-    id("org.jetbrains.kotlin.jvm") version "1.9.10"
+    id("org.jetbrains.kotlin.jvm") version "2.2.21"
 }
 
 // TODO - Move this to share conventions gradle file

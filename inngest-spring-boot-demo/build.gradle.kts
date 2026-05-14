@@ -6,9 +6,8 @@ val springBootMajorVersion = springBootVersion.map { it.substringBefore(".").toI
 
 plugins {
     java
-    id("org.springframework.boot")
-    id("io.spring.dependency-management") version "1.1.4"
-    id("io.freefair.lombok") version "8.6"
+    application
+    id("io.spring.dependency-management") version "1.1.7"
 }
 
 group = "com.inngest"
@@ -23,6 +22,10 @@ java {
         }
 }
 
+application {
+    mainClass.set("com.inngest.springbootdemo.SpringBootDemoApplication")
+}
+
 repositories {
     mavenCentral()
 }
@@ -33,6 +36,9 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("com.fasterxml.jackson.core:jackson-databind")
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
+
+    compileOnly("org.projectlombok:lombok:1.18.46")
+    annotationProcessor("org.projectlombok:lombok:1.18.46")
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     if (springBootMajorVersion.get() >= 4) {
@@ -109,6 +115,18 @@ tasks.withType<Test> {
 }
 
 tasks.register<Test>("integrationTest") {
+    description = "Runs Spring Boot demo integration tests."
+    group = "verification"
+    testClassesDirs = sourceSets["test"].output.classesDirs
+    classpath = sourceSets["test"].runtimeClasspath
+    shouldRunAfter(tasks.test)
     systemProperty("test-group", "integration-test")
     systemProperty("junit.jupiter.execution.parallel.enabled", false)
+}
+
+tasks.register<JavaExec>("bootRun") {
+    group = "application"
+    description = "Runs the Spring Boot demo application."
+    classpath = sourceSets["main"].runtimeClasspath
+    mainClass.set(application.mainClass)
 }
