@@ -158,6 +158,8 @@ internal open class InternalInngestFunction(
 
     fun call(
         ctx: FunctionContext,
+        @Suppress("UNUSED_PARAMETER")
+        execution: ExecutionRequestContext,
         client: Inngest,
         requestBody: String,
     ): StepOp {

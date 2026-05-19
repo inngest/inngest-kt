@@ -14,11 +14,9 @@
 - [ ] Backward-compatible parsing for current tests and fixtures where feasible.
 
 * Status Notes
-- Checked against the current repository state on 2026-05-15: no plan 002
-  checklist items are implemented yet.
-- =ExecutionContext= currently parses only =attempt=, =fn_id=, =run_id=, and
-  =env=. It does not parse =disable_immediate_execution=, =use_api=,
-  =stack=, or =qi_id=.
+- Implementation started on 2026-05-19. Shared core parsing now carries the
+  richer execution request context while keeping =FunctionContext= focused on
+  developer-facing fields.
 - Ktor and Spring adapters currently validate =fnId= and pass only the function
   ID plus request body into =CommHandler=. They do not capture or thread the
   inbound =stepId= query parameter.
@@ -35,12 +33,12 @@
   implementation.
 
 * Checklist
-- [ ] Extend =ExecutionContext= to include =disable_immediate_execution=, =use_api=, and stack metadata.
+- [X] Extend =ExecutionContext= to include =disable_immediate_execution=, =use_api=, and stack metadata.
 - [ ] Add =stepId= handling in Ktor and Spring request boundaries and thread it into shared execution.
-- [ ] Add =qi_id= support in the internal model even if checkpointing is deferred.
-- [ ] Introduce a dedicated internal execution context type if =FunctionContext= should stay user-facing and minimal.
-- [ ] Thread the richer execution context through =CommHandler= and the internal function engine.
-- [ ] Preserve backward-compatible parsing defaults for old/minimal fixtures while new context fields are optional in tests.
+- [X] Add =qi_id= support in the internal model even if checkpointing is deferred.
+- [X] Introduce a dedicated internal execution context type if =FunctionContext= should stay user-facing and minimal.
+- [X] Thread the richer execution context through =CommHandler= and the internal function engine.
+- [X] Preserve backward-compatible parsing defaults for old/minimal fixtures while new context fields are optional in tests.
 - [ ] Update fixtures and builders from milestone 000 to emit the richer request body.
 - [ ] Add tests for parsing and preserving the new request fields.
 - [ ] Audit direct JSON parsing assumptions in shared code and adapters.
