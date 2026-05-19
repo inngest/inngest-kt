@@ -72,8 +72,9 @@ public class InngestControllerTest {
 
     @Test
     void postRouteReturnsCallResponseWithRequiredHeaders() throws Exception {
-        String responseBody = mockMvc.perform(post("/api/inngest")
+            String responseBody = mockMvc.perform(post("/api/inngest")
                 .queryParam("fnId", "echo-fn")
+                .queryParam("stepId", "step")
                 .contentType("application/json")
                 .content(ProtocolFixtures.executionRequestPayloadJson("echo-fn")))
             .andExpect(status().isOk())
@@ -92,6 +93,7 @@ public class InngestControllerTest {
 
         String responseBody = mockMvc.perform(post("/api/inngest")
                 .queryParam("fnId", "echo-fn")
+                .queryParam("stepId", "step")
                 .header(InngestHeaderKey.ServerKind.getValue(), "cloud")
                 .contentType("application/json")
                 .content(ProtocolFixtures.executionRequestPayloadJson("echo-fn")))

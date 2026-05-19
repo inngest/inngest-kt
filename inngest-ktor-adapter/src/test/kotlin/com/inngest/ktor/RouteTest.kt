@@ -45,7 +45,7 @@ internal class RouteTest {
             }
 
             val response =
-                client.post("/api/inngest?fnId=echo-fn") {
+                client.post("/api/inngest?fnId=echo-fn&stepId=step") {
                     contentType(ContentType.Application.Json)
                     setBody(ProtocolFixtures.executionRequestPayloadJson("echo-fn"))
                 }
@@ -71,7 +71,7 @@ internal class RouteTest {
             }
 
             val response =
-                client.post("/api/inngest?fnId=echo-fn") {
+                client.post("/api/inngest?fnId=echo-fn&stepId=step") {
                     header(InngestHeaderKey.ServerKind.value, "cloud")
                     contentType(ContentType.Application.Json)
                     setBody(ProtocolFixtures.executionRequestPayloadJson("echo-fn"))

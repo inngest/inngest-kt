@@ -88,6 +88,7 @@ public abstract class InngestController {
         @RequestHeader(name = "X-Inngest-Signature", required = false) String signature,
         @RequestHeader(name = "X-Inngest-Server-Kind", required = false) String serverKind,
         @RequestParam(name = "fnId", required = false) String functionId,
+        @RequestParam(name = "stepId", required = false) String stepId,
         @RequestBody String body
     ) {
         try {
@@ -97,7 +98,7 @@ public abstract class InngestController {
 
             SignatureVerificationKt.checkHeadersAndValidateSignature(signature, body, serverKind, commHandler.getConfig());
 
-            CommResponse response = commHandler.callFunction(functionId, body);
+            CommResponse response = commHandler.callFunction(functionId, body, stepId);
 
             return commResponse(response);
         } catch (Exception e) {

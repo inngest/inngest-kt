@@ -17,9 +17,8 @@
 - Implementation started on 2026-05-19. Shared core parsing now carries the
   richer execution request context while keeping =FunctionContext= focused on
   developer-facing fields.
-- Ktor and Spring adapters currently validate =fnId= and pass only the function
-  ID plus request body into =CommHandler=. They do not capture or thread the
-  inbound =stepId= query parameter.
+- Ktor and Spring adapters now capture the inbound =stepId= query parameter and
+  pass it into =CommHandler=.
 - Function registration already emits runtime URLs with =fnId= and
   =stepId=step=, but this plan covers the receiving side of those query
   parameters, not registration URL generation.
@@ -34,7 +33,7 @@
 
 * Checklist
 - [X] Extend =ExecutionContext= to include =disable_immediate_execution=, =use_api=, and stack metadata.
-- [ ] Add =stepId= handling in Ktor and Spring request boundaries and thread it into shared execution.
+- [X] Add =stepId= handling in Ktor and Spring request boundaries and thread it into shared execution.
 - [X] Add =qi_id= support in the internal model even if checkpointing is deferred.
 - [X] Introduce a dedicated internal execution context type if =FunctionContext= should stay user-facing and minimal.
 - [X] Thread the richer execution context through =CommHandler= and the internal function engine.
