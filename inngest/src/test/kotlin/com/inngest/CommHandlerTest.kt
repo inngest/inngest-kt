@@ -176,6 +176,18 @@ internal class CommHandlerTest {
     }
 
     @Test
+    fun `protocol fixture emits richer execution context`() {
+        val payload = mapper.readTree(ProtocolFixtures.executionRequestPayloadJson("echo-fn"))
+        val ctx = payload["ctx"]
+
+        assertFalse(ctx["disable_immediate_execution"].asBoolean())
+        assertFalse(ctx["use_api"].asBoolean())
+        assertEquals(0, ctx["stack"]["current"].asInt())
+        assertTrue(ctx["stack"]["stack"].isArray)
+        assertEquals("qi-test", ctx["qi_id"].asText())
+    }
+
+    @Test
     fun `callFunction marks non-retriable errors correctly`() {
         val response =
             commHandler(NonRetriableFailureFunction())

@@ -91,6 +91,15 @@ public final class ProtocolFixtures {
         ctx.put("fn_id", functionId);
         ctx.put("run_id", "run-test");
         ctx.put("env", "test");
+        ctx.put("disable_immediate_execution", false);
+        ctx.put("use_api", false);
+
+        LinkedHashMap<String, Object> stack = new LinkedHashMap<>();
+        stack.put("stack", Collections.emptyList());
+        stack.put("current", 0);
+        ctx.put("stack", stack);
+        ctx.put("qi_id", "qi-test");
+
         return ctx;
     }
 }
