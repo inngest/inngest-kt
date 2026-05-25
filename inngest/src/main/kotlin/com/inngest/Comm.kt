@@ -23,16 +23,18 @@ data class ExecutionStack
         val current: Int = 0,
     )
 
-data class ExecutionContext(
-    val attempt: Int,
-    @Json(name = "fn_id") val fnId: String,
-    @Json(name = "run_id") val runId: String,
-    val env: String,
-    @Json(name = "disable_immediate_execution") val disableImmediateExecution: Boolean = false,
-    @Json(name = "use_api") val useApi: Boolean = false,
-    val stack: ExecutionStack = ExecutionStack(),
-    @Json(name = "qi_id") val queueItemId: String? = null,
-)
+data class ExecutionContext
+    @JvmOverloads
+    constructor(
+        val attempt: Int,
+        @Json(name = "fn_id") val fnId: String,
+        @Json(name = "run_id") val runId: String,
+        val env: String,
+        @Json(name = "disable_immediate_execution") val disableImmediateExecution: Boolean = false,
+        @Json(name = "use_api") val useApi: Boolean = false,
+        val stack: ExecutionStack = ExecutionStack(),
+        @Json(name = "qi_id") val queueItemId: String? = null,
+    )
 
 internal const val DEFAULT_STEP_ID = "step"
 
