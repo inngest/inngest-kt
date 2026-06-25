@@ -16,12 +16,69 @@ data class ExecutionRequestPayload(
     val steps: MemoizedState,
 )
 
-data class ExecutionContext(
+data class ExecutionStack
+    @JvmOverloads
+    constructor(
+        val stack: List<String> = emptyList(),
+        val current: Int = 0,
+    )
+
+data class ExecutionContext
+    @JvmOverloads
+    constructor(
+        val attempt: Int,
+        @Json(name = "fn_id") val fnId: String,
+        @Json(name = "run_id") val runId: String,
+        val env: String,
+        @Json(name = "disable_immediate_execution") val disableImmediateExecution: Boolean = false,
+        @Json(name = "use_api") val useApi: Boolean = false,
+        val stack: ExecutionStack = ExecutionStack(),
+        @Json(name = "qi_id") val queueItemId: String? = null,
+    )
+
+internal const val DEFAULT_STEP_ID = "step"
+
+internal data class ExecutionRequestContext(
+    val functionId: String,
+    val runId: String,
     val attempt: Int,
-    @Json(name = "fn_id") val fnId: String,
-    @Json(name = "run_id") val runId: String,
     val env: String,
-)
+    val stepId: String,
+    val disableImmediateExecution: Boolean,
+    val useApi: Boolean,
+    val stack: ExecutionStack,
+    val queueItemId: String?,
+) {
+    fun toFunctionContext(
+        event: Event,
+        events: List<Event>,
+    ): FunctionContext =
+        FunctionContext(
+            event = event,
+            events = events,
+            runId = runId,
+            fnId = functionId,
+            attempt = attempt,
+        )
+
+    companion object {
+        fun from(
+            ctx: ExecutionContext,
+            stepId: String?,
+        ): ExecutionRequestContext =
+            ExecutionRequestContext(
+                functionId = ctx.fnId,
+                runId = ctx.runId,
+                attempt = ctx.attempt,
+                env = ctx.env,
+                stepId = stepId?.takeIf { it.isNotBlank() } ?: DEFAULT_STEP_ID,
+                disableImmediateExecution = ctx.disableImmediateExecution,
+                useApi = ctx.useApi,
+                stack = ctx.stack,
+                queueItemId = ctx.queueItemId,
+            )
+    }
+}
 
 internal data class RegistrationRequestPayload
     @JvmOverloads
@@ -101,25 +158,21 @@ class CommHandler(
     private val allFunctions = baseFunctions.plus(failureFunctions)
     private val functionsById = indexFunctions(allFunctions, client.appId)
 
+    @JvmOverloads
     fun callFunction(
         functionId: String,
         requestBody: String,
+        stepId: String? = DEFAULT_STEP_ID,
     ): CommResponse {
         try {
             val payload = Klaxon().parse<ExecutionRequestPayload>(requestBody)
             // TODO - check that payload is not null and throw error
             val function = functionsById[functionId] ?: throw Exception("Function not found")
+            val execution = ExecutionRequestContext.from(payload!!.ctx, stepId)
 
-            val ctx =
-                FunctionContext(
-                    event = payload!!.event,
-                    events = payload.events,
-                    runId = payload.ctx.runId,
-                    fnId = payload.ctx.fnId,
-                    attempt = payload.ctx.attempt,
-                )
+            val ctx = execution.toFunctionContext(payload.event, payload.events)
 
-            val result = function.call(ctx = ctx, client = client, requestBody)
+            val result = function.call(ctx = ctx, execution = execution, client = client, requestBody)
             var body: Any? = null
             if (result.statusCode in stepTerminalStatusCodes || result is StepOptions) {
                 body = listOf(result)

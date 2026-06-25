@@ -1,27 +1,50 @@
 #+title: 002 Expand Execution Request Model
 #+AUTHOR: Darwin D. Wu
 #+DATE: 2026-04-16
-#+STATUS: Draft
+#+STATUS: Done
 
 * Goal
-- [ ] Extend the execution request model to carry the full context required by the spec.
-- [ ] Stop encoding execution assumptions in scattered parsing logic.
+- [X] Extend the execution request model to carry the full context required by the spec.
+- [X] Stop encoding execution assumptions in scattered parsing logic.
 
 * Scope
-- [ ] Shared execution payload types.
-- [ ] Internal execution context threading.
-- [ ] Backward-compatible parsing for current tests and fixtures where feasible.
+- [X] Shared execution payload types.
+- [X] Internal execution context threading.
+- [X] Adapter request-boundary query parameters needed by shared execution.
+- [X] Backward-compatible parsing for current tests and fixtures where feasible.
+
+* Status Notes
+- Implementation started on 2026-05-19. Shared core parsing now carries the
+  richer execution request context while keeping =FunctionContext= focused on
+  developer-facing fields.
+- Ktor and Spring adapters now capture the inbound =stepId= query parameter and
+  pass it into =CommHandler=.
+- Function registration already emits runtime URLs with =fnId= and
+  =stepId=step=, but this plan covers the receiving side of those query
+  parameters, not registration URL generation.
+- Protocol fixtures now emit the richer execution context by default, while
+  tests still cover older minimal payloads for backward-compatible parsing.
+- The upstream SDK spec currently requires =ctx.disable_immediate_execution=,
+  =ctx.use_api=, and =ctx.stack= for Call Requests, and provides =ctx.qi_id=
+  for async checkpointing. Checkpoint behavior can remain deferred, but parsing
+  and threading the queue item ID should not be blocked by checkpoint
+  implementation.
+- Direct JSON parsing audit: execution payload parsing remains centralized in
+  =CommHandler=; Ktor and Spring adapters pass through request bodies plus query
+  parameters; =State= still reads =steps= from the request body until payload
+  recovery and planned-step execution are implemented in later plans.
 
 * Checklist
-- [ ] Extend =ExecutionContext= to include =disable_immediate_execution=, =use_api=, and stack metadata.
-- [ ] Add =stepId= handling at the request boundary and thread it into execution.
-- [ ] Add =qi_id= support in the internal model even if checkpointing is deferred.
-- [ ] Introduce a dedicated internal execution context type if =FunctionContext= should stay user-facing and minimal.
-- [ ] Thread the richer execution context through =CommHandler= and the internal function engine.
-- [ ] Update fixtures and builders from milestone 000 to emit the richer request body.
-- [ ] Add tests for parsing and preserving the new request fields.
-- [ ] Audit direct JSON parsing assumptions in shared code and adapters.
+- [X] Extend =ExecutionContext= to include =disable_immediate_execution=, =use_api=, and stack metadata.
+- [X] Add =stepId= handling in Ktor and Spring request boundaries and thread it into shared execution.
+- [X] Add =qi_id= support in the internal model even if checkpointing is deferred.
+- [X] Introduce a dedicated internal execution context type if =FunctionContext= should stay user-facing and minimal.
+- [X] Thread the richer execution context through =CommHandler= and the internal function engine.
+- [X] Preserve backward-compatible parsing defaults for old/minimal fixtures while new context fields are optional in tests.
+- [X] Update fixtures and builders from milestone 000 to emit the richer request body.
+- [X] Add tests for parsing and preserving the new request fields.
+- [X] Audit direct JSON parsing assumptions in shared code and adapters.
 
 * Exit Criteria
-- [ ] Shared code can parse and carry all context required for payload recovery and planned-step execution.
-- [ ] Request parsing no longer blocks later milestones such as step planning or checkpointing.
+- [X] Shared code can parse and carry all context required for payload recovery and planned-step execution.
+- [X] Request parsing no longer blocks later milestones such as step planning or checkpointing.

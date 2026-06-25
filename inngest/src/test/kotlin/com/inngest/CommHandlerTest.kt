@@ -1,5 +1,6 @@
 package com.inngest
 
+import com.beust.klaxon.Klaxon
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.inngest.testing.ProtocolFixtures
@@ -7,6 +8,8 @@ import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import java.time.Duration
@@ -79,6 +82,109 @@ internal class CommHandlerTest {
 
         assertEquals(ResultStatusCode.FunctionComplete, response.statusCode)
         assertEquals("done", mapper.readValue(response.body, String::class.java))
+    }
+
+    @Test
+    fun `execution request parses and preserves spec context fields`() {
+        val payload =
+            Klaxon().parse<ExecutionRequestPayload>(
+                """
+                {
+                  "ctx": {
+                    "attempt": 2,
+                    "fn_id": "echo-fn",
+                    "run_id": "run-test",
+                    "env": "branch",
+                    "disable_immediate_execution": true,
+                    "use_api": true,
+                    "stack": {
+                      "stack": ["first", "second"],
+                      "current": 1
+                    },
+                    "qi_id": "qi-test"
+                  },
+                  "event": {
+                    "name": "test/run",
+                    "data": {
+                      "message": "hello"
+                    }
+                  },
+                  "events": [
+                    {
+                      "name": "test/run",
+                      "data": {
+                        "message": "hello"
+                      }
+                    }
+                  ],
+                  "steps": {}
+                }
+                """.trimIndent(),
+            )!!
+        val execution = ExecutionRequestContext.from(payload.ctx, "target-step")
+
+        assertEquals("echo-fn", execution.functionId)
+        assertEquals("run-test", execution.runId)
+        assertEquals(2, execution.attempt)
+        assertEquals("branch", execution.env)
+        assertEquals("target-step", execution.stepId)
+        assertTrue(execution.disableImmediateExecution)
+        assertTrue(execution.useApi)
+        assertEquals(listOf("first", "second"), execution.stack.stack)
+        assertEquals(1, execution.stack.current)
+        assertEquals("qi-test", execution.queueItemId)
+    }
+
+    @Test
+    fun `execution request defaults new context fields for minimal payloads`() {
+        val payload =
+            Klaxon().parse<ExecutionRequestPayload>(
+                """
+                {
+                  "ctx": {
+                    "attempt": 0,
+                    "fn_id": "echo-fn",
+                    "run_id": "run-test",
+                    "env": "test"
+                  },
+                  "event": {
+                    "name": "test/run",
+                    "data": {
+                      "message": "hello"
+                    }
+                  },
+                  "events": [
+                    {
+                      "name": "test/run",
+                      "data": {
+                        "message": "hello"
+                      }
+                    }
+                  ],
+                  "steps": {}
+                }
+                """.trimIndent(),
+            )!!
+        val execution = ExecutionRequestContext.from(payload.ctx, null)
+
+        assertFalse(execution.disableImmediateExecution)
+        assertFalse(execution.useApi)
+        assertEquals(emptyList<String>(), execution.stack.stack)
+        assertEquals(0, execution.stack.current)
+        assertNull(execution.queueItemId)
+        assertEquals(DEFAULT_STEP_ID, execution.stepId)
+    }
+
+    @Test
+    fun `protocol fixture emits richer execution context`() {
+        val payload = mapper.readTree(ProtocolFixtures.executionRequestPayloadJson("echo-fn"))
+        val ctx = payload["ctx"]
+
+        assertFalse(ctx["disable_immediate_execution"].asBoolean())
+        assertFalse(ctx["use_api"].asBoolean())
+        assertEquals(0, ctx["stack"]["current"].asInt())
+        assertTrue(ctx["stack"]["stack"].isArray)
+        assertEquals("qi-test", ctx["qi_id"].asText())
     }
 
     @Test

@@ -55,6 +55,7 @@ fun Route.serve(
 
         post("") {
             val fnId = call.request.queryParameters["fnId"]
+            val stepId = call.request.queryParameters["stepId"]
             if (fnId == null) {
                 val response = comm.protocolErrorResponse(IllegalArgumentException("Missing fnId parameter"))
                 call.respondComm(response)
@@ -65,7 +66,7 @@ fun Route.serve(
                     val serverKind = call.request.headers[InngestHeaderKey.ServerKind.value]
                     checkHeadersAndValidateSignature(signature, body, serverKind, comm.config)
 
-                    val response = comm.callFunction(fnId, body)
+                    val response = comm.callFunction(fnId, body, stepId)
                     call.respondComm(response)
                 } catch (e: Exception) {
                     val response = comm.protocolErrorResponse(e)

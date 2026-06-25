@@ -10,12 +10,30 @@
 - [ ] HTTP client support for GET requests and authenticated API calls.
 - [ ] Batch event retrieval.
 - [ ] Memoized step retrieval.
+- [ ] Integration with the richer execution request model from plan 002.
+
+* Status Notes
+- Checked against the current repository state on 2026-05-15: no plan 003
+  checklist items are implemented yet.
+- Plan 002 is a prerequisite for this work. =ExecutionContext= currently does
+  not parse =ctx.use_api=, =ctx.disable_immediate_execution=, or
+  =ctx.stack=, so payload recovery cannot be triggered from request context yet.
+- =HttpClient= currently only builds JSON =POST= requests. Recovery needs a
+  shared =GET= path that preserves SDK headers and outbound authentication.
+- =State= currently reads memoized step data from the raw request body. Recovery
+  should make the fully recovered =steps= object available before function
+  execution and step memoization begin.
+- The upstream SDK spec currently requires both recovery calls to use the API
+  origin, global outbound headers, and bearer-token authorization based on the
+  hashed signing key. Signing-key fallback is tracked in plan 006, but plan 003
+  should avoid creating an API-auth path that would make fallback harder to add.
 
 * Checklist
 - [ ] Extend the internal HTTP client to support GET requests with shared headers and auth.
+- [ ] Parse and thread =ctx.use_api= from the execution request model once plan 002 lands.
 - [ ] Implement =GET /v0/runs/:run_id/batch= retrieval.
 - [ ] Implement =GET /v0/runs/:run_id/actions= retrieval.
-- [ ] Add request signing/auth header support to these API calls using the same base config path as sync.
+- [ ] Add request signing/auth header support to these API calls using the same base config path as sync and a shape compatible with signing-key fallback.
 - [ ] Replace the request payload =events= and =event= when the batch API succeeds.
 - [ ] Replace memoized step data when the actions API succeeds.
 - [ ] Return a protocol failure when either required fetch fails or returns non-200.
