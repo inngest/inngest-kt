@@ -65,5 +65,7 @@ object Connect {
         }
 
         override fun awaitClosed(timeout: Duration): Boolean = supervisor.awaitClosed(timeout.toMillis())
+
+        override fun debugState(): ConnectDebugState = supervisor.debugState()
     }
 }

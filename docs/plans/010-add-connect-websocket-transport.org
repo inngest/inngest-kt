@@ -641,8 +641,9 @@ dev-server-gated test group):
   Worker connects and idles reliably.
 - [X] M4 — Execution path: request processor, lease extension, response
   mapping, reply ACK tracking, buffer + HTTP flush, contract tests.
-- [ ] M5 — Lifecycle polish: graceful shutdown/drain, status reporter, debug
-  state, shutdown hook, drain diagnostics.
+- [X] M5 — Lifecycle polish: graceful shutdown/drain, status reporter, debug
+  state, shutdown hook, drain diagnostics. (Graceful shutdown/drain and the
+  shutdown hook landed in M3/M4; this milestone added the rest.)
 - [ ] M6 — Public API + docs: builder API, Java sample, README section,
   introspection capabilities, =dev-connect= target, e2e test group, CHANGELOG.
 - [ ] M7 — QA: manual checklist against dev server + cloud, soak test, then
@@ -779,6 +780,20 @@ Notes and gaps discovered while executing the milestones; newest last.
 - Note for e2e automation: when a JavaExec dev process is stopped by a
   signal, Gradle reports BUILD FAILED — harness scripts should not treat that
   exit status as a test failure.
+
+** M5 (lifecycle polish)
+- =StatusReporter= sends =WORKER_STATUS{in_flight_request_ids,
+  shutdown_requested}= at the gateway-provided =status_interval= (absent/"0s"
+  disables it — the dev server currently sends none, so this is exercised by
+  the mock gateway only).
+- =RequestProcessor= now keeps per-request =InFlightRequestInfo= (slug, run
+  id, acquire time) under the lease lock, powering three consumers: status
+  reports, the public =WorkerConnection.debugState()= snapshot
+  (=ConnectDebugState=), and the periodic 60s "still draining" shutdown dump
+  with per-request ages.
+- Tests: status reports carry the executing request id; reporting stays
+  silent when the gateway sends no interval; debug state reflects
+  active/in-flight/heartbeat transitions.
 
 * Open questions
 - [ ] Should generated protobuf classes be shaded/relocated to avoid classpath

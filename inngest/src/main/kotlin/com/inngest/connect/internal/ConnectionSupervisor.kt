@@ -44,6 +44,7 @@ internal class ConnectionSupervisor(
         private val logger = Logger.getLogger("com.inngest.connect")
         private const val START_TIMEOUT_MILLIS = 30_000L
         private const val EXECUTOR_KEEP_ALIVE_SECONDS = 60L
+        private const val SHUTDOWN_DUMP_INTERVAL_MILLIS = 60_000L
     }
 
     private val httpClient =
@@ -106,6 +107,13 @@ internal class ConnectionSupervisor(
                 },
             sdkResponseVersion = "inngest-kt:${config.sdkVersion}",
             replyAckDeadlineMillis = replyAckDeadlineMillis,
+        )
+
+    private val statusReporter =
+        StatusReporter(
+            scheduler = scheduler,
+            inFlightRequestIds = { requestProcessor.inFlightRequestIds() },
+            shutdownRequested = { shutdownRequested.get() },
         )
 
     private val wakeQueue = LinkedBlockingQueue<WakeReason>()
@@ -193,6 +201,25 @@ internal class ConnectionSupervisor(
     val connectionId: String?
         get() = active.get()?.id
 
+    fun debugState(): com.inngest.connect.ConnectDebugState {
+        val activeConn = active.get()
+        val lastHeartbeatNanos = activeConn?.lastGatewayHeartbeatAtNanos ?: 0L
+        return com.inngest.connect.ConnectDebugState(
+            state = currentState,
+            activeConnectionId = activeConn?.id,
+            drainingConnectionId = draining.get()?.id,
+            shutdownRequested = shutdownRequested.get(),
+            inFlightRequestCount = inFlightRequests.count(),
+            inFlightRequestIds = requestProcessor.inFlightRequestIds(),
+            millisSinceLastGatewayHeartbeat =
+                if (lastHeartbeatNanos == 0L) {
+                    null
+                } else {
+                    TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - lastHeartbeatNanos)
+                },
+        )
+    }
+
     /**
      * Starts the reconcile loop and blocks until the first connection is
      * ready (or a terminal startup failure/timeout occurs, in which case the
@@ -227,6 +254,20 @@ internal class ConnectionSupervisor(
         logger.info("shutting down connect worker (in-flight: ${inFlightRequests.count()})")
         setState(ConnectionState.CLOSING, "close requested")
         shutdownRequested.set(true)
+
+        // Periodic "still draining" diagnostics while in-flight work holds
+        // the shutdown, so operators can see which runs are responsible.
+        dumpInFlightForShutdown("drain-start")
+        try {
+            scheduler.scheduleAtFixedRate(
+                { dumpInFlightForShutdown("periodic") },
+                SHUTDOWN_DUMP_INTERVAL_MILLIS,
+                SHUTDOWN_DUMP_INTERVAL_MILLIS,
+                TimeUnit.MILLISECONDS,
+            )
+        } catch (e: java.util.concurrent.RejectedExecutionException) {
+            // Scheduler already gone; the drain is over anyway.
+        }
 
         active.get()?.let { conn ->
             conn.lifecycle.transition(ConnectionPhase.Closing)
@@ -329,6 +370,7 @@ internal class ConnectionSupervisor(
         active.set(conn)
         excludeGateways.remove(conn.gatewayGroup)
         heartbeatManager.attach(conn)
+        statusReporter.attach(conn)
         hasConnectedBefore = true
         setState(ConnectionState.ACTIVE, "connection ${conn.id} active")
 
@@ -372,6 +414,7 @@ internal class ConnectionSupervisor(
     private fun teardown() {
         logger.fine("reconcile loop exiting")
         heartbeatManager.stop()
+        statusReporter.stop()
         scheduler.shutdownNow()
 
         active.getAndSet(null)?.let { conn ->
@@ -443,6 +486,21 @@ internal class ConnectionSupervisor(
 
     private fun wake(reason: WakeReason) {
         wakeQueue.offer(reason)
+    }
+
+    private fun dumpInFlightForShutdown(reason: String) {
+        val snapshot = requestProcessor.inFlightSnapshot()
+        val queued = inFlightRequests.count()
+        if (queued == 0) return
+        val now = System.nanoTime()
+        logger.info("shutdown: still draining $queued request(s) [$reason]")
+        snapshot.forEach { info ->
+            val ageMillis = TimeUnit.NANOSECONDS.toMillis(now - info.acquiredAtNanos)
+            logger.info(
+                "shutdown: draining request ${info.requestId} " +
+                    "(function ${info.functionSlug}, run ${info.runId}, age ${ageMillis}ms)",
+            )
+        }
     }
 
     private fun setState(

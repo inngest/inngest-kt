@@ -41,6 +41,10 @@ internal class GatewayConnection(
     @Volatile
     var extendLeaseIntervalMillis: Long = DEFAULT_EXTEND_LEASE_INTERVAL_MILLIS
 
+    /** WORKER_STATUS reporting interval; 0 (the default) disables reporting. */
+    @Volatile
+    var statusIntervalMillis: Long = 0
+
     /** Nanotime of the most recent GATEWAY_HEARTBEAT (0 = none yet). */
     @Volatile
     var lastGatewayHeartbeatAtNanos: Long = 0

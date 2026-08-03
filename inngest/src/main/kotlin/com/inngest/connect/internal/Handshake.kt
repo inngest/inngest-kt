@@ -108,6 +108,8 @@ internal class Handshake(
                     readyData.extendLeaseInterval,
                     GatewayConnection.DEFAULT_EXTEND_LEASE_INTERVAL_MILLIS,
                 )
+            // Status reporting is opt-in: absent/"0s" disables it.
+            conn.statusIntervalMillis = GoDuration.toMillis(readyData.statusInterval, 0)
 
             conn.activeAtNanos = System.nanoTime()
             conn.lifecycle.transition(ConnectionPhase.Active)

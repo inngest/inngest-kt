@@ -47,9 +47,24 @@ internal class RequestProcessor(
         private val logger = Logger.getLogger("com.inngest.connect")
     }
 
+    /** Metadata about one ACKed, executing request; used for status/diagnostics. */
+    internal class InFlightRequestInfo(
+        val requestId: String,
+        val functionSlug: String,
+        val runId: String,
+        val acquiredAtNanos: Long,
+    )
+
     private val leaseLock = Any()
     private val leases = HashMap<String, String>()
     private val extendTasks = HashMap<String, ScheduledFuture<*>>()
+    private val inFlightInfo = HashMap<String, InFlightRequestInfo>()
+
+    /** Request ids that have been ACKed and are executing (or awaiting reply). */
+    fun inFlightRequestIds(): List<String> = synchronized(leaseLock) { inFlightInfo.keys.toList() }
+
+    /** Snapshot of ACKed in-flight request metadata for diagnostics. */
+    fun inFlightSnapshot(): List<InFlightRequestInfo> = synchronized(leaseLock) { inFlightInfo.values.toList() }
 
     /**
      * Entry point from the socket reader thread: parse, validate, and enqueue.
@@ -166,7 +181,16 @@ internal class RequestProcessor(
             WriteResult.SENT -> {}
         }
 
-        synchronized(leaseLock) { leases[request.requestId] = request.leaseId }
+        synchronized(leaseLock) {
+            leases[request.requestId] = request.leaseId
+            inFlightInfo[request.requestId] =
+                InFlightRequestInfo(
+                    requestId = request.requestId,
+                    functionSlug = request.functionSlug,
+                    runId = request.runId,
+                    acquiredAtNanos = System.nanoTime(),
+                )
+        }
         scheduleLeaseExtension(owning, request)
 
         logger.fine(
@@ -335,6 +359,7 @@ internal class RequestProcessor(
         synchronized(leaseLock) {
             leases.remove(requestId)
             extendTasks.remove(requestId)?.cancel(false)
+            inFlightInfo.remove(requestId)
         }
         inFlight.decrement()
         if (hooks.shutdownRequested() && inFlight.isEmpty()) {

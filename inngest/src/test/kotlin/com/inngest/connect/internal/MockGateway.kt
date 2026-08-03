@@ -22,6 +22,7 @@ internal class MockGateway(
     private val autoHandshake: Boolean = true,
     private val heartbeatInterval: String = "10s",
     private val extendLeaseInterval: String = "5s",
+    private val statusInterval: String = "",
     private val gatewayGroup: String = "gw-mock",
 ) : Closeable {
     val httpServer = MockWebServer()
@@ -152,7 +153,7 @@ internal class MockGateway(
                                     .newBuilder()
                                     .setHeartbeatInterval(heartbeatInterval)
                                     .setExtendLeaseInterval(extendLeaseInterval)
-                                    .setStatusInterval("")
+                                    .setStatusInterval(statusInterval)
                                     .build()
                                     .toByteString(),
                             )

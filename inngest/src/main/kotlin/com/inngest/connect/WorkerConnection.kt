@@ -28,4 +28,7 @@ interface WorkerConnection {
 
     /** Blocks up to [timeout]; returns true when fully closed. */
     fun awaitClosed(timeout: Duration): Boolean
+
+    /** Snapshot of connection health for debugging. */
+    fun debugState(): ConnectDebugState
 }
