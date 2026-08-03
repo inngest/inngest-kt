@@ -636,7 +636,7 @@ dev-server-gated test group):
 - [X] M2 — Config assembly: runtime-kind in function config builder, connect
   capabilities/env vars, =ConnectConfig= + validation, golden config tests.
   (=ConnectConfig=/options builder moved into M3 where they are first used.)
-- [ ] M3 — Handshake + supervisor: start request, WS handshake, reconcile loop,
+- [X] M3 — Handshake + supervisor: start request, WS handshake, reconcile loop,
   heartbeats, backoff/exclusion, mock-gateway happy path + failure tests.
   Worker connects and idles reliably.
 - [ ] M4 — Execution path: request processor, lease extension, response
@@ -715,8 +715,33 @@ Notes and gaps discovered while executing the milestones; newest last.
 - Deliberate additions over the Go tables: =WORKER_READY= and =WORKER_STATUS=
   are modeled as Active-phase writes (Go never sends READY and does not
   implement the status reporter; JS sends both).
-- Remaining for M3: =ConnectOptions=/=ConnectConfig=, start-request API client,
-  handshake, supervisor loop, heartbeat manager, mock gateway fixture + tests.
+- Landed second: =ConnectOptions=/=ConnectApp=/=ConnectionState= (public),
+  =ConnectConfig= (validation + precedence), =ConnectApiClient= (start/flush,
+  typed 401/429 errors), =GoDuration= parser — all unit-tested against
+  =MockWebServer=.
+- Landed third: =GatewayConnection= (phase-gated =send= with
+  =SENT/DENIED_BY_PHASE/FAILED= results), =Handshake= (per-stage deadlines;
+  OkHttp binds one listener at dial time, so the handshake listener owns
+  steady-state dispatch after a lock-guarded hand-off), =HeartbeatManager=
+  (sender + watchdog, no shared counter), =ConnectionSupervisor= (reconcile
+  loop on a =BlockingQueue<WakeReason>=, backoff/exclusion/drain/close), and
+  public =Connect.start= / =WorkerConnection=. Mock gateway fixture ported
+  from JS =mock-gateway.ts= on =MockWebServer= WebSocket upgrades; 7 behavior
+  tests (happy path incl. full =WorkerConnectRequestData= assertion, graceful
+  close, concurrent close idempotency, socket-drop reconnect + gateway
+  exclusion, drain replacement, watchdog reconnect, heartbeat keep-alive).
+- /Two real races found by the tests and fixed/ (both added to the hazard
+  catalog's evidence): (1) OkHttp does not auto-acknowledge a server-initiated
+  close — reacting only to =onClosed= hangs the connection half-open; the
+  listener must echo =close()= in =onClosing= and treat it as connection
+  death. (2) =onConnectionDead= originally retired the generation (whose
+  no-write callback wakes the reconcile loop) /before/ adding the gateway to
+  =excludeGateways= — the reconnect's start request could race ahead without
+  the exclusion. State must be published before observers are woken.
+- Executor requests are logged-and-dropped until M4's request processor; the
+  worker should not be pointed at real traffic until M4 lands.
+- Logging: =java.util.logging= (zero new dependencies); revisit if a logging
+  facade is introduced SDK-wide.
 
 * Open questions
 - [ ] Should generated protobuf classes be shaded/relocated to avoid classpath
