@@ -34,7 +34,9 @@ connect consumes it when available), middleware (plan 008).
 Source researched: =inngest-js/packages/inngest/src/components/connect/=
 (=index.ts=, =config.ts=, =types.ts=, =messages.ts=, =buffer.ts=, =os.ts=,
 =util.ts=, =strategies/core/{connection,handshake,requestProcessor,heartbeat,statusReporter}.ts=,
-=protobuf/connect.proto=).
+=protobuf/connect.proto=). The Go SDK (=inngestgo/connect/=) was studied as a
+second reference; see the cross-SDK comparison section below — where the two
+disagree, this plan states which behavior Kotlin adopts.
 
 ** Wire format
 Every WebSocket frame is a binary protobuf =ConnectMessage { GatewayMessageType
@@ -185,6 +187,143 @@ Conclusions: OkHttp needs no help (no new networking dependency); the protobuf
 plugin works with our Gradle; the dev server fully supports connect for QA; the
 execution payload/response mapping plugs straight into =CommHandler=.
 
+* Cross-SDK comparison: inngest-js vs inngestgo
+Source researched: =inngestgo/connect/= (=handler.go=, =connection.go=,
+=connection_lifecycle.go=, =connection_write.go=, =request_lifecycle.go=,
+=invoke.go=, =worker_pool.go=, =buffer.go=, =manager_state.go=, =handshake.go=,
+=workerapi.go=) plus the root =connect.go= wiring. The Go implementation is the
+more recent and more defensively engineered of the two — notably it models a
+*per-websocket-generation lifecycle state machine with gated writes*, which the
+JS SDK approximates with ad-hoc checks. Differences and what Kotlin adopts:
+
+| Concern | inngest-js | inngestgo | Kotlin decision |
+|---------+------------+-----------+-----------------|
+| Connection state | one =ConnectionState= for everything; liveness via a =dead= boolean checked ad hoc | *two* levels: coarse user-visible manager state (=manager_state.go=, validated transitions) + per-generation phase machine =New->Handshaking->Active->Draining/Closing->Retired->Closed= (=connection_lifecycle.go=) | *Go model* — it is the core TOCTOU defense (see next section) |
+| Write policy | check =ws.readyState= / =activeConnection= before send | every protocol write gated by phase policy table (=connection_write.go= =canWrite(kind)=); ACK-write failure retires the generation | *Go model* |
+| Readiness | =worker_manual_readiness_ack=true= + explicit =WORKER_READY= after handlers attached | never sends =WORKER_READY= (auto-ready on sync) | *JS model* — manual readiness avoids receiving work before handlers are attached |
+| Worker-heartbeat liveness | counts 2 unanswered *worker* heartbeats via =pendingHeartbeats= counter mutated from two callbacks | watchdog timer on *gateway* heartbeats: deadline = =(tolerance+1) x interval=, tolerance 3 (configurable), reset on each =GATEWAY_HEARTBEAT= | *Go model* — a monotonic deadline reset by receipt has no shared counter to race on |
+| Execution pool | unbounded async; =maxWorkerConcurrency= only advertised | fixed goroutine pool (default 1,000, cap 100M); =MaxWorkerConcurrency= sizes the pool *and* is advertised | *Go model* — bounded =ExecutorService= (default 1,000 threads is wrong for the JVM; default to a cached pool bounded at 1,000 concurrent, sized to the option when set) |
+| Reconnect budget | retry forever, capped backoff | give up after 5 consecutive failed attempts (worker terminates); 30s deadline on the *initial* connect | *Hybrid*: initial =Connect.start= fails after the 30s deadline (Go); steady-state reconnects retry forever with capped backoff (JS) — a long-lived worker should survive a multi-minute outage. Attempts reset on success in both. |
+| Gateway drain | old socket kept as "draining"; lease extensions are redirected to the *new* active socket | old generation stays =Draining= (leases + replies still allowed on it); replacement dialed with old gateway group excluded, 10s replacement timeout; then old generation =Retired= -> replies buffer to HTTP flush and lease extension stops | *Go model for gating, JS model for continuity*: extensions/replies for ACKed work use the owning generation while it is =Draining=; once it retires, further lease extensions move to the current active generation (JS) instead of stopping (Go) — stopping risks the executor rerouting long-running work; buffered-reply flush covers the reply path either way |
+| Handshake timeouts | one 10s deadline overall | 5s for HELLO, 20s for CONNECTION_READY (sync can be slow), 10s WS dial | *Go model* (per-phase deadlines; READY needs the longer budget because it includes the server-side sync) |
+| Message read limit | none | 10MB default, =MessageReadLimit= option (-1 disables) | *Go model* — OkHttp needs no read limit knob for frames it reads into memory anyway, but expose the option for parity and guard against pathological frames |
+| Gateway URL override | =gatewayUrl= string option + env var | =RewriteGatewayEndpoint func(url) url= hook | *JS model* (string + env var) — simpler, Java-friendly; a rewrite hook can be added later without breaking anything |
+| =request_version= in =SDKResponse= | echoes the execution version header | hardcoded 0 (Go supports v0 only) | echo the SDK's existing =x-inngest-req-version= value, matching what it advertises over HTTP |
+| Capabilities JSON | ={"trust_probe":"v1","connect":"v1"}= | ={"in_band_sync":"v1","trust_probe":"v1","connect":"v1"}= | declare only what the SDK implements: ={"connect":"v1"}= (this SDK has neither in-band sync nor trust probes; see =ProtocolGapsTest=) |
+| Buffer flush triggers | on connect, on buffered-while-disconnected, on close | same + a coalesced =notifyFlushChan= poked whenever a generation retires or a reply is buffered, serialized in the manager loop | *Go model* — event-driven flush with coalescing (single-permit queue) |
+| Executor payload guard | skips requests when manager state != ACTIVE (pre-check) | no manager-state pre-check; the phase-gated ACK write is the sole gate | *Go model* — the pre-check is exactly a TOCTOU (state can flip between check and ACK); rely on the gated ACK |
+| Close idempotency | =closePromise= memoization | =atomic.Bool= swap | same idea; Kotlin uses an atomic flag + memoized close result |
+| Identity | =sdk_language "typescript"=, =sdk_version "v<x.y.z>"= | =SDKLanguage "go"=, version bare ="0.16.0"= | =sdk_language "java"= (matches introspection), =sdk_version "v<VERSION>"= |
+
+Shared behaviors confirmed identical in both SDKs (safe to treat as protocol
+contract): start request/flush wire shapes and auth headers, subprotocol
+=v0.connect.inngest.com=, HELLO->CONNECT->READY order, backoff schedule
+(1s,2s,5s,10s,20s,30s,60s,120s,300s), 401 -> fallback-key switch, 429 ->
+connection-limit error, 5s reply-ACK deadline before buffering, 5 flush rounds,
+lease rotation via =new_lease_id= with "nil means lost, keep executing but the
+result may be discarded", =WORKER_PAUSE= on shutdown + drain in-flight +
+flush-on-close, app config functions as UTF-8 JSON with =runtime.type "ws"=.
+
+* Concurrency correctness: TOCTOU hazards and mitigations
+The connect worker is inherently multi-threaded (socket reader, timers,
+executor pool, supervisor, user shutdown), and most historical bugs in the JS
+implementation — visible as defensive comments in its source — are
+check-then-act races. This section is normative for the Kotlin implementation:
+every hazard below must have the listed mitigation and a test.
+
+** The central principle: act-then-verify, never check-then-act
+A pre-check ("is the socket open? is the state ACTIVE?") can never be the
+correctness mechanism, because the state may change between check and use.
+Checks are allowed as fast-path optimizations only; the authoritative signal is
+always the outcome of the *act* (the write result, the CAS result, the map
+mutation under lock).
+
+** Hazard catalog
+1. /Phase changes between "can ACK?" and the ACK write/ (request ownership).
+   The ACK is the ownership boundary: before a successful ACK write the SDK has
+   not claimed the request and must *skip* it (gateway reroutes); after it, the
+   SDK must finish and deliver a result (socket or flush). Mitigation (Go):
+   =canWriteRequestAck()= is only a fast path; if the actual write fails, the
+   generation is retired and the request is skipped — it is never executed.
+   Execution starts only after a successful ACK write. This converts the race
+   into a safe outcome on both sides of the window.
+2. /Reply written to a socket that died after the check/. Mitigation: reply
+   write failure (including OkHttp =send()= returning =false=) never retires
+   and never throws away the result — it buffers the =SDKResponse= for HTTP
+   flush. Worst case is a duplicate reply (socket + flush), which the gateway
+   deduplicates by =request_id=; the pending-ACK buffer exists precisely
+   because a "successful" send is not a delivery guarantee.
+3. /Late =WORKER_REQUEST_EXTEND_LEASE_ACK= after request completion/ —
+   re-inserting into the lease map would resurrect a dead entry and (in JS,
+   historically) prevent shutdown. Mitigation: lease map mutations happen under
+   one lock, and the ACK handler first checks membership and *ignores* ACKs for
+   unknown request ids (both SDKs converged on this).
+4. /Lease rotation vs extension tick/: the extension timer must read the
+   *current* lease id at fire time, under the same lock that rotation uses —
+   never capture it at scheduling time.
+5. /Heartbeat counter mutated from two threads/ (JS: sender increments
+   =pendingHeartbeats=, receiver zeroes it). Mitigation: adopt Go's watchdog —
+   a deadline timer reset by heartbeat *receipt*; the sender never shares
+   mutable state with the receiver. Timer reset/cancel must be self-contained
+   (Kotlin: single =ScheduledFuture= swapped under a lock, or a
+   monotonic-deadline check in the tick).
+6. /Missed wake on the supervisor loop/ (JS fixed this: a wake that fires while
+   the loop is doing async work must not be lost when the wake signal is
+   re-armed). Mitigation: the supervisor parks on a =BlockingQueue<WakeReason>=
+   (or lock+condition with a pending set); wakes enqueue-coalesce; there is no
+   re-armable one-shot signal to lose.
+7. /Double close / close-during-connect/. Mitigation: =AtomicBoolean.compareAndSet=
+   guards the close path; the close result is memoized so concurrent =close()=
+   calls await the same outcome; state transitions go through a validated
+   transition table (invalid transitions are logged and ignored, so a drain
+   reconnect can never resurrect a CLOSING connection to ACTIVE — JS guards
+   this ad hoc in its =onStateChange= callback).
+8. /Pending-reply deadline vs ACK race/: the 5s deadline task and the ACK
+   handler both touch the pending map. Mitigation: both re-check membership
+   under the buffer lock before acting (the deadline task moves
+   pending->buffered only if still pending; ACK deletes only its own entry).
+   Buffered map is keyed by =request_id= so a duplicate buffer is idempotent.
+9. /Shutdown drain vs queued-but-not-started work/: if in-flight accounting
+   starts at execution start, shutdown can exit while requests sit in the pool
+   queue. Mitigation (Go): the WaitGroup is incremented at *enqueue* time and
+   decremented when processing finishes; queued items past the gate are skipped
+   by the phase-gated ACK (pre-ACK skip is safe, hazard 1).
+10. /Two generations alive during drain/: timers and executor completions can
+    hold a reference to the old generation while the supervisor installs a new
+    one. Mitigation: never share one mutable "current connection" everywhere —
+    each write helper takes an explicit generation reference and asks *that
+    generation's* phase; only lease extension deliberately re-resolves the
+    current active generation (see comparison table). The supervisor is the
+    only writer of the active/draining references.
+11. /Stale =excludeGateways= growth/: exclusion is added on failure and must be
+    removed on success for that gateway group, or long-lived workers will
+    eventually exclude everything (JS deletes on success; keep that).
+12. /OkHttp specifics/: =WebSocket.send()= is a non-blocking enqueue onto a
+    writer thread; it returns =false= after close/failure and when the 16 MiB
+    outgoing queue is exceeded — treat =false= exactly like a write failure
+    (hazard 1/2 paths). =onMessage/onClosing/onFailure= arrive on OkHttp
+    threads: handlers must only enqueue work (to the supervisor queue or
+    executor pool) and never block on locks held across I/O.
+
+** Testing the mitigations
+- Every hazard above gets a targeted mock-gateway test (see Testing section):
+  e.g. gateway sends =GATEWAY_CLOSING= between executor-request receipt and
+  ACK; reply-ACK withheld past deadline while socket stays open; extend-lease
+  ACK delivered after completion; =close()= raced from N threads.
+- Port the Go test files' scenarios: =connection_drain_test.go= (drain with
+  in-flight work, replacement timeout), =connection_closing_test.go= (pause
+  write gating, drain-then-close ordering), =connection_write_test.go=
+  (per-phase write policy matrix), =manager_state_test.go= (transition
+  validation).
+- The phase-transition table and write-policy table are pure functions —
+  exhaustively table-test them (every =(from,to)= pair, every =(phase,kind)=
+  pair).
+- Add a stress test: N events executing while the mock gateway drains and
+  reconnects in a loop; assert every run gets exactly one terminal result
+  (socket or flush) and the worker drains cleanly. Run in CI as part of
+  =make test-core=. Optionally verify the lifecycle classes with JetBrains
+  =lincheck= if flakiness appears (not a launch requirement).
+
 * Design
 ** Placement: core =inngest= module, new package =com.inngest.connect=
 A separate =inngest-connect= Gradle module was considered and rejected:
@@ -205,6 +344,8 @@ class ConnectOptions private constructor(...) {
         fun gatewayUrl(url: String): Builder          // overrides start response
         fun handleShutdownSignals(enabled: Boolean): Builder // default true
         fun signingKey(key: String): Builder          // else INNGEST_SIGNING_KEY
+        fun messageReadLimit(bytes: Long): Builder    // default 10 MiB (Go parity)
+        fun missedHeartbeatTolerance(n: Int): Builder // default 3 (Go parity)
         fun build(): ConnectOptions
     }
 }
@@ -243,10 +384,11 @@ Notes:
 | =kotlin/com/inngest/connect/WorkerConnection.kt=                 | Public interface + =ConnectionState= + =ConnectDebugState=. |
 | =kotlin/com/inngest/connect/internal/ConnectConfig.kt=           | Resolved config: hashed signing key (+fallback when plan 006 lands), env name, API base URL, instance id, capabilities JSON, app configs (name/version/functions JSON bytes). |
 | =kotlin/com/inngest/connect/internal/ConnectApiClient.kt=        | OkHttp calls: =POST /v0/connect/start=, =POST /v0/connect/flush= (protobuf bodies — deliberately not built on =HttpClient=, which is JSON-only). |
-| =kotlin/com/inngest/connect/internal/Handshake.kt=               | Dial + HELLO/CONNECT/READY state machine with 10s deadline; returns an established =GatewayConnection=. |
+| =kotlin/com/inngest/connect/internal/Handshake.kt=               | Dial + HELLO/CONNECT/READY state machine (10s dial, 5s HELLO, 20s READY deadlines — Go parity); returns an established =GatewayConnection=. |
 | =kotlin/com/inngest/connect/internal/GatewayConnection.kt=       | Live socket wrapper: id, OkHttp =WebSocket=, intervals, =pendingHeartbeats=, =dead= flag, =connectedAt=, close(). |
-| =kotlin/com/inngest/connect/internal/ConnectionSupervisor.kt=    | The reconcile loop (dedicated thread): ensure-live-connection, backoff, gateway exclusion, drain handling, shutdown exit, teardown. |
-| =kotlin/com/inngest/connect/internal/HeartbeatManager.kt=        | Scheduled heartbeat + miss detection. |
+| =kotlin/com/inngest/connect/internal/ConnectionSupervisor.kt=    | The reconcile loop (dedicated thread): ensure-live-connection, backoff, gateway exclusion, drain handling, shutdown exit, teardown. Owns the coarse manager state with a validated transition table. |
+| =kotlin/com/inngest/connect/internal/ConnectionPhase.kt=         | Per-generation phase machine (=New/Handshaking/Active/Draining/Closing/Retired/Closed=) with validated transitions and the per-message-kind write-policy table (port of Go's =connection_lifecycle.go= + =connection_write.go=). |
+| =kotlin/com/inngest/connect/internal/HeartbeatManager.kt=        | Scheduled worker heartbeat sends + gateway-heartbeat watchdog (deadline = =(tolerance+1) x interval=, reset on receipt). |
 | =kotlin/com/inngest/connect/internal/StatusReporter.kt=          | Optional =WORKER_STATUS= reports. |
 | =kotlin/com/inngest/connect/internal/RequestProcessor.kt=        | ACK, lease bookkeeping + extension timers, dispatch to executor pool, reply/buffer, reply-ACK + extend-lease-ACK handling. |
 | =kotlin/com/inngest/connect/internal/InFlightRequests.kt=        | Lease map + WaitGroup equivalent (=AtomicInteger= + lock/condition or =Phaser=). |
@@ -285,19 +427,21 @@ Changes to existing code (all small, behavior-preserving for HTTP):
   tick, per-request lease-extension tasks, pending-reply 5s deadlines.
 - *Executor pool* (=ExecutorService=, named =inngest-connect-worker-N=):
   runs =CommHandler.callFunction= per =GATEWAY_EXECUTOR_REQUEST=. Default: a
-  cached pool (JS parity: no local cap). When =maxWorkerConcurrency= is set it
-  is both advertised to the gateway *and* used as the pool bound — a cheap local
-  backstop the JS SDK lacks; document the difference.
+  cached pool bounded at 1,000 concurrent requests (Go's default pool size; JS
+  is unbounded). When =maxWorkerConcurrency= is set it is both advertised to
+  the gateway *and* used as the pool bound (Go semantics).
 - All cross-thread state (=activeConnection=, =drainingConnection=, lease map,
   =shutdownRequested=) is confined behind a single lock or made atomic; the
-  supervisor is the only writer of the connection refs.
+  supervisor is the only writer of the connection refs. Per-generation write
+  permission lives in the generation's own phase machine, not in shared flags —
+  see the TOCTOU section, which is normative for this design.
 
 ** Message dispatch (steady state)
 | Incoming                          | Action |
 |-----------------------------------+--------|
-| =GATEWAY_HEARTBEAT=               | reset =pendingHeartbeats=, record timestamp |
-| =GATEWAY_CLOSING=                 | move active -> draining, wake supervisor to dial replacement |
-| =GATEWAY_EXECUTOR_REQUEST=        | validate app name known; =WORKER_REQUEST_ACK=; register lease; schedule extension timer; submit to executor pool |
+| =GATEWAY_HEARTBEAT=               | reset the gateway-heartbeat watchdog deadline, record timestamp |
+| =GATEWAY_CLOSING=                 | transition generation to =Draining=, wake supervisor to dial replacement |
+| =GATEWAY_EXECUTOR_REQUEST=        | validate app name known; enqueue to executor pool (in-flight counted at enqueue); worker sends phase-gated =WORKER_REQUEST_ACK= (skip if it fails — pre-ACK skip), registers lease, schedules extension timer, executes |
 | =WORKER_REPLY_ACK=                | =MessageBuffer.acknowledgePending(requestId)= |
 | =WORKER_REQUEST_EXTEND_LEASE_ACK= | rotate lease id, or on missing =new_lease_id= drop the lease (result will be discarded) |
 | =SYNC_FAILED=                     | log error payload; treat as fatal handshake failure when received during setup |
@@ -442,7 +586,9 @@ Scenarios (mirroring =connection.test.ts= / =requestProcessor.test.ts= /
   endpoint (assert protobuf body + auth header).
 - lease extension: timer fires at interval, ACK rotates lease id; ACK without
   =new_lease_id= stops extensions; late ACK after completion is ignored.
-- heartbeat: 2 missed -> reconnect; gateway heartbeat resets counter.
+- heartbeat: gateway silence past the watchdog deadline -> reconnect; each
+  gateway heartbeat resets the deadline; worker heartbeats keep sending on
+  interval independently.
 - =GATEWAY_CLOSING=: replacement dialed while old socket still answers lease
   extensions; old closed after new READY.
 - shutdown: =WORKER_PAUSE= observed; in-flight request completes before socket
