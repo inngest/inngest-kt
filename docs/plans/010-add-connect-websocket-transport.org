@@ -639,7 +639,7 @@ dev-server-gated test group):
 - [X] M3 — Handshake + supervisor: start request, WS handshake, reconcile loop,
   heartbeats, backoff/exclusion, mock-gateway happy path + failure tests.
   Worker connects and idles reliably.
-- [ ] M4 — Execution path: request processor, lease extension, response
+- [X] M4 — Execution path: request processor, lease extension, response
   mapping, reply ACK tracking, buffer + HTTP flush, contract tests.
 - [ ] M5 — Lifecycle polish: graceful shutdown/drain, status reporter, debug
   state, shutdown hook, drain diagnostics.
@@ -738,10 +738,33 @@ Notes and gaps discovered while executing the milestones; newest last.
   no-write callback wakes the reconcile loop) /before/ adding the gateway to
   =excludeGateways= — the reconnect's start request could race ahead without
   the exclusion. State must be published before observers are woken.
-- Executor requests are logged-and-dropped until M4's request processor; the
-  worker should not be pointed at real traffic until M4 lands.
 - Logging: =java.util.logging= (zero new dependencies); revisit if a logging
   facade is introduced SDK-wide.
+
+** M4 (execution path)
+- =RequestProcessor=: parse/validate on the reader thread, in-flight counted
+  at enqueue, ACK as the ownership boundary (=DENIED_BY_PHASE= -> skip;
+  =FAILED= -> retire the generation and skip), lease registry + per-request
+  extension timers reading the current lease id under the lease lock, reply
+  via owning generation -> current active -> buffer, response mapping per the
+  plan's table (incl. 400 -> ERROR+no_retry divergence from JS).
+- =MessageBuffer=: pending (reply-ACK deadline, re-checked under the lock) ->
+  buffered -> HTTP flush with 5 backoff rounds; flush runs off-loop with a
+  single-flight guard and deliberately does NOT re-wake on failure (that would
+  spin flush attempts forever — next natural trigger retries).
+- Teardown: =expireAllPending()= promotes never-ACKed replies before the final
+  flush, since deadline tasks die with the scheduler; a duplicate of a reply
+  that actually arrived is deduplicated by the gateway on request id. This is
+  a deliberate divergence from Go (which can drop un-ACKed pending replies on
+  shutdown) — noted for upstreaming.
+- 8 mock-gateway tests: DONE reply w/ full field assertions, NonRetriableError
+  -> ERROR+no_retry, unknown app skipped without ACK, un-ACKed reply buffered
+  and flushed over HTTP, lease extension + rotation, lease lost -> extensions
+  stop but reply still delivered, shutdown drains in-flight work, and a
+  request arriving mid-shutdown is skipped without execution.
+- /Gap found in the fixture/: MockWebServer's =RecordedRequest.body= is an
+  okio Buffer that reading drains — the dispatcher must =clone()= it or later
+  test assertions see an empty body.
 
 * Open questions
 - [ ] Should generated protobuf classes be shaded/relocated to avoid classpath

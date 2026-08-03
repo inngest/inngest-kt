@@ -38,10 +38,12 @@ internal class ConnectionSupervisor(
     private val apiClient: ConnectApiClient,
     private val backoffMillis: (Int) -> Long = Backoff::delayMillis,
     private val drainingRetryMillis: () -> Long = { Backoff.gatewayDrainingRetryMillis() },
+    private val replyAckDeadlineMillis: Long = MessageBuffer.DEFAULT_REPLY_ACK_DEADLINE_MILLIS,
 ) {
     companion object {
         private val logger = Logger.getLogger("com.inngest.connect")
         private const val START_TIMEOUT_MILLIS = 30_000L
+        private const val EXECUTOR_KEEP_ALIVE_SECONDS = 60L
     }
 
     private val httpClient =
@@ -62,6 +64,49 @@ internal class ConnectionSupervisor(
         }
 
     internal val inFlightRequests = InFlightRequests()
+
+    private val executor =
+        java.util.concurrent
+            .ThreadPoolExecutor(
+                config.maxWorkerConcurrency,
+                config.maxWorkerConcurrency,
+                EXECUTOR_KEEP_ALIVE_SECONDS,
+                TimeUnit.SECONDS,
+                LinkedBlockingQueue(),
+                object : java.util.concurrent.ThreadFactory {
+                    private val counter =
+                        java.util.concurrent.atomic
+                            .AtomicInteger()
+
+                    override fun newThread(runnable: Runnable): Thread =
+                        Thread(runnable, "inngest-connect-worker-${counter.incrementAndGet()}").apply {
+                            isDaemon = false
+                        }
+                },
+            ).apply { allowCoreThreadTimeOut(true) }
+
+    private val messageBuffer = MessageBuffer(apiClient, scheduler = scheduler)
+
+    private val requestProcessor =
+        RequestProcessor(
+            commHandlersByApp = config.apps.associate { it.appName to it.commHandler },
+            executor = executor,
+            scheduler = scheduler,
+            inFlight = inFlightRequests,
+            buffer = messageBuffer,
+            hooks =
+                object : RequestProcessor.Hooks {
+                    override fun activeConnection(): GatewayConnection? = active.get()
+
+                    override fun shutdownRequested(): Boolean = shutdownRequested.get()
+
+                    override fun wake(reason: WakeReason) {
+                        this@ConnectionSupervisor.wake(reason)
+                    }
+                },
+            sdkResponseVersion = "inngest-kt:${config.sdkVersion}",
+            replyAckDeadlineMillis = replyAckDeadlineMillis,
+        )
 
     private val wakeQueue = LinkedBlockingQueue<WakeReason>()
     private val active = AtomicReference<GatewayConnection?>()
@@ -107,18 +152,15 @@ internal class ConnectionSupervisor(
                     }
 
                     ConnectProto.GatewayMessageType.GATEWAY_EXECUTOR_REQUEST -> {
-                        // Request processing lands with milestone M4.
-                        logger.warning(
-                            "executor request received but request processing is not implemented yet " +
-                                "(connection ${conn.id})",
-                        )
+                        requestProcessor.handleExecutorRequest(conn, message)
                     }
 
-                    ConnectProto.GatewayMessageType.WORKER_REPLY_ACK,
-                    ConnectProto.GatewayMessageType.WORKER_REQUEST_EXTEND_LEASE_ACK,
-                    -> {
-                        // Handled by the request processor milestone (M4).
-                        logger.fine("ignoring ${message.kind} before request processor exists")
+                    ConnectProto.GatewayMessageType.WORKER_REPLY_ACK -> {
+                        requestProcessor.handleReplyAck(message)
+                    }
+
+                    ConnectProto.GatewayMessageType.WORKER_REQUEST_EXTEND_LEASE_ACK -> {
+                        requestProcessor.handleExtendLeaseAck(message)
                     }
 
                     else -> {
@@ -253,6 +295,12 @@ internal class ConnectionSupervisor(
                 }
             }
 
+            // Flush buffered replies whenever there are any and we are able
+            // to reach the API (the flush itself runs off-loop).
+            if (messageBuffer.hasBufferedMessages()) {
+                submitFlush()
+            }
+
             // Park until something changes.
             val reason = wakeQueue.take()
             val extra = mutableListOf<WakeReason>()
@@ -333,6 +381,16 @@ internal class ConnectionSupervisor(
             conn.closeNormal(ConnectProto.WorkerDisconnectReason.WORKER_SHUTDOWN.name)
         }
 
+        // ACKs can no longer arrive and the deadline tasks are gone with the
+        // scheduler: promote every pending reply and flush over HTTP. A
+        // duplicate of an actually-delivered reply is deduplicated by the
+        // gateway on request id.
+        messageBuffer.expireAllPending()
+        if (messageBuffer.hasBufferedMessages()) {
+            messageBuffer.flush()
+        }
+
+        executor.shutdownNow()
         httpClient.dispatcher.executorService.shutdown()
         httpClient.connectionPool.evictAll()
 
@@ -340,6 +398,28 @@ internal class ConnectionSupervisor(
         firstReady.completeExceptionally(ConnectApiException("connection closed before becoming ready"))
 
         closedLatch.countDown()
+    }
+
+    private val flushInProgress = AtomicBoolean(false)
+
+    /** Run at most one HTTP flush at a time, off the supervisor thread. */
+    private fun submitFlush() {
+        if (!flushInProgress.compareAndSet(false, true)) return
+        try {
+            executor.execute {
+                try {
+                    // flush() retries internally with backoff; when it still
+                    // fails, do NOT re-wake the loop — that would spin flush
+                    // attempts forever. The next natural trigger (reconnect,
+                    // newly buffered reply, shutdown) retries.
+                    messageBuffer.flush()
+                } finally {
+                    flushInProgress.set(false)
+                }
+            }
+        } catch (e: java.util.concurrent.RejectedExecutionException) {
+            flushInProgress.set(false)
+        }
     }
 
     // -----------------------------------------------------------------------

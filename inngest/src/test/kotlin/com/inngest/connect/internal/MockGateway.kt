@@ -81,7 +81,8 @@ internal class MockGateway(
 
                         "/v0/connect/flush" -> {
                             flushRequests.add(request)
-                            val sdkResponse = ConnectProto.SDKResponse.parseFrom(request.body.readByteArray())
+                            // Clone: reading drains the Buffer, and tests read it again.
+                            val sdkResponse = ConnectProto.SDKResponse.parseFrom(request.body.clone().readByteArray())
                             MockResponse()
                                 .setResponseCode(200)
                                 .setBody(
