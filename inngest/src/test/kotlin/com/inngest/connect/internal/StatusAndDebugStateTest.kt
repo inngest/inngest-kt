@@ -25,6 +25,24 @@ internal class StatusAndDebugStateTest {
     private var gateway: MockGateway? = null
     private var supervisor: ConnectionSupervisor? = null
 
+    /**
+     * Await an internal-state condition instead of asserting it instantly.
+     * Gateway-side observations (e.g. seeing the ACK) do not imply the
+     * worker thread has finished its post-write bookkeeping yet.
+     */
+    private fun awaitTrue(
+        timeoutMillis: Long = 5_000,
+        message: String,
+        condition: () -> Boolean,
+    ) {
+        val deadline = System.currentTimeMillis() + timeoutMillis
+        while (System.currentTimeMillis() < deadline) {
+            if (condition()) return
+            Thread.sleep(10)
+        }
+        assertTrue(condition(), message)
+    }
+
     @AfterEach
     fun tearDown() {
         supervisor?.close()
@@ -166,19 +184,18 @@ internal class StatusAndDebugStateTest {
         )
         socket.expect(ConnectProto.GatewayMessageType.WORKER_REQUEST_ACK)
 
-        val busy = sup.debugState()
-        assertEquals(1, busy.inFlightRequestCount)
-        assertTrue(busy.inFlightRequestIds.contains("req-debug"))
+        // The worker registers in-flight metadata after the ACK write, so
+        // seeing the ACK does not mean the registration is visible yet.
+        assertEquals(1, sup.debugState().inFlightRequestCount)
+        awaitTrue(message = "expected req-debug in inFlightRequestIds") {
+            sup.debugState().inFlightRequestIds.contains("req-debug")
+        }
 
         // Heartbeat receipt is visible in the snapshot.
         socket.send(ConnectProto.GatewayMessageType.GATEWAY_HEARTBEAT)
-        val deadline = System.currentTimeMillis() + 2_000
-        var sawHeartbeat = false
-        while (System.currentTimeMillis() < deadline && !sawHeartbeat) {
-            val since = sup.debugState().millisSinceLastGatewayHeartbeat
-            if (since != null) sawHeartbeat = true else Thread.sleep(20)
+        awaitTrue(message = "expected millisSinceLastGatewayHeartbeat after a gateway heartbeat") {
+            sup.debugState().millisSinceLastGatewayHeartbeat != null
         }
-        assertTrue(sawHeartbeat, "expected millisSinceLastGatewayHeartbeat after a gateway heartbeat")
 
         socket.expect(ConnectProto.GatewayMessageType.WORKER_REPLY, 10)
     }

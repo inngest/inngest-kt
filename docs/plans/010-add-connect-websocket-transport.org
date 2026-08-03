@@ -794,6 +794,13 @@ Notes and gaps discovered while executing the milestones; newest last.
 - Tests: status reports carry the executing request id; reporting stays
   silent when the gateway sends no interval; debug state reflects
   active/in-flight/heartbeat transitions.
+- /CI flake found and fixed (Java 25 matrix job)/: a test asserted
+  =debugState().inFlightRequestIds= immediately after observing the ACK on
+  the gateway side, but the worker registers lease/in-flight metadata *after*
+  the ACK write (deliberate — ACK is the ownership boundary, Go ordering).
+  Rule for this suite: a gateway-side observation never implies the worker's
+  post-write bookkeeping is visible; assertions on internal state must poll
+  with a deadline (=awaitTrue= helper), never assert instantly.
 
 * Open questions
 - [ ] Should generated protobuf classes be shaded/relocated to avoid classpath
