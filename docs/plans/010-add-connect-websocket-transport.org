@@ -631,7 +631,7 @@ dev-server-gated test group):
   run in =make test-core=. E2e connect tests join the dev-server-gated group.
 
 * Milestones
-- [ ] M1 — Protobuf foundation: vendored proto, Gradle plugin wiring, generated
+- [X] M1 — Protobuf foundation: vendored proto, Gradle plugin wiring, generated
   code compiles on Java 8 target, codec unit tests. (=chore(inngest): add connect protobuf codegen=)
 - [ ] M2 — Config assembly: runtime-kind in function config builder, connect
   capabilities/env vars, =ConnectConfig= + validation, golden config tests.
@@ -659,6 +659,30 @@ Each milestone is a small reviewable PR chain with conventional-commit titles
 - [ ] Public API usable from plain Java; no new public surface leaks internal
   protocol types (generated protobuf classes stay internal).
 - [ ] No second execution engine (plan 009's standing constraint).
+
+* Implementation notes (running log)
+Notes and gaps discovered while executing the milestones; newest last.
+
+** M1 (protobuf foundation)
+- Vendored the proto with two local =option java_package= /
+  =java_outer_classname= lines so generated classes land in
+  =com.inngest.connect.v1.ConnectProto= instead of claiming the generic
+  =connect.v1= Java package. No wire-format changes; header comment records the
+  upstream commit.
+- /Gap found/: adding generated Java sources un-skipped the =javadoc= task
+  (the module was pure Kotlin before, so it had always been NO-SOURCE) and
+  JDK 8's javadoc fails on the =-html5= flag. Fixed by excluding
+  =com/inngest/connect/v1/**= from =tasks.javadoc= — generated classes are not
+  public API. Watch this again if other generated/Java sources are added.
+- /Environment note/: the =java { toolchain 8 }= setting means any machine
+  without a JDK 8 fails at =compileJava= once the module has Java sources.
+  CI (setup-java) and the nix dev shell provide one; other environments need
+  =org.gradle.java.installations.paths= pointing at a JDK 8. Documented here
+  because protobuf codegen makes the module contain Java sources for the first
+  time.
+- Codec tests pin all enum wire numbers and optional-field presence semantics
+  (=ConnectProtoCodecTest=), so a future proto re-vendor that changes the
+  contract fails loudly.
 
 * Open questions
 - [ ] Should generated protobuf classes be shaded/relocated to avoid classpath
