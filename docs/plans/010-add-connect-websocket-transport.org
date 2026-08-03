@@ -766,6 +766,20 @@ Notes and gaps discovered while executing the milestones; newest last.
   okio Buffer that reading drains — the dispatcher must =clone()= it or later
   test assertions see an empty body.
 
+** Live dev-server smoke test (after M4)
+- =inngest-test-server= gained a connect entry point (=ConnectWorker.kt=, run
+  via =make dev-connect= / =inngest-test-server:runConnect=) serving a
+  two-step function.
+- Against a real dev server (CLI v1.39): app synced over =WORKER_CONNECT=,
+  =state=ACTIVE= reported, a single run completed with the expected output
+  (step memoization over multiple executor round-trips works), a concurrent
+  burst of 20 events all reached =Completed= (21/21 total runs), and SIGTERM
+  triggered the shutdown hook -> drain -> clean close (worker printed
+  "Connect worker closed" and the JVM exited).
+- Note for e2e automation: when a JavaExec dev process is stopped by a
+  signal, Gradle reports BUILD FAILED — harness scripts should not treat that
+  exit status as a test failure.
+
 * Open questions
 - [ ] Should generated protobuf classes be shaded/relocated to avoid classpath
   clashes with user protobuf versions? (protobuf-java is notorious for runtime
