@@ -295,6 +295,7 @@ class InngestFunctionConfigBuilder {
     private fun buildSteps(
         serveUrl: String,
         functionId: String,
+        runtimeKind: FunctionRuntimeKind,
     ): Map<String, StepConfig> =
         mapOf(
             "step" to
@@ -304,7 +305,7 @@ class InngestFunctionConfigBuilder {
                     retries = mapOf("attempts" to this.retries),
                     runtime =
                         hashMapOf(
-                            "type" to "http",
+                            "type" to runtimeKind.value,
                             "url" to "$serveUrl?fnId=$functionId&stepId=step",
                         ),
                 ),
@@ -313,6 +314,7 @@ class InngestFunctionConfigBuilder {
     internal fun build(
         appId: String,
         serverUrl: String,
+        runtimeKind: FunctionRuntimeKind = FunctionRuntimeKind.Http,
     ): InternalFunctionConfig {
         if (id == null) {
             throw InngestInvalidConfigurationException("Function id must be configured via builder")
@@ -331,7 +333,7 @@ class InngestFunctionConfigBuilder {
                 idempotency,
                 cancel,
                 batchEvents,
-                steps = buildSteps(serverUrl, globalId),
+                steps = buildSteps(serverUrl, globalId, runtimeKind),
             )
         return config
     }

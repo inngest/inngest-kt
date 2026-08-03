@@ -633,8 +633,9 @@ dev-server-gated test group):
 * Milestones
 - [X] M1 — Protobuf foundation: vendored proto, Gradle plugin wiring, generated
   code compiles on Java 8 target, codec unit tests. (=chore(inngest): add connect protobuf codegen=)
-- [ ] M2 — Config assembly: runtime-kind in function config builder, connect
+- [X] M2 — Config assembly: runtime-kind in function config builder, connect
   capabilities/env vars, =ConnectConfig= + validation, golden config tests.
+  (=ConnectConfig=/options builder moved into M3 where they are first used.)
 - [ ] M3 — Handshake + supervisor: start request, WS handshake, reconcile loop,
   heartbeats, backoff/exclusion, mock-gateway happy path + failure tests.
   Worker connects and idles reliably.
@@ -683,6 +684,27 @@ Notes and gaps discovered while executing the milestones; newest last.
 - Codec tests pin all enum wire numbers and optional-field presence semantics
   (=ConnectProtoCodecTest=), so a future proto re-vendor that changes the
   contract fails loudly.
+
+** M2 (config assembly)
+- =FunctionRuntimeKind= (=http=/=ws=) threads through
+  =InngestFunctionConfigBuilder.build= -> =buildSteps= and
+  =InternalInngestFunction.getFunctionConfig= with an =Http= default, so the
+  register path is untouched (existing golden tests unchanged and passing).
+- =CommHandler.getConnectFunctionConfigs()= deliberately bypasses
+  =getServeUrl()=: serve origin/path config must not leak into the
+  =ws://connect= placeholder. =getConnectFunctionConfigsJson()= reuses the same
+  Klaxon field converters as =register= so duration/scope formatting cannot
+  drift between the two sync paths (covered by a batchEvents golden test).
+- =SupportedFrameworkName.Connect("connect")= added; connect =CommHandler=
+  instances use it (affects only the =x-inngest-framework= response header
+  value and the future =WorkerConnectRequestData.framework= field).
+- Scope shift: the public =ConnectOptions=/=ConnectConfig= surface moves to M3
+  where it is first consumed — committing dead public API in M2 would be
+  unreviewable.
+- /Environment note/: =inngest-test-server= pins a Java 17 toolchain; this
+  sandbox also needed a manual Temurin 17 for
+  =org.gradle.java.installations.paths= (same class of gap as the M1 JDK 8
+  note).
 
 * Open questions
 - [ ] Should generated protobuf classes be shaded/relocated to avoid classpath

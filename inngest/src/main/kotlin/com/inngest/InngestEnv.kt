@@ -18,6 +18,10 @@ enum class InngestSystem(
     ServeOrigin("INNGEST_SERVE_ORIGIN"),
     ServePath("INNGEST_SERVE_PATH"),
     Dev("INNGEST_DEV"),
+
+    // Connect (WebSocket worker) variables
+    ConnectGatewayUrl("INNGEST_CONNECT_GATEWAY_URL"),
+    ConnectMaxWorkerConcurrency("INNGEST_CONNECT_MAX_WORKER_CONCURRENCY"),
 }
 
 enum class InngestEnv(
