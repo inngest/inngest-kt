@@ -706,6 +706,18 @@ Notes and gaps discovered while executing the milestones; newest last.
   =org.gradle.java.installations.paths= (same class of gap as the M1 JDK 8
   note).
 
+** M3 (in progress)
+- Landed first: the pure core — =ConnectionPhase= (per-generation phase machine
+  with validated transitions), =ConnectionLifecycle= (thread-safe holder whose
+  once-only no-write callback is tested under racing transitions), the
+  per-phase write-policy table, and the =Backoff= schedule. Both tables are
+  exhaustively table-tested per the TOCTOU section.
+- Deliberate additions over the Go tables: =WORKER_READY= and =WORKER_STATUS=
+  are modeled as Active-phase writes (Go never sends READY and does not
+  implement the status reporter; JS sends both).
+- Remaining for M3: =ConnectOptions=/=ConnectConfig=, start-request API client,
+  handshake, supervisor loop, heartbeat manager, mock gateway fixture + tests.
+
 * Open questions
 - [ ] Should generated protobuf classes be shaded/relocated to avoid classpath
   clashes with user protobuf versions? (protobuf-java is notorious for runtime
