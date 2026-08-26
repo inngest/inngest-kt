@@ -9,6 +9,10 @@ TEST_JAVA_ARGS=$(if $(TEST_JAVA_VERSION),-PtestJavaVersion=$(TEST_JAVA_VERSION),
 dev-ktor:
 	$(GRADLE) inngest-test-server:run
 
+.PHONY: dev-connect
+dev-connect:
+	$(GRADLE) inngest-test-server:runConnect
+
 .PHONY: dev-spring-boot
 dev-spring-boot:
 	$(GRADLE) $(SPRING_BOOT_ARGS) inngest-spring-boot-demo:bootRun

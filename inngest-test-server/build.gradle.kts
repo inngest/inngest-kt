@@ -42,6 +42,15 @@ application {
     mainClass.set("com.inngest.testserver.AppKt")
 }
 
+// Run the connect (WebSocket transport) development worker instead of the
+// HTTP server: ./gradlew inngest-test-server:runConnect (or `make dev-connect`).
+tasks.register<JavaExec>("runConnect") {
+    group = "application"
+    description = "Runs the Inngest Connect development worker"
+    classpath = sourceSets["main"].runtimeClasspath
+    mainClass.set("com.inngest.testserver.ConnectWorkerKt")
+}
+
 tasks.named<Test>("test") {
     testJavaVersion.orNull?.let { version ->
         javaLauncher.set(

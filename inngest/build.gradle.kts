@@ -11,6 +11,7 @@ plugins {
     id("maven-publish")
     id("signing")
     id("org.jetbrains.kotlin.jvm") version "2.2.21"
+    id("com.google.protobuf") version "0.9.5"
 }
 
 // TODO - Move this to share conventions gradle file
@@ -33,12 +34,25 @@ dependencies {
 
     implementation("com.fasterxml.jackson.core:jackson-databind:2.16.1")
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
+    implementation("com.google.protobuf:protobuf-java:4.33.4")
 
     testFixturesImplementation("com.fasterxml.jackson.core:jackson-databind:2.16.1")
 
     testImplementation(kotlin("test"))
     testImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
     testImplementation("org.junit-pioneer:junit-pioneer:1.9.1")
+}
+
+protobuf {
+    protoc {
+        artifact = "com.google.protobuf:protoc:4.33.4"
+    }
+}
+
+// Generated protobuf classes are compiled and shipped but are not public API
+// surface; keep them out of the javadoc jar.
+tasks.javadoc {
+    exclude("com/inngest/connect/v1/**")
 }
 
 publishing {
