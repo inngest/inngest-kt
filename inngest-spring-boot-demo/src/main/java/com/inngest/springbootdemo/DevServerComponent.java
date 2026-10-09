@@ -292,7 +292,8 @@ public class DevServerComponent implements DisposableBean {
                 ObjectMapper mapper = new ObjectMapper();
 
                 JsonNode node = mapper.readTree(strResponse);
-                JsonNode dataResult = node.path("data").path("output");
+                // Running runs may omit output until the function finishes.
+                JsonNode dataResult = node.path("data").get("output");
 
                 T output = mapper.treeToValue(dataResult, outputType);
                 RunResponse<T> result = mapper.readValue(strResponse, new TypeReference<RunResponse<T>>() {
