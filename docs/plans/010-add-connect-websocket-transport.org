@@ -1,0 +1,816 @@
+#+title: 010 Add Connect WebSocket Transport
+#+AUTHOR: Dan Farrelly
+#+DATE: 2026-07-30
+#+STATUS: Draft
+
+* Goal
+- [ ] Implement Inngest Connect for the Kotlin SDK: a persistent, worker-initiated
+  WebSocket transport that receives execution requests from an Inngest gateway
+  instead of serving inbound HTTP, reusing the existing shared execution engine
+  (=CommHandler.callFunction=) without introducing a second engine.
+- [ ] Ship a small, Java-friendly public API (=connect(...)= returning a
+  =WorkerConnection=) with graceful shutdown, reconnection, and delivery
+  guarantees matching the JS SDK (=inngest-js= =components/connect=).
+
+This plan executes the "Connect transport" line of
+[[file:009-add-optional-transports-and-optimizations.org][plan 009]] and keeps its
+exit criterion: no second, divergent execution engine.
+
+* Scope
+- [ ] Vendored =connect.proto= + protobuf codegen in the =inngest= module.
+- [ ] Connect handshake, reconcile loop, heartbeats, lease extension, worker
+  status, graceful drain/shutdown, response buffering + HTTP flush.
+- [ ] Function config sync over the connect handshake (=runtime.type "ws"=).
+- [ ] New env vars: =INNGEST_CONNECT_GATEWAY_URL=,
+  =INNGEST_CONNECT_MAX_WORKER_CONCURRENCY=.
+- [ ] Local QA via the Inngest dev server; integration tests via an in-process
+  mock gateway.
+
+Out of scope (tracked elsewhere): streaming and checkpointing (plan 009),
+planned-step execution (plan 004), signing key fallback env plumbing (plan 006 —
+connect consumes it when available), middleware (plan 008).
+
+* Background: how Connect works in inngest-js (reference implementation)
+Source researched: =inngest-js/packages/inngest/src/components/connect/=
+(=index.ts=, =config.ts=, =types.ts=, =messages.ts=, =buffer.ts=, =os.ts=,
+=util.ts=, =strategies/core/{connection,handshake,requestProcessor,heartbeat,statusReporter}.ts=,
+=protobuf/connect.proto=). The Go SDK (=inngestgo/connect/=) was studied as a
+second reference; see the cross-SDK comparison section below — where the two
+disagree, this plan states which behavior Kotlin adopts.
+
+** Wire format
+Every WebSocket frame is a binary protobuf =ConnectMessage { GatewayMessageType
+kind; bytes payload }=. The payload is itself an encoded protobuf message whose
+type depends on =kind=. The proto (package =connect.v1=, canonical copy lives in
+=inngest/inngest= at =proto/connect/v1/connect.proto=) defines 16 message kinds:
+
+| Kind                            | Direction | Payload type                      |
+|---------------------------------+-----------+-----------------------------------|
+| =GATEWAY_HELLO=                 | g -> w    | (none)                            |
+| =WORKER_CONNECT=                | w -> g    | =WorkerConnectRequestData=        |
+| =GATEWAY_CONNECTION_READY=      | g -> w    | =GatewayConnectionReadyData=      |
+| =WORKER_READY=                  | w -> g    | (none)                            |
+| =SYNC_FAILED=                   | g -> w    | =SystemError=                     |
+| =GATEWAY_EXECUTOR_REQUEST=      | g -> w    | =GatewayExecutorRequestData=      |
+| =WORKER_REQUEST_ACK=            | w -> g    | =WorkerRequestAckData=            |
+| =WORKER_REQUEST_EXTEND_LEASE=   | w -> g    | =WorkerRequestExtendLeaseData=    |
+| =WORKER_REQUEST_EXTEND_LEASE_ACK= | g -> w  | =WorkerRequestExtendLeaseAckData= |
+| =WORKER_REPLY=                  | w -> g    | =SDKResponse=                     |
+| =WORKER_REPLY_ACK=              | g -> w    | =WorkerReplyAckData=              |
+| =WORKER_PAUSE=                  | w -> g    | (none)                            |
+| =WORKER_HEARTBEAT=              | w -> g    | (none)                            |
+| =GATEWAY_HEARTBEAT=             | g -> w    | (none)                            |
+| =GATEWAY_CLOSING=               | g -> w    | (none)                            |
+| =WORKER_STATUS=                 | w -> g    | =WorkerStatusData=                |
+
+** Connection establishment
+1. =POST {apiBaseUrl}/v0/connect/start= with protobuf =StartRequest{exclude_gateways}=,
+   =Content-Type: application/protobuf=, =Authorization: Bearer <hashed signing key>=
+   (omitted in dev), and =x-inngest-env= when an env is configured. Response is a
+   protobuf =StartResponse{connection_id, gateway_endpoint, gateway_group,
+   session_token, sync_token}=. Errors: 401 -> switch to fallback signing key and
+   retry; 429 -> connection limit; anything else -> reconnect with backoff.
+2. Open a WebSocket to =gateway_endpoint= (overridable by option/env) with
+   subprotocol =v0.connect.inngest.com=, binary frames, 10s handshake deadline.
+3. Gateway sends =GATEWAY_HELLO=; worker replies =WORKER_CONNECT= carrying
+   =WorkerConnectRequestData=:
+   - =connection_id= (from start response), =instance_id= (option or hostname),
+   - =auth_data = {session_token, sync_token}=,
+   - =apps[] = {app_name, app_version?, functions}= where =functions= is the
+     UTF-8 JSON array of function configs (same shape as the HTTP register
+     payload's =functions=, but step =runtime.type= is ="ws"=),
+   - =capabilities= = UTF-8 JSON, JS sends ={"trust_probe":"v1","connect":"v1"}=,
+   - =worker_manual_readiness_ack = true=, =system_attributes= (cpu/mem/os),
+   - =environment=, =framework = "connect"=, =platform=, =sdk_version=,
+     =sdk_language=, =started_at=, =max_worker_concurrency?=.
+4. Gateway syncs the app (a "deploy" appears server-side) and replies
+   =GATEWAY_CONNECTION_READY= with =heartbeat_interval=, =extend_lease_interval=,
+   =status_interval= as Go-style duration strings (e.g. ="10s"=; dev server sends
+   heartbeat ="10s"=, extend-lease ="30s"=; empty/"0s" status disables reports).
+   JS defaults when absent: heartbeat 10s, extend-lease 5s, status off.
+5. Worker attaches steady-state handlers, then sends =WORKER_READY= (or
+   =WORKER_PAUSE= instead if a shutdown began mid-reconnect).
+
+** Steady state
+- *Reconcile loop*: one supervisor loop owns the connection. Anything that
+  invalidates the connection (socket error/close, 2 consecutive missed
+  heartbeats, =GATEWAY_CLOSING=) marks it dead and wakes the loop, which
+  establishes a replacement. Exponential backoff schedule (ms):
+  =1000, 2000, 5000, 10000, 20000, 30000, 60000, 120000, 300000= (capped), reset
+  to 0 on success. Failed gateway groups are accumulated into =exclude_gateways=
+  for subsequent start requests (cleared per-gateway on success). A
+  ="connect_gateway_closing"= start failure retries fast with 0.5–1.5s jitter.
+- *Heartbeats*: worker sends =WORKER_HEARTBEAT= every =heartbeat_interval=;
+  each =GATEWAY_HEARTBEAT= received resets =pendingHeartbeats=; after 2 unanswered
+  sends the connection is declared dead.
+- *Gateway drain*: on =GATEWAY_CLOSING= the current connection is kept as
+  "draining" (it keeps servicing lease extensions/replies) while the loop opens a
+  replacement; the old socket is closed once the new one is ready.
+- *Worker status*: optional =WORKER_STATUS{in_flight_request_ids,
+  shutdown_requested}= at =status_interval=.
+
+** Execution
+- =GATEWAY_EXECUTOR_REQUEST= payload =GatewayExecutorRequestData= carries
+  =request_id=, =account_id=, =env_id=, =app_id=, =app_name=, =function_id=,
+  =function_slug=, =step_id?=, =request_payload= (bytes), =system_trace_ctx=,
+  =user_trace_ctx=, =run_id=, =lease_id=, =job_id=.
+- =request_payload= is *exactly* the JSON body of an HTTP execution request
+  (=ctx= / =event= / =events= / =steps=) — verified against the dev server (see
+  spike below). The JS SDK feeds it through the normal comm handler with
+  signature validation skipped (auth already happened via session token).
+- Worker immediately replies =WORKER_REQUEST_ACK=, records
+  =request_id -> lease_id=, and starts a per-request lease-extension timer that
+  sends =WORKER_REQUEST_EXTEND_LEASE= every =extend_lease_interval= (using the
+  *current* active socket, so leases survive drains).
+  =WORKER_REQUEST_EXTEND_LEASE_ACK= carries =new_lease_id= (rotate it) — an ACK
+  with no =new_lease_id= means the lease was lost (another worker claimed it):
+  stop extending and discard the eventual result.
+- On completion the worker sends =WORKER_REPLY= with =SDKResponse=:
+  =status= mapped from the engine's HTTP-ish status (=200 -> DONE=,
+  =206 -> NOT_COMPLETED=, =4xx/5xx -> ERROR=), =body= = response JSON bytes,
+  =no_retry= from the =x-inngest-no-retry= header, =retry_after= from the
+  =retry-after= header, =request_version= from =x-inngest-req-version=,
+  =sdk_version = "inngest-js:v<x.y.z>"=, plus request/trace/run echo fields.
+- *Delivery guarantee*: each sent reply is held as "pending" for 5s; the gateway
+  confirms receipt with =WORKER_REPLY_ACK{request_id}=. Un-ACKed or
+  socketless replies land in a buffer that is flushed via
+  =POST {apiBaseUrl}/v0/connect/flush= (body = one =SDKResponse=, protobuf
+  content type, same auth as start; response is =FlushResponse=). Flush retries
+  up to 5 rounds with the same backoff schedule. Flush runs on (re)connect
+  before starting, when a response is buffered while disconnected, and on close.
+
+** Shutdown
+On SIGINT/SIGTERM (or explicit =close()=): send =WORKER_PAUSE= (gateway stops
+routing new work), wait for in-flight requests to drain (a WaitGroup; lease-lost
+also releases), close the socket (close code 1000, reason
+=WORKER_SHUTDOWN=; unexpected teardown paths use 4001/=UNEXPECTED=), flush the
+buffer over HTTP, resolve the =closed= future. If the socket dies mid-shutdown
+with requests still in flight, the loop reconnects and sends =WORKER_PAUSE=
+instead of =WORKER_READY= to keep leases alive until drained.
+
+** Concurrency + isolation notes from JS
+- =maxWorkerConcurrency= is only *advertised* to the gateway (routing hint) —
+  the JS SDK does not locally gate execution.
+- JS defaults to running the socket in a =worker_thread= ("isolateExecution")
+  because blocking user code would starve Node's event loop and kill heartbeats.
+  This is a Node-specific problem; on the JVM, OkHttp WebSockets read on their
+  own threads, so *no isolation strategy is needed* — the equivalent of the JS
+  "same thread" strategy is the only one required.
+
+* Verified findings (spikes, 2026-07-30)
+Two spikes were built to de-risk the plan (code in the session scratchpad;
+salient parts reproduced in this doc):
+
+1. *Protobuf toolchain*: the JS repo's =connect.proto= compiles unmodified with
+   the =com.google.protobuf= Gradle plugin =0.9.5= + =protoc=/=protobuf-java=
+   =4.33.4= under this repo's Gradle =9.1= wrapper with Kotlin =2.2.21= applied;
+   encode/decode round-trips work from Kotlin via the generated Java classes.
+2. *End-to-end protocol* against a real dev server (=inngest-cli= v1.39 via
+   =npx=, OkHttp 4.12 WebSocket, subprotocol set via the
+   =Sec-WebSocket-Protocol= header):
+   - =POST /v0/connect/start= -> gateway =ws://127.0.0.1:8289/v0/connect=,
+     session/sync tokens returned with no auth in dev mode.
+   - HELLO -> WORKER_CONNECT (app config JSON with
+     =runtime: {"type":"ws","url":"ws://connect?fnId=<slug>&stepId=step"}=) ->
+     CONNECTION_READY (=heartbeat_interval "10s"=, =extend_lease_interval "30s"=)
+     -> WORKER_READY: the app synced and the function was routable.
+   - Sending =spike/hello= to the event API produced a
+     =GATEWAY_EXECUTOR_REQUEST= whose =request_payload= was the standard
+     execution JSON (=ctx.attempt/fn_id/run_id/stack/qi_id= etc. — a superset of
+     what =ExecutionRequestPayload= parses today, including =generation_id=,
+     =max_attempts=, =request_id=).
+   - Replying =WORKER_REPLY= with =SDKResponse{status: DONE, body: {...}}= got a
+     =WORKER_REPLY_ACK=, and the dev server's runs API showed the run
+     ="status": "Completed"= with the reply body as output.
+
+Conclusions: OkHttp needs no help (no new networking dependency); the protobuf
+plugin works with our Gradle; the dev server fully supports connect for QA; the
+execution payload/response mapping plugs straight into =CommHandler=.
+
+* Cross-SDK comparison: inngest-js vs inngestgo
+Source researched: =inngestgo/connect/= (=handler.go=, =connection.go=,
+=connection_lifecycle.go=, =connection_write.go=, =request_lifecycle.go=,
+=invoke.go=, =worker_pool.go=, =buffer.go=, =manager_state.go=, =handshake.go=,
+=workerapi.go=) plus the root =connect.go= wiring. The Go implementation is the
+more recent and more defensively engineered of the two — notably it models a
+*per-websocket-generation lifecycle state machine with gated writes*, which the
+JS SDK approximates with ad-hoc checks. Differences and what Kotlin adopts:
+
+| Concern | inngest-js | inngestgo | Kotlin decision |
+|---------+------------+-----------+-----------------|
+| Connection state | one =ConnectionState= for everything; liveness via a =dead= boolean checked ad hoc | *two* levels: coarse user-visible manager state (=manager_state.go=, validated transitions) + per-generation phase machine =New->Handshaking->Active->Draining/Closing->Retired->Closed= (=connection_lifecycle.go=) | *Go model* — it is the core TOCTOU defense (see next section) |
+| Write policy | check =ws.readyState= / =activeConnection= before send | every protocol write gated by phase policy table (=connection_write.go= =canWrite(kind)=); ACK-write failure retires the generation | *Go model* |
+| Readiness | =worker_manual_readiness_ack=true= + explicit =WORKER_READY= after handlers attached | never sends =WORKER_READY= (auto-ready on sync) | *JS model* — manual readiness avoids receiving work before handlers are attached |
+| Worker-heartbeat liveness | counts 2 unanswered *worker* heartbeats via =pendingHeartbeats= counter mutated from two callbacks | watchdog timer on *gateway* heartbeats: deadline = =(tolerance+1) x interval=, tolerance 3 (configurable), reset on each =GATEWAY_HEARTBEAT= | *Go model* — a monotonic deadline reset by receipt has no shared counter to race on |
+| Execution pool | unbounded async; =maxWorkerConcurrency= only advertised | fixed goroutine pool (default 1,000, cap 100M); =MaxWorkerConcurrency= sizes the pool *and* is advertised | *Go model* — bounded =ExecutorService= (default 1,000 threads is wrong for the JVM; default to a cached pool bounded at 1,000 concurrent, sized to the option when set) |
+| Reconnect budget | retry forever, capped backoff | give up after 5 consecutive failed attempts (worker terminates); 30s deadline on the *initial* connect | *Hybrid*: initial =Connect.start= fails after the 30s deadline (Go); steady-state reconnects retry forever with capped backoff (JS) — a long-lived worker should survive a multi-minute outage. Attempts reset on success in both. |
+| Gateway drain | old socket kept as "draining"; lease extensions are redirected to the *new* active socket | old generation stays =Draining= (leases + replies still allowed on it); replacement dialed with old gateway group excluded, 10s replacement timeout; then old generation =Retired= -> replies buffer to HTTP flush and lease extension stops | *Go model for gating, JS model for continuity*: extensions/replies for ACKed work use the owning generation while it is =Draining=; once it retires, further lease extensions move to the current active generation (JS) instead of stopping (Go) — stopping risks the executor rerouting long-running work; buffered-reply flush covers the reply path either way |
+| Handshake timeouts | one 10s deadline overall | 5s for HELLO, 20s for CONNECTION_READY (sync can be slow), 10s WS dial | *Go model* (per-phase deadlines; READY needs the longer budget because it includes the server-side sync) |
+| Message read limit | none | 10MB default, =MessageReadLimit= option (-1 disables) | *Go model* — OkHttp needs no read limit knob for frames it reads into memory anyway, but expose the option for parity and guard against pathological frames |
+| Gateway URL override | =gatewayUrl= string option + env var | =RewriteGatewayEndpoint func(url) url= hook | *JS model* (string + env var) — simpler, Java-friendly; a rewrite hook can be added later without breaking anything |
+| =request_version= in =SDKResponse= | echoes the execution version header | hardcoded 0 (Go supports v0 only) | echo the SDK's existing =x-inngest-req-version= value, matching what it advertises over HTTP |
+| Capabilities JSON | ={"trust_probe":"v1","connect":"v1"}= | ={"in_band_sync":"v1","trust_probe":"v1","connect":"v1"}= | declare only what the SDK implements: ={"connect":"v1"}= (this SDK has neither in-band sync nor trust probes; see =ProtocolGapsTest=) |
+| Buffer flush triggers | on connect, on buffered-while-disconnected, on close | same + a coalesced =notifyFlushChan= poked whenever a generation retires or a reply is buffered, serialized in the manager loop | *Go model* — event-driven flush with coalescing (single-permit queue) |
+| Executor payload guard | skips requests when manager state != ACTIVE (pre-check) | no manager-state pre-check; the phase-gated ACK write is the sole gate | *Go model* — the pre-check is exactly a TOCTOU (state can flip between check and ACK); rely on the gated ACK |
+| Close idempotency | =closePromise= memoization | =atomic.Bool= swap | same idea; Kotlin uses an atomic flag + memoized close result |
+| Identity | =sdk_language "typescript"=, =sdk_version "v<x.y.z>"= | =SDKLanguage "go"=, version bare ="0.16.0"= | =sdk_language "java"= (matches introspection), =sdk_version "v<VERSION>"= |
+
+Shared behaviors confirmed identical in both SDKs (safe to treat as protocol
+contract): start request/flush wire shapes and auth headers, subprotocol
+=v0.connect.inngest.com=, HELLO->CONNECT->READY order, backoff schedule
+(1s,2s,5s,10s,20s,30s,60s,120s,300s), 401 -> fallback-key switch, 429 ->
+connection-limit error, 5s reply-ACK deadline before buffering, 5 flush rounds,
+lease rotation via =new_lease_id= with "nil means lost, keep executing but the
+result may be discarded", =WORKER_PAUSE= on shutdown + drain in-flight +
+flush-on-close, app config functions as UTF-8 JSON with =runtime.type "ws"=.
+
+* Concurrency correctness: TOCTOU hazards and mitigations
+The connect worker is inherently multi-threaded (socket reader, timers,
+executor pool, supervisor, user shutdown), and most historical bugs in the JS
+implementation — visible as defensive comments in its source — are
+check-then-act races. This section is normative for the Kotlin implementation:
+every hazard below must have the listed mitigation and a test.
+
+** The central principle: act-then-verify, never check-then-act
+A pre-check ("is the socket open? is the state ACTIVE?") can never be the
+correctness mechanism, because the state may change between check and use.
+Checks are allowed as fast-path optimizations only; the authoritative signal is
+always the outcome of the *act* (the write result, the CAS result, the map
+mutation under lock).
+
+** Hazard catalog
+1. /Phase changes between "can ACK?" and the ACK write/ (request ownership).
+   The ACK is the ownership boundary: before a successful ACK write the SDK has
+   not claimed the request and must *skip* it (gateway reroutes); after it, the
+   SDK must finish and deliver a result (socket or flush). Mitigation (Go):
+   =canWriteRequestAck()= is only a fast path; if the actual write fails, the
+   generation is retired and the request is skipped — it is never executed.
+   Execution starts only after a successful ACK write. This converts the race
+   into a safe outcome on both sides of the window.
+2. /Reply written to a socket that died after the check/. Mitigation: reply
+   write failure (including OkHttp =send()= returning =false=) never retires
+   and never throws away the result — it buffers the =SDKResponse= for HTTP
+   flush. Worst case is a duplicate reply (socket + flush), which the gateway
+   deduplicates by =request_id=; the pending-ACK buffer exists precisely
+   because a "successful" send is not a delivery guarantee.
+3. /Late =WORKER_REQUEST_EXTEND_LEASE_ACK= after request completion/ —
+   re-inserting into the lease map would resurrect a dead entry and (in JS,
+   historically) prevent shutdown. Mitigation: lease map mutations happen under
+   one lock, and the ACK handler first checks membership and *ignores* ACKs for
+   unknown request ids (both SDKs converged on this).
+4. /Lease rotation vs extension tick/: the extension timer must read the
+   *current* lease id at fire time, under the same lock that rotation uses —
+   never capture it at scheduling time.
+5. /Heartbeat counter mutated from two threads/ (JS: sender increments
+   =pendingHeartbeats=, receiver zeroes it). Mitigation: adopt Go's watchdog —
+   a deadline timer reset by heartbeat *receipt*; the sender never shares
+   mutable state with the receiver. Timer reset/cancel must be self-contained
+   (Kotlin: single =ScheduledFuture= swapped under a lock, or a
+   monotonic-deadline check in the tick).
+6. /Missed wake on the supervisor loop/ (JS fixed this: a wake that fires while
+   the loop is doing async work must not be lost when the wake signal is
+   re-armed). Mitigation: the supervisor parks on a =BlockingQueue<WakeReason>=
+   (or lock+condition with a pending set); wakes enqueue-coalesce; there is no
+   re-armable one-shot signal to lose.
+7. /Double close / close-during-connect/. Mitigation: =AtomicBoolean.compareAndSet=
+   guards the close path; the close result is memoized so concurrent =close()=
+   calls await the same outcome; state transitions go through a validated
+   transition table (invalid transitions are logged and ignored, so a drain
+   reconnect can never resurrect a CLOSING connection to ACTIVE — JS guards
+   this ad hoc in its =onStateChange= callback).
+8. /Pending-reply deadline vs ACK race/: the 5s deadline task and the ACK
+   handler both touch the pending map. Mitigation: both re-check membership
+   under the buffer lock before acting (the deadline task moves
+   pending->buffered only if still pending; ACK deletes only its own entry).
+   Buffered map is keyed by =request_id= so a duplicate buffer is idempotent.
+9. /Shutdown drain vs queued-but-not-started work/: if in-flight accounting
+   starts at execution start, shutdown can exit while requests sit in the pool
+   queue. Mitigation (Go): the WaitGroup is incremented at *enqueue* time and
+   decremented when processing finishes; queued items past the gate are skipped
+   by the phase-gated ACK (pre-ACK skip is safe, hazard 1).
+10. /Two generations alive during drain/: timers and executor completions can
+    hold a reference to the old generation while the supervisor installs a new
+    one. Mitigation: never share one mutable "current connection" everywhere —
+    each write helper takes an explicit generation reference and asks *that
+    generation's* phase; only lease extension deliberately re-resolves the
+    current active generation (see comparison table). The supervisor is the
+    only writer of the active/draining references.
+11. /Stale =excludeGateways= growth/: exclusion is added on failure and must be
+    removed on success for that gateway group, or long-lived workers will
+    eventually exclude everything (JS deletes on success; keep that).
+12. /OkHttp specifics/: =WebSocket.send()= is a non-blocking enqueue onto a
+    writer thread; it returns =false= after close/failure and when the 16 MiB
+    outgoing queue is exceeded — treat =false= exactly like a write failure
+    (hazard 1/2 paths). =onMessage/onClosing/onFailure= arrive on OkHttp
+    threads: handlers must only enqueue work (to the supervisor queue or
+    executor pool) and never block on locks held across I/O.
+
+** Testing the mitigations
+- Every hazard above gets a targeted mock-gateway test (see Testing section):
+  e.g. gateway sends =GATEWAY_CLOSING= between executor-request receipt and
+  ACK; reply-ACK withheld past deadline while socket stays open; extend-lease
+  ACK delivered after completion; =close()= raced from N threads.
+- Port the Go test files' scenarios: =connection_drain_test.go= (drain with
+  in-flight work, replacement timeout), =connection_closing_test.go= (pause
+  write gating, drain-then-close ordering), =connection_write_test.go=
+  (per-phase write policy matrix), =manager_state_test.go= (transition
+  validation).
+- The phase-transition table and write-policy table are pure functions —
+  exhaustively table-test them (every =(from,to)= pair, every =(phase,kind)=
+  pair).
+- Add a stress test: N events executing while the mock gateway drains and
+  reconnects in a loop; assert every run gets exactly one terminal result
+  (socket or flush) and the worker drains cleanly. Run in CI as part of
+  =make test-core=. Optionally verify the lifecycle classes with JetBrains
+  =lincheck= if flakiness appears (not a launch requirement).
+
+* Design
+** Placement: core =inngest= module, new package =com.inngest.connect=
+A separate =inngest-connect= Gradle module was considered and rejected:
+connect must call =internal= machinery (=InternalFunctionConfig=,
+=InngestFunctionConfigBuilder.build=, =CommHandler= internals), and Kotlin
+=internal= visibility does not cross Gradle modules. Splitting would force those
+APIs public. The JS SDK ships connect inside the core package too. Cost: core
+gains a =protobuf-java= runtime dependency (~1.7 MB); acceptable, and noted as a
+possible future split once the surface stabilizes.
+
+** Public API (Kotlin + Java friendly, no coroutines)
+#+begin_src kotlin
+// com.inngest.connect
+class ConnectOptions private constructor(...) {
+    class Builder(apps: List<ConnectApp>) {          // or vararg ConnectApp
+        fun instanceId(id: String): Builder
+        fun maxWorkerConcurrency(n: Int): Builder
+        fun gatewayUrl(url: String): Builder          // overrides start response
+        fun handleShutdownSignals(enabled: Boolean): Builder // default true
+        fun signingKey(key: String): Builder          // else INNGEST_SIGNING_KEY
+        fun messageReadLimit(bytes: Long): Builder    // default 10 MiB (Go parity)
+        fun missedHeartbeatTolerance(n: Int): Builder // default 3 (Go parity)
+        fun build(): ConnectOptions
+    }
+}
+
+// One app = one client + its functions (multi-app supported like JS)
+class ConnectApp(val client: Inngest, val functions: List<InngestFunction>)
+
+object Connect {
+    @JvmStatic
+    fun start(options: ConnectOptions): WorkerConnection // blocks until first ACTIVE (or throws)
+}
+
+interface WorkerConnection {
+    val state: ConnectionState        // CONNECTING/ACTIVE/PAUSED/RECONNECTING/CLOSING/CLOSED
+    val connectionId: String
+    fun close()                       // graceful: pause, drain, flush; idempotent
+    fun awaitClosed()                 // blocks until fully closed
+    fun awaitClosed(timeout: Duration): Boolean
+    fun debugState(): ConnectDebugState  // in-flight snapshot, heartbeat timestamps
+}
+#+end_src
+Notes:
+- Blocking + =@JvmStatic= + builder keeps parity with the SDK's Java-first
+  interop style (no Kotlin default-arg soup in the public surface).
+- All apps must share one environment/signing key (validated up front, like JS).
+- =Connect.start= performs config assembly and the first handshake; subsequent
+  reconnects happen on background threads.
+
+** New/changed files
+| File (under =inngest/src/main/=)                                | Purpose |
+|-----------------------------------------------------------------+---------|
+| =proto/connect/v1/connect.proto=                                 | Vendored proto (source of truth: =inngest/inngest= repo; header comment records upstream commit). |
+| =kotlin/com/inngest/connect/Connect.kt=                          | =Connect.start=, option defaulting from env, app validation. |
+| =kotlin/com/inngest/connect/ConnectOptions.kt=                   | Options + builder (above). |
+| =kotlin/com/inngest/connect/ConnectApp.kt=                       | App descriptor. |
+| =kotlin/com/inngest/connect/WorkerConnection.kt=                 | Public interface + =ConnectionState= + =ConnectDebugState=. |
+| =kotlin/com/inngest/connect/internal/ConnectConfig.kt=           | Resolved config: hashed signing key (+fallback when plan 006 lands), env name, API base URL, instance id, capabilities JSON, app configs (name/version/functions JSON bytes). |
+| =kotlin/com/inngest/connect/internal/ConnectApiClient.kt=        | OkHttp calls: =POST /v0/connect/start=, =POST /v0/connect/flush= (protobuf bodies — deliberately not built on =HttpClient=, which is JSON-only). |
+| =kotlin/com/inngest/connect/internal/Handshake.kt=               | Dial + HELLO/CONNECT/READY state machine (10s dial, 5s HELLO, 20s READY deadlines — Go parity); returns an established =GatewayConnection=. |
+| =kotlin/com/inngest/connect/internal/GatewayConnection.kt=       | Live socket wrapper: id, OkHttp =WebSocket=, intervals, =pendingHeartbeats=, =dead= flag, =connectedAt=, close(). |
+| =kotlin/com/inngest/connect/internal/ConnectionSupervisor.kt=    | The reconcile loop (dedicated thread): ensure-live-connection, backoff, gateway exclusion, drain handling, shutdown exit, teardown. Owns the coarse manager state with a validated transition table. |
+| =kotlin/com/inngest/connect/internal/ConnectionPhase.kt=         | Per-generation phase machine (=New/Handshaking/Active/Draining/Closing/Retired/Closed=) with validated transitions and the per-message-kind write-policy table (port of Go's =connection_lifecycle.go= + =connection_write.go=). |
+| =kotlin/com/inngest/connect/internal/HeartbeatManager.kt=        | Scheduled worker heartbeat sends + gateway-heartbeat watchdog (deadline = =(tolerance+1) x interval=, reset on receipt). |
+| =kotlin/com/inngest/connect/internal/StatusReporter.kt=          | Optional =WORKER_STATUS= reports. |
+| =kotlin/com/inngest/connect/internal/RequestProcessor.kt=        | ACK, lease bookkeeping + extension timers, dispatch to executor pool, reply/buffer, reply-ACK + extend-lease-ACK handling. |
+| =kotlin/com/inngest/connect/internal/InFlightRequests.kt=        | Lease map + WaitGroup equivalent (=AtomicInteger= + lock/condition or =Phaser=). |
+| =kotlin/com/inngest/connect/internal/MessageBuffer.kt=           | pending (5s ack deadline) -> buffered -> HTTP flush w/ retries. |
+| =kotlin/com/inngest/connect/internal/Backoff.kt=                 | The 1s..300s schedule + jittered gateway-draining retry. |
+| =kotlin/com/inngest/connect/internal/SystemAttributes.kt=        | cpu cores (=Runtime.availableProcessors=), mem (=OperatingSystemMXBean= total, fall back 0), os (=os.name= lowercased), hostname (=InetAddress.getLocalHost().hostName=, fall back ="unknown"=). |
+
+Changes to existing code (all small, behavior-preserving for HTTP):
+- =InngestFunctionConfigBuilder.build(appId, serverUrl)= and
+  =InternalInngestFunction.getFunctionConfig=: accept a runtime kind so steps can
+  emit ={"type":"ws","url":"ws://connect?fnId=<composite>&stepId=step"}=
+  (default remains ="http"= — existing tests and fixtures unchanged).
+- =CommHandler=: expose an internal =getFunctionConfigs(origin, runtimeKind)=
+  (or a sibling method) so connect can serialize the functions JSON via the same
+  Klaxon path used by =register=; construct with framework ="connect"= —
+  =SupportedFrameworkName= gains =Connect("connect")= (used for the
+  =WorkerConnectRequestData.framework= field; the =x-inngest-framework= header
+  never appears on the wire for connect).
+- =Comm.kt=: connect calls the existing =callFunction(functionId, requestBody,
+  stepId)= and =protocolErrorResponse= untouched — this is the "no second
+  engine" guarantee.
+- =InngestEnv.kt= (=InngestSystem=): add =INNGEST_CONNECT_GATEWAY_URL=,
+  =INNGEST_CONNECT_MAX_WORKER_CONCURRENCY=.
+- =Introspection.kt=: populate =capabilities= with ={"connect":"v1"}= once
+  shipped (plan 009 checklist item).
+- =inngest/build.gradle.kts=: protobuf plugin + deps (below).
+
+** Threading model (no coroutines; matches the SDK's blocking style)
+- *OkHttp WebSocket* delivers =onMessage= callbacks on its own reader thread —
+  handlers must stay fast and non-blocking.
+- *Supervisor thread* (1, named =inngest-connect-supervisor=): runs the
+  reconcile loop; parked on a =BlockingQueue<WakeReason>= /
+  lock-condition; woken by socket events, missed heartbeats, gateway drain,
+  shutdown, last-request-drained.
+- *Scheduler* (=ScheduledThreadPoolExecutor(1)=, daemon): heartbeat tick, status
+  tick, per-request lease-extension tasks, pending-reply 5s deadlines.
+- *Executor pool* (=ExecutorService=, named =inngest-connect-worker-N=):
+  runs =CommHandler.callFunction= per =GATEWAY_EXECUTOR_REQUEST=. Default: a
+  cached pool bounded at 1,000 concurrent requests (Go's default pool size; JS
+  is unbounded). When =maxWorkerConcurrency= is set it is both advertised to
+  the gateway *and* used as the pool bound (Go semantics).
+- All cross-thread state (=activeConnection=, =drainingConnection=, lease map,
+  =shutdownRequested=) is confined behind a single lock or made atomic; the
+  supervisor is the only writer of the connection refs. Per-generation write
+  permission lives in the generation's own phase machine, not in shared flags —
+  see the TOCTOU section, which is normative for this design.
+
+** Message dispatch (steady state)
+| Incoming                          | Action |
+|-----------------------------------+--------|
+| =GATEWAY_HEARTBEAT=               | reset the gateway-heartbeat watchdog deadline, record timestamp |
+| =GATEWAY_CLOSING=                 | transition generation to =Draining=, wake supervisor to dial replacement |
+| =GATEWAY_EXECUTOR_REQUEST=        | validate app name known; enqueue to executor pool (in-flight counted at enqueue); worker sends phase-gated =WORKER_REQUEST_ACK= (skip if it fails — pre-ACK skip), registers lease, schedules extension timer, executes |
+| =WORKER_REPLY_ACK=                | =MessageBuffer.acknowledgePending(requestId)= |
+| =WORKER_REQUEST_EXTEND_LEASE_ACK= | rotate lease id, or on missing =new_lease_id= drop the lease (result will be discarded) |
+| =SYNC_FAILED=                     | log error payload; treat as fatal handshake failure when received during setup |
+| anything else                     | warn + ignore |
+
+** Response mapping (=CommResponse= -> =SDKResponse=)
+| Engine result (=ResultStatusCode=)     | =SDKResponseStatus= | =no_retry=                       | =retry_after= |
+|----------------------------------------+---------------------+----------------------------------+----------------|
+| =FunctionComplete= (200)               | =DONE=              | false                            | — |
+| =StepComplete= / =StepError= (206)     | =NOT_COMPLETED=     | false                            | — |
+| =RetriableError= (500)                 | =ERROR=             | false (=x-inngest-no-retry=)     | =retry-after= header when present |
+| =NonRetriableError= (400)              | =ERROR=             | true (=x-inngest-no-retry=)      | — |
+Other fields: =body= = =CommResponse.body= bytes; =request_version= = the SDK's
+existing =x-inngest-req-version= value; =sdk_version= = ="inngest-kt:v<version>"=;
+=request_id/account_id/env_id/app_id/run_id/system_trace_ctx/user_trace_ctx=
+echoed from the request. (Note JS maps unknown statuses to =DONE= via a switch
+default — we instead map ERROR-ish statuses explicitly, including 400, which JS
+silently defaults to DONE; flag this upstream.)
+
+=WorkerConnectRequestData= identity fields: =sdk_version = "v<version>"=
+(JS parity), =sdk_language = "java"= (consistent with introspection),
+=framework = "connect"=, =platform= from =INNGEST_PLATFORM= if set.
+
+** Auth model
+- Start/flush requests: =Authorization: Bearer <hashedSigningKey>= via the
+  existing =hashedSigningKey()= (=signingkey/BearerToken.kt=); omitted in dev.
+  =x-inngest-env= header when env configured. On 401 during start: switch to the
+  fallback key if configured (plan 006) and retry via the backoff path.
+- WebSocket frames carry no signatures; the session/sync tokens from
+  =StartResponse= authenticate =WORKER_CONNECT=. Signature validation in the
+  engine is bypassed by construction (connect never calls
+  =checkHeadersAndValidateSignature=).
+- Branch environments: a =signkey-branch-*= key requires an explicit env name
+  (validated up front, like JS).
+
+** Configuration and env vars
+Resolution order everywhere: explicit option -> system property -> env var ->
+default (matches =ServeConfig= conventions).
+| Setting                | Source |
+|------------------------+--------|
+| API base URL (start/flush) | option -> =INNGEST_API_BASE_URL= -> dev ? =http://127.0.0.1:8288= : =https://api.inngest.com= |
+| Signing key            | option -> =INNGEST_SIGNING_KEY= (required unless dev) |
+| Env name               | client =env= / =INNGEST_ENV= (drives =x-inngest-env= + =environment= field) |
+| Gateway URL override   | option -> =INNGEST_CONNECT_GATEWAY_URL= |
+| Max worker concurrency | option -> =INNGEST_CONNECT_MAX_WORKER_CONCURRENCY= |
+| Instance id            | option -> hostname -> ="unknown"= |
+Interaction to document: the SDK currently *defaults to Dev mode* when neither
+=INNGEST_DEV= nor =INNGEST_ENV= is set (plan 006 will flip this); until then,
+cloud connect users must set =INNGEST_DEV=0= (or =INNGEST_ENV=) or connect will
+skip auth and target the local dev API.
+
+** Shutdown
+- =Runtime.getRuntime().addShutdownHook= (opt-out via
+  =handleShutdownSignals(false)=) calling =close()=.
+- =close()=: mark CLOSING; send =WORKER_PAUSE= on the active socket; wait on the
+  in-flight WaitGroup; supervisor exits when =shutdownRequested && inFlight == 0=;
+  close socket(s) (1000/=WORKER_SHUTDOWN=); flush buffer over HTTP (try primary
+  key, then fallback); mark CLOSED; release =awaitClosed()= waiters. Reconnect
+  during shutdown sends =WORKER_PAUSE= instead of =WORKER_READY=.
+- Emit periodic "still draining" logs with per-request age while draining
+  (JS parity, invaluable for stuck-shutdown diagnosis).
+
+* Dependencies
+| Dependency | Version | Why | Notes |
+|------------+---------+-----+-------|
+| =com.google.protobuf:protobuf-java= | 4.33.x (=implementation=) | runtime for generated classes | Java 8 compatible; proven in spike |
+| =com.google.protobuf= Gradle plugin | 0.9.5 | codegen at build time | proven against Gradle 9.1; downloads platform =protoc= from Maven Central |
+| =com.google.protobuf:protoc= | 4.33.x (protoc artifact) | code generation | build-time only |
+| WebSocket client | — | =okhttp3.WebSocket= already in =implementation= scope | subprotocol set via =Sec-WebSocket-Protocol= header (OkHttp has no first-class API); binary frames via =okio.ByteString= |
+Explicitly *not* added: =protobuf-java-util= (spike used it for =Timestamps=;
+production code builds =Timestamp.newBuilder().setSeconds(...).setNanos(...)=
+directly to avoid the transitive Gson dependency), any coroutines library, any
+standalone WebSocket library.
+
+Alternatives considered for protobuf:
+- /Square Wire/: Kotlin-idiomatic codegen, but generated Kotlin data classes are
+  less Java-interop-friendly and add a new runtime; rejected.
+- /Checked-in generated sources/: no build-time plugin, but ~10k lines of
+  generated Java in-tree and manual regeneration drift; rejected since the
+  plugin is proven to work.
+CI note: generation happens on the build JDK (21+) while compiling to the
+module's Java 8 target — no protoc needed on user machines; the published jar
+contains only compiled classes + the protobuf-java dependency.
+
+* Limitations and accepted divergences
+- *No worker-thread isolation option* (JS =isolateExecution=): unnecessary on
+  the JVM (socket I/O and timers run on their own threads). Document as N/A.
+- *Single-step-per-request engine unchanged*: connect inherits today's
+  exception-driven, one-step-per-message model; planned-step work (plan 004)
+  benefits connect automatically later. No connect-specific engine changes.
+- *Message size*: the gateway may disconnect with =MESSAGE_TOO_LARGE= for
+  oversized replies (JS does not chunk either). Document the limit; no
+  mitigation in v1.
+- *Checkpointing/maxRuntime*: JS's =DefaultMaxRuntime.connect= (5 min) belongs
+  to its checkpointing feature; not applicable until plan 009's checkpointing.
+- *Signing key fallback*: consumed if plan 006 has landed; otherwise the
+  fallback path is a no-op (single key retried).
+- *Trace contexts*: =system_trace_ctx= / =user_trace_ctx= are echoed opaquely
+  into ACKs and replies; no OTel propagation into user code (the SDK has no
+  tracing today).
+- *Unknown ctx fields*: the dev server sends execution ctx fields the SDK does
+  not model (=generation_id=, =max_attempts=, =request_id=); Klaxon ignores
+  unknown keys, but a contract test must pin this (see Testing).
+- *=PAUSED= state* exists in the JS state enum but is never entered by the JS
+  implementation either; we mirror the enum for parity, primarily reporting
+  CONNECTING/ACTIVE/RECONNECTING/CLOSING/CLOSED.
+
+* Testing and QA
+** Unit tests (=inngest/src/test=)
+- Config: env var/system property/default resolution for the new vars; branch
+  key + missing env rejection; multi-app same-env validation; instance id
+  fallback chain.
+- Codec/golden: encode =WorkerConnectRequestData= and =SDKResponse= from fixed
+  inputs, decode with generated classes and assert field-level equality —
+  including a golden assertion that the app config =functions= JSON matches the
+  existing register payload's functions array except =runtime= (=type ws=,
+  =ws://connect?fnId=...&stepId=step= URL). Extend
+  =InngestFunctionConfigBuilderTest= for the runtime-kind parameter.
+- Response mapping table above as a parameterized test over
+  =CommResponse{200,206,400,500}= incl. =retry-after= and =no-retry= headers
+  (reuse =RetryDecision= fixtures).
+- Backoff schedule + jitter bounds; buffer state machine (pending -> ack,
+  pending -> deadline -> buffered, flush success/failure/retry).
+- Contract test: feed the captured dev-server connect =request_payload= JSON
+  (checked in under =src/test/resources/protocol/connect/=) through
+  =CommHandler.callFunction= and assert a correct step response — pins Klaxon's
+  tolerance of the extra ctx fields.
+
+** Mock gateway integration tests (in-process, deterministic)
+Port the JS =mock-gateway.ts= approach using OkHttp =MockWebServer= (already a
+test dependency), which supports WebSocket upgrades and protobuf response
+bodies. One =MockGateway= test fixture exposes: scripted start responses,
+auto-handshake, captured worker messages, and injectable gateway messages.
+Scenarios (mirroring =connection.test.ts= / =requestProcessor.test.ts= /
+=handshake.test.ts= / =heartbeat.test.ts= / =integration.test.ts=):
+- happy path: start -> handshake -> READY; app config bytes asserted.
+- handshake failures: non-HELLO first message, CONNECTION_READY timeout, socket
+  close mid-handshake -> reconnect with backoff + gateway exclusion.
+- start failures: 401 (fallback key switch), 429 (connection-limit error), 5xx.
+- executor request: ACK fields echo request; reply sent; REPLY_ACK clears
+  pending; missing ACK for >5s buffers and flushes over the mock's HTTP flush
+  endpoint (assert protobuf body + auth header).
+- lease extension: timer fires at interval, ACK rotates lease id; ACK without
+  =new_lease_id= stops extensions; late ACK after completion is ignored.
+- heartbeat: gateway silence past the watchdog deadline -> reconnect; each
+  gateway heartbeat resets the deadline; worker heartbeats keep sending on
+  interval independently.
+- =GATEWAY_CLOSING=: replacement dialed while old socket still answers lease
+  extensions; old closed after new READY.
+- shutdown: =WORKER_PAUSE= observed; in-flight request completes before socket
+  close; buffered replies flushed; =close()= idempotent; reconnect-during-
+  shutdown path sends =WORKER_PAUSE= not =WORKER_READY=.
+- unknown app name in executor request is skipped with a warning.
+
+** End-to-end tests (real dev server)
+Follow the existing =inngest-spring-boot-demo= itest pattern (=make itest=,
+dev-server-gated test group):
+- new =make dev-connect= target running a connect worker variant of
+  =inngest-test-server= (same functions, connect transport instead of =serve=),
+  plus =make inngest-dev= unchanged.
+- e2e assertions via the dev server REST API (=/v1/events/{id}/runs=): simple
+  fn completes; multi-step fn completes (step memoization over connect);
+  =NonRetriableError= fn ends =Failed= without retries; sleep fn (=sleep 1s=)
+  completes; concurrent burst (e.g. 50 events) all complete.
+- restart-resilience script (manual or scripted): kill/restart the dev server
+  mid-run and assert the worker reconnects and the run completes; SIGTERM the
+  worker mid-run and assert drain-then-exit with the run completing.
+
+** Manual QA checklist (pre-release)
+- [ ] Dev server: sync visible in UI, function runs, logs sane at =info=.
+- [ ] Inngest Cloud (real signing key): start auth, branch env key + env name,
+  =x-inngest-env= honored; app appears in the Connect UI; heartbeats visible.
+- [ ] Gateway drain in cloud (deploys rotate gateways naturally; verify
+  seamless replacement under load).
+- [ ] Long-running function (> extend-lease interval) completes; lease
+  extensions visible in debug logs.
+- [ ] Kill network (drop WS) under load: reconnect + buffered flush delivers
+  results; no run lost.
+- [ ] Java consumer sample (builder API from plain Java) compiles and runs.
+- [ ] Soak: 1h run at steady event rate; no thread/memory leak (thread names
+  make leaks grep-able in a thread dump).
+
+** CI
+- Core matrix already runs Java 8/11/17/21/25: protobuf codegen executes on the
+  Gradle JVM and compiles to the Java 8 target — no matrix changes needed.
+- Mock-gateway tests are hermetic (ephemeral ports, no external processes) and
+  run in =make test-core=. E2e connect tests join the dev-server-gated group.
+
+* Milestones
+- [X] M1 — Protobuf foundation: vendored proto, Gradle plugin wiring, generated
+  code compiles on Java 8 target, codec unit tests. (=chore(inngest): add connect protobuf codegen=)
+- [X] M2 — Config assembly: runtime-kind in function config builder, connect
+  capabilities/env vars, =ConnectConfig= + validation, golden config tests.
+  (=ConnectConfig=/options builder moved into M3 where they are first used.)
+- [X] M3 — Handshake + supervisor: start request, WS handshake, reconcile loop,
+  heartbeats, backoff/exclusion, mock-gateway happy path + failure tests.
+  Worker connects and idles reliably.
+- [X] M4 — Execution path: request processor, lease extension, response
+  mapping, reply ACK tracking, buffer + HTTP flush, contract tests.
+- [X] M5 — Lifecycle polish: graceful shutdown/drain, status reporter, debug
+  state, shutdown hook, drain diagnostics. (Graceful shutdown/drain and the
+  shutdown hook landed in M3/M4; this milestone added the rest.)
+- [ ] M6 — Public API + docs: builder API, Java sample, README section,
+  introspection capabilities, =dev-connect= target, e2e test group, CHANGELOG.
+- [ ] M7 — QA: manual checklist against dev server + cloud, soak test, then
+  flip plan status.
+Each milestone is a small reviewable PR chain with conventional-commit titles
+(=feat(inngest): ...=) per repo policy.
+
+* Exit Criteria
+- [ ] A connect worker built on =CommHandler.callFunction= passes the mock
+  gateway suite and the dev-server e2e suite (sync, run, drain, shutdown,
+  flush) with zero changes to HTTP-serving behavior or wire fixtures.
+- [ ] All protocol behaviors above (handshake, heartbeats, lease extension,
+  reply ACK/buffer/flush, drain, graceful shutdown) match the JS reference
+  semantics, with divergences documented in this plan.
+- [ ] Public API usable from plain Java; no new public surface leaks internal
+  protocol types (generated protobuf classes stay internal).
+- [ ] No second execution engine (plan 009's standing constraint).
+
+* Implementation notes (running log)
+Notes and gaps discovered while executing the milestones; newest last.
+
+** M1 (protobuf foundation)
+- Vendored the proto with two local =option java_package= /
+  =java_outer_classname= lines so generated classes land in
+  =com.inngest.connect.v1.ConnectProto= instead of claiming the generic
+  =connect.v1= Java package. No wire-format changes; header comment records the
+  upstream commit.
+- /Gap found/: adding generated Java sources un-skipped the =javadoc= task
+  (the module was pure Kotlin before, so it had always been NO-SOURCE) and
+  JDK 8's javadoc fails on the =-html5= flag. Fixed by excluding
+  =com/inngest/connect/v1/**= from =tasks.javadoc= — generated classes are not
+  public API. Watch this again if other generated/Java sources are added.
+- /Environment note/: the =java { toolchain 8 }= setting means any machine
+  without a JDK 8 fails at =compileJava= once the module has Java sources.
+  CI (setup-java) and the nix dev shell provide one; other environments need
+  =org.gradle.java.installations.paths= pointing at a JDK 8. Documented here
+  because protobuf codegen makes the module contain Java sources for the first
+  time.
+- Codec tests pin all enum wire numbers and optional-field presence semantics
+  (=ConnectProtoCodecTest=), so a future proto re-vendor that changes the
+  contract fails loudly.
+
+** M2 (config assembly)
+- =FunctionRuntimeKind= (=http=/=ws=) threads through
+  =InngestFunctionConfigBuilder.build= -> =buildSteps= and
+  =InternalInngestFunction.getFunctionConfig= with an =Http= default, so the
+  register path is untouched (existing golden tests unchanged and passing).
+- =CommHandler.getConnectFunctionConfigs()= deliberately bypasses
+  =getServeUrl()=: serve origin/path config must not leak into the
+  =ws://connect= placeholder. =getConnectFunctionConfigsJson()= reuses the same
+  Klaxon field converters as =register= so duration/scope formatting cannot
+  drift between the two sync paths (covered by a batchEvents golden test).
+- =SupportedFrameworkName.Connect("connect")= added; connect =CommHandler=
+  instances use it (affects only the =x-inngest-framework= response header
+  value and the future =WorkerConnectRequestData.framework= field).
+- Scope shift: the public =ConnectOptions=/=ConnectConfig= surface moves to M3
+  where it is first consumed — committing dead public API in M2 would be
+  unreviewable.
+- /Environment note/: =inngest-test-server= pins a Java 17 toolchain; this
+  sandbox also needed a manual Temurin 17 for
+  =org.gradle.java.installations.paths= (same class of gap as the M1 JDK 8
+  note).
+
+** M3 (in progress)
+- Landed first: the pure core — =ConnectionPhase= (per-generation phase machine
+  with validated transitions), =ConnectionLifecycle= (thread-safe holder whose
+  once-only no-write callback is tested under racing transitions), the
+  per-phase write-policy table, and the =Backoff= schedule. Both tables are
+  exhaustively table-tested per the TOCTOU section.
+- Deliberate additions over the Go tables: =WORKER_READY= and =WORKER_STATUS=
+  are modeled as Active-phase writes (Go never sends READY and does not
+  implement the status reporter; JS sends both).
+- Landed second: =ConnectOptions=/=ConnectApp=/=ConnectionState= (public),
+  =ConnectConfig= (validation + precedence), =ConnectApiClient= (start/flush,
+  typed 401/429 errors), =GoDuration= parser — all unit-tested against
+  =MockWebServer=.
+- Landed third: =GatewayConnection= (phase-gated =send= with
+  =SENT/DENIED_BY_PHASE/FAILED= results), =Handshake= (per-stage deadlines;
+  OkHttp binds one listener at dial time, so the handshake listener owns
+  steady-state dispatch after a lock-guarded hand-off), =HeartbeatManager=
+  (sender + watchdog, no shared counter), =ConnectionSupervisor= (reconcile
+  loop on a =BlockingQueue<WakeReason>=, backoff/exclusion/drain/close), and
+  public =Connect.start= / =WorkerConnection=. Mock gateway fixture ported
+  from JS =mock-gateway.ts= on =MockWebServer= WebSocket upgrades; 7 behavior
+  tests (happy path incl. full =WorkerConnectRequestData= assertion, graceful
+  close, concurrent close idempotency, socket-drop reconnect + gateway
+  exclusion, drain replacement, watchdog reconnect, heartbeat keep-alive).
+- /Two real races found by the tests and fixed/ (both added to the hazard
+  catalog's evidence): (1) OkHttp does not auto-acknowledge a server-initiated
+  close — reacting only to =onClosed= hangs the connection half-open; the
+  listener must echo =close()= in =onClosing= and treat it as connection
+  death. (2) =onConnectionDead= originally retired the generation (whose
+  no-write callback wakes the reconcile loop) /before/ adding the gateway to
+  =excludeGateways= — the reconnect's start request could race ahead without
+  the exclusion. State must be published before observers are woken.
+- Logging: =java.util.logging= (zero new dependencies); revisit if a logging
+  facade is introduced SDK-wide.
+
+** M4 (execution path)
+- =RequestProcessor=: parse/validate on the reader thread, in-flight counted
+  at enqueue, ACK as the ownership boundary (=DENIED_BY_PHASE= -> skip;
+  =FAILED= -> retire the generation and skip), lease registry + per-request
+  extension timers reading the current lease id under the lease lock, reply
+  via owning generation -> current active -> buffer, response mapping per the
+  plan's table (incl. 400 -> ERROR+no_retry divergence from JS).
+- =MessageBuffer=: pending (reply-ACK deadline, re-checked under the lock) ->
+  buffered -> HTTP flush with 5 backoff rounds; flush runs off-loop with a
+  single-flight guard and deliberately does NOT re-wake on failure (that would
+  spin flush attempts forever — next natural trigger retries).
+- Teardown: =expireAllPending()= promotes never-ACKed replies before the final
+  flush, since deadline tasks die with the scheduler; a duplicate of a reply
+  that actually arrived is deduplicated by the gateway on request id. This is
+  a deliberate divergence from Go (which can drop un-ACKed pending replies on
+  shutdown) — noted for upstreaming.
+- 8 mock-gateway tests: DONE reply w/ full field assertions, NonRetriableError
+  -> ERROR+no_retry, unknown app skipped without ACK, un-ACKed reply buffered
+  and flushed over HTTP, lease extension + rotation, lease lost -> extensions
+  stop but reply still delivered, shutdown drains in-flight work, and a
+  request arriving mid-shutdown is skipped without execution.
+- /Gap found in the fixture/: MockWebServer's =RecordedRequest.body= is an
+  okio Buffer that reading drains — the dispatcher must =clone()= it or later
+  test assertions see an empty body.
+
+** Live dev-server smoke test (after M4)
+- =inngest-test-server= gained a connect entry point (=ConnectWorker.kt=, run
+  via =make dev-connect= / =inngest-test-server:runConnect=) serving a
+  two-step function.
+- Against a real dev server (CLI v1.39): app synced over =WORKER_CONNECT=,
+  =state=ACTIVE= reported, a single run completed with the expected output
+  (step memoization over multiple executor round-trips works), a concurrent
+  burst of 20 events all reached =Completed= (21/21 total runs), and SIGTERM
+  triggered the shutdown hook -> drain -> clean close (worker printed
+  "Connect worker closed" and the JVM exited).
+- Note for e2e automation: when a JavaExec dev process is stopped by a
+  signal, Gradle reports BUILD FAILED — harness scripts should not treat that
+  exit status as a test failure.
+
+** M5 (lifecycle polish)
+- =StatusReporter= sends =WORKER_STATUS{in_flight_request_ids,
+  shutdown_requested}= at the gateway-provided =status_interval= (absent/"0s"
+  disables it — the dev server currently sends none, so this is exercised by
+  the mock gateway only).
+- =RequestProcessor= now keeps per-request =InFlightRequestInfo= (slug, run
+  id, acquire time) under the lease lock, powering three consumers: status
+  reports, the public =WorkerConnection.debugState()= snapshot
+  (=ConnectDebugState=), and the periodic 60s "still draining" shutdown dump
+  with per-request ages.
+- Tests: status reports carry the executing request id; reporting stays
+  silent when the gateway sends no interval; debug state reflects
+  active/in-flight/heartbeat transitions.
+- /CI flake found and fixed (Java 25 matrix job)/: a test asserted
+  =debugState().inFlightRequestIds= immediately after observing the ACK on
+  the gateway side, but the worker registers lease/in-flight metadata *after*
+  the ACK write (deliberate — ACK is the ownership boundary, Go ordering).
+  Rule for this suite: a gateway-side observation never implies the worker's
+  post-write bookkeeping is visible; assertions on internal state must poll
+  with a deadline (=awaitTrue= helper), never assert instantly.
+
+* Open questions
+- [ ] Should generated protobuf classes be shaded/relocated to avoid classpath
+  clashes with user protobuf versions? (protobuf-java is notorious for runtime
+  version conflicts in large apps; shading via the Shadow plugin would isolate
+  us but complicates publishing. Recommendation: start unshaded with a
+  documented =protobuf-java= version requirement; revisit if users report
+  conflicts.)
+- [ ] =maxWorkerConcurrency= local pool bound in addition to the gateway hint —
+  keep (recommended) or strict JS parity?
+- [ ] Mark the API =@Experimental= (opt-in annotation) for the first release?
+- [ ] =app_version= support (JS sends =appVersion= per app) — the Kotlin client
+  has no app-version concept today; add =appVersion= to =Inngest= or defer?
