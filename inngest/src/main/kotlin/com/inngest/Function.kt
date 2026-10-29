@@ -71,6 +71,17 @@ data class StepConfig(
     val runtime: HashMap<String, String> = hashMapOf("type" to "http"),
 )
 
+/**
+ * How a synced function's steps are reached by the Inngest server: over the
+ * HTTP serve endpoint, or over a connect (WebSocket) worker.
+ */
+internal enum class FunctionRuntimeKind(
+    val value: String,
+) {
+    Http("http"),
+    Ws("ws"),
+}
+
 @Suppress("unused")
 internal class InternalFunctionConfig
     @JvmOverloads
@@ -254,12 +265,14 @@ internal open class InternalInngestFunction(
         }
     }
 
+    @JvmOverloads
     fun getFunctionConfig(
         serveUrl: String,
         client: Inngest,
+        runtimeKind: FunctionRuntimeKind = FunctionRuntimeKind.Http,
     ): InternalFunctionConfig {
         // TODO use URL objects for serveUrl instead of strings so we can fetch things like scheme
-        return configBuilder.build(client.appId, serveUrl)
+        return configBuilder.build(client.appId, serveUrl, runtimeKind)
     }
 
     private fun serializeStepData(stepData: Any?): JsonNode? {

@@ -5,4 +5,5 @@ enum class SupportedFrameworkName(
 ) {
     SpringBoot("springboot"),
     Ktor("ktor"),
+    Connect("connect"),
 }

@@ -119,6 +119,13 @@ data class CommError(
 
 private val stepTerminalStatusCodes = setOf(ResultStatusCode.StepComplete, ResultStatusCode.StepError)
 
+/**
+ * Placeholder base URL advertised in connect function configs. The gateway
+ * never dials it; execution requests are routed over the worker's WebSocket.
+ * Both the JS and Go SDKs use the same placeholder.
+ */
+internal const val CONNECT_PLACEHOLDER_SERVE_URL = "ws://connect"
+
 private fun generateFailureFunctions(
     functions: Map<String, InngestFunction>,
     client: Inngest,
@@ -236,6 +243,23 @@ class CommHandler(
         allFunctions.forEach { entry -> configs.add(entry.value.getFunctionConfig(getServeUrl(origin), client)) }
         return configs
     }
+
+    /**
+     * Function configs for a connect worker sync. Connect apps are not served
+     * over HTTP: steps advertise the `ws://connect` placeholder URL and the
+     * gateway routes executor requests by function slug, so the serve
+     * origin/path configuration does not apply.
+     */
+    internal fun getConnectFunctionConfigs(): List<InternalFunctionConfig> =
+        allFunctions.map { (_, fn) ->
+            fn.getFunctionConfig(CONNECT_PLACEHOLDER_SERVE_URL, client, FunctionRuntimeKind.Ws)
+        }
+
+    internal fun getConnectFunctionConfigsJson(): String =
+        Klaxon()
+            .fieldConverter(KlaxonDuration::class, durationConverter)
+            .fieldConverter(KlaxonConcurrencyScope::class, concurrencyScopeConverter)
+            .toJsonString(getConnectFunctionConfigs())
 
     @JvmOverloads
     fun register(
