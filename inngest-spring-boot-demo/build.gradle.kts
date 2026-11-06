@@ -1,3 +1,4 @@
+import org.gradle.api.attributes.java.TargetJvmVersion
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.gradle.api.tasks.testing.logging.TestLogEvent
 
@@ -35,6 +36,16 @@ repositories {
 }
 
 val testJavaVersion = providers.gradleProperty("testJavaVersion").map { it.toInt() }
+val springBootRuntimeVersion = providers.gradleProperty("springBootRuntimeVersion").orElse("2.7.18")
+val runtimeJavaVersion = testJavaVersion.orElse(JavaVersion.current().majorVersion.toInt())
+
+// Resolve a consumer's full Boot dependency graph without changing compilation.
+val springCompatibilityRuntimeClasspath by configurations.creating {
+    isCanBeConsumed = false
+    extendsFrom(configurations.testImplementation.get(), configurations.testRuntimeOnly.get())
+    attributes.addAllLater(configurations.testRuntimeClasspath.get().attributes)
+    attributes.attribute(TargetJvmVersion.TARGET_JVM_VERSION_ATTRIBUTE, runtimeJavaVersion.get())
+}
 
 dependencies {
     implementation(project(":inngest-spring-boot-adapter"))
@@ -72,9 +83,19 @@ dependencyManagement {
             bomProperty("kotlin.version", "1.9.10")
         }
     }
+    // Configuration-scoped imports are exposed through the plugin's Groovy DSL.
+    withGroovyBuilder {
+        "configurations"(springCompatibilityRuntimeClasspath.name) {
+            "imports" {
+                "mavenBom"("org.springframework.boot:spring-boot-dependencies:${springBootRuntimeVersion.get()}") {
+                    "bomProperty"("kotlin.version", "1.9.10")
+                }
+            }
+        }
+    }
 }
 
-tasks.withType<Test> {
+tasks.withType<Test>().configureEach {
     testJavaVersion.orNull?.let { version ->
         // CI includes Java 8/11 entries for compatibility, but Boot 3/4 cannot
         // run below Java 17. Use the requested JVM unless the Boot baseline is higher.
@@ -146,6 +167,22 @@ tasks.register<Test>("integrationTest") {
     testClassesDirs = sourceSets["test"].output.classesDirs
     classpath = sourceSets["test"].runtimeClasspath
     shouldRunAfter(tasks.test)
+    systemProperty("test-group", "integration-test")
+    systemProperty("junit.jupiter.execution.parallel.enabled", false)
+}
+
+tasks.register<Test>("compatibilityTest") {
+    description = "Runs baseline-compiled integration tests on the selected Spring Boot runtime."
+    group = "verification"
+    require(springBootVersion.get() == "2.7.18") {
+        "compatibilityTest must compile against Boot 2.7.18; use springBootRuntimeVersion to select the runtime."
+    }
+    val minimumJavaVersion = if (springBootRuntimeVersion.get().substringBefore(".").toInt() >= 3) 17 else 8
+    require(runtimeJavaVersion.get() >= minimumJavaVersion) {
+        "Spring Boot ${springBootRuntimeVersion.get()} requires testJavaVersion >= $minimumJavaVersion."
+    }
+    testClassesDirs = sourceSets["test"].output.classesDirs
+    classpath = sourceSets["test"].output + sourceSets["main"].output + springCompatibilityRuntimeClasspath
     systemProperty("test-group", "integration-test")
     systemProperty("junit.jupiter.execution.parallel.enabled", false)
 }

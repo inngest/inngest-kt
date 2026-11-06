@@ -32,7 +32,7 @@ jobs:
         run: JAVA_HOME="${JAVA_HOME_21_X64}" PATH="${JAVA_HOME_21_X64}/bin:${PATH}" make test-core test-ktor TEST_JAVA_VERSION=${{ matrix.java }}
 
   test-spring-boot:
-    name: Test Spring Boot (Java ${{ matrix.java }}, Spring Boot ${{ matrix.spring-boot }})
+    name: Spring source tests (Java ${{ matrix.java }}, Spring Boot ${{ matrix.spring-boot }})
     runs-on: depot-ubuntu-22.04
     strategy:
       fail-fast: false
@@ -83,7 +83,7 @@ jobs:
           reporter: github-pr-review
 
   itest:
-    name: Integration Test (Java ${{ matrix.java }}, Spring Boot ${{ matrix.spring-boot }})
+    name: Spring runtime compatibility (Java ${{ matrix.java }}, Spring Boot ${{ matrix.spring-boot }})
     runs-on: depot-ubuntu-22.04-4
     strategy:
       fail-fast: false
@@ -119,4 +119,6 @@ jobs:
         run: nix develop -c true
 
       - name: Test
-        run: JAVA_HOME="${JAVA_HOME_21_X64}" PATH="${JAVA_HOME_21_X64}/bin:${PATH}" nix develop -c make itest SPRING_BOOT_VERSION=${{ matrix.spring-boot }} TEST_JAVA_VERSION=${{ matrix.java }}
+        # Compile the adapter and demo fixtures at Boot 2.7.18 for every row;
+        # only the consumer runtime BOM and test JVM vary.
+        run: JAVA_HOME="${JAVA_HOME_21_X64}" PATH="${JAVA_HOME_21_X64}/bin:${PATH}" nix develop -c make itest-spring-compatibility SPRING_BOOT_RUNTIME_VERSION=${{ matrix.spring-boot }} TEST_JAVA_VERSION=${{ matrix.java }}
