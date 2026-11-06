@@ -8,6 +8,7 @@ import com.inngest.InngestFunctionConfigBuilder
 import com.inngest.InngestHeaderKey
 import com.inngest.Step
 import com.inngest.testing.ProtocolFixtures
+import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.client.request.post
 import io.ktor.client.request.put
@@ -24,6 +25,9 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import java.time.Instant
+import javax.crypto.Mac
+import javax.crypto.spec.SecretKeySpec
 
 internal class RouteTest {
     private val mapper = ObjectMapper()
@@ -34,6 +38,25 @@ internal class RouteTest {
         mockWebServer?.shutdown()
         mockWebServer = null
     }
+
+    @Test
+    fun `get route returns dev introspection without a request body`() =
+        testApplication {
+            application {
+                routing {
+                    serve("/api/inngest", Inngest("test-app", eventKey = "evt-key", isDev = true), listOf(EchoFunction()))
+                }
+            }
+
+            val response = client.get("/api/inngest")
+            val body = mapper.readTree(response.bodyAsText())
+
+            assertEquals(HttpStatusCode.OK, response.status)
+            assertEquals(ContentType.Application.Json, response.contentType()?.withoutParameters())
+            assertEquals("dev", body["mode"].asText())
+            assertEquals(1, body["function_count"].asInt())
+            assertTrue(body["authentication_succeeded"].isNull)
+        }
 
     @Test
     fun `post route returns call response with required headers`() =
@@ -48,6 +71,43 @@ internal class RouteTest {
                 client.post("/api/inngest?fnId=echo-fn&stepId=step") {
                     contentType(ContentType.Application.Json)
                     setBody(ProtocolFixtures.executionRequestPayloadJson("echo-fn"))
+                }
+
+            assertEquals(HttpStatusCode.OK, response.status)
+            assertEquals("2", response.headers[InngestHeaderKey.RequestVersion.value])
+            assertEquals("ktor", response.headers[InngestHeaderKey.Framework.value])
+            assertEquals("\"done\"", response.bodyAsText())
+        }
+
+    @Test
+    fun `post route executes a valid signed request in cloud`() =
+        testApplication {
+            application {
+                routing {
+                    serve(
+                        "/api/inngest",
+                        Inngest("test-app", eventKey = "evt-key", isDev = false),
+                        listOf(EchoFunction()),
+                        signingKey = "signkey-test-12345678",
+                    )
+                }
+            }
+
+            val requestBody = ProtocolFixtures.executionRequestPayloadJson("echo-fn")
+            val timestamp = Instant.now().epochSecond
+            val mac = Mac.getInstance("HmacSHA256")
+            mac.init(SecretKeySpec("12345678".toByteArray(Charsets.UTF_8), "HmacSHA256"))
+            val signature =
+                mac
+                    .doFinal((requestBody + timestamp).toByteArray(Charsets.UTF_8))
+                    .joinToString("") { "%02x".format(it) }
+
+            val response =
+                client.post("/api/inngest?fnId=echo-fn&stepId=step") {
+                    header(InngestHeaderKey.ServerKind.value, "cloud")
+                    header(InngestHeaderKey.Signature.value, "t=$timestamp&s=$signature")
+                    contentType(ContentType.Application.Json)
+                    setBody(requestBody)
                 }
 
             assertEquals(HttpStatusCode.OK, response.status)

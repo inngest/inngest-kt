@@ -14,6 +14,24 @@ To run the `spring-boot` test server:
 make dev-spring-boot
 ```
 
+## Testing Ktor
+
+Run the Ktor adapter and test-server unit test targets from the repository root:
+
+```sh
+make test-ktor
+```
+
+Run the Netty integration test against the Inngest dev server:
+
+```sh
+nix develop -c make itest-ktor TEST_JAVA_VERSION=21
+```
+
+Outside the Nix shell, `make itest-ktor` requires the `inngest` CLI on `PATH`
+or `INNGEST_CLI_PATH` set to its executable. The integration test starts and
+stops its own servers.
+
 ## Releasing
 
 Releases follow the same high-level flow as `inngest-rs`, adapted for package-prefixed tags:

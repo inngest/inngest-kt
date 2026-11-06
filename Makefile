@@ -20,6 +20,10 @@ test: test-core test-ktor test-springboot-adapter test-springboot-demo
 itest:
 	$(GRADLE) test $(TEST_ARGS) $(SPRING_BOOT_ARGS) $(TEST_JAVA_ARGS) -p inngest-spring-boot-demo integrationTest
 
+.PHONY: itest-ktor
+itest-ktor:
+	$(GRADLE) $(TEST_ARGS) $(TEST_JAVA_ARGS) -p inngest-test-server integrationTest
+
 .PHONY: test-core
 test-core:
 	$(GRADLE) test $(TEST_ARGS) $(TEST_JAVA_ARGS) -p inngest

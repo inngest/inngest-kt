@@ -24,11 +24,12 @@ dependencies {
 
     // Use the JUnit 5 integration.
     testImplementation("org.junit.jupiter:junit-jupiter-engine:5.14.4")
+    testImplementation("com.fasterxml.jackson.core:jackson-databind:2.22.4")
 
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 
-    implementation("io.ktor:ktor-server-core:2.3.5")
-    implementation("io.ktor:ktor-server-netty:2.3.5")
+    implementation("io.ktor:ktor-server-core:3.6.1")
+    implementation("io.ktor:ktor-server-netty:3.6.1")
     implementation("com.fasterxml.jackson.core:jackson-annotations:2.22")
 }
 
@@ -42,7 +43,7 @@ application {
     mainClass.set("com.inngest.testserver.AppKt")
 }
 
-tasks.named<Test>("test") {
+tasks.withType<Test>().configureEach {
     testJavaVersion.orNull?.let { version ->
         javaLauncher.set(
             javaToolchains.launcherFor {
@@ -96,4 +97,17 @@ tasks.named<Test>("test") {
             }),
         )
     }
+}
+
+tasks.named<Test>("test") {
+    useJUnitPlatform { excludeTags("integration") }
+}
+
+tasks.register<Test>("integrationTest") {
+    description = "Runs Ktor integration tests against the Inngest dev server (requires inngest on PATH or INNGEST_CLI_PATH)."
+    group = "verification"
+    testClassesDirs = sourceSets["test"].output.classesDirs
+    classpath = sourceSets["test"].runtimeClasspath
+    shouldRunAfter(tasks.test)
+    useJUnitPlatform { includeTags("integration") }
 }
