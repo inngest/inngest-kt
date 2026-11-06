@@ -28,16 +28,16 @@ repositories {
 val testJavaVersion = providers.gradleProperty("testJavaVersion").map { it.toInt() }
 
 dependencies {
-    implementation("com.beust:klaxon:5.5")
-    implementation("com.fasterxml.jackson.core:jackson-core:2.16.1")
+    implementation("com.beust:klaxon:5.6")
+    implementation("com.fasterxml.jackson.core:jackson-core:2.22.4")
 
-    implementation("com.fasterxml.jackson.core:jackson-databind:2.16.1")
-    implementation("com.squareup.okhttp3:okhttp:4.12.0")
+    implementation("com.fasterxml.jackson.core:jackson-databind:2.22.4")
+    implementation("com.squareup.okhttp3:okhttp:4.12.1")
 
-    testFixturesImplementation("com.fasterxml.jackson.core:jackson-databind:2.16.1")
+    testFixturesImplementation("com.fasterxml.jackson.core:jackson-databind:2.22.4")
 
     testImplementation(kotlin("test"))
-    testImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
+    testImplementation("com.squareup.okhttp3:mockwebserver:4.12.1")
     testImplementation("org.junit-pioneer:junit-pioneer:1.9.1")
 }
 

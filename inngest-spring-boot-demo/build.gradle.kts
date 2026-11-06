@@ -41,7 +41,7 @@ dependencies {
 
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("com.fasterxml.jackson.core:jackson-databind")
-    implementation("com.squareup.okhttp3:okhttp:4.12.0")
+    implementation("com.squareup.okhttp3:okhttp:4.12.1")
 
     compileOnly("org.projectlombok:lombok:1.18.46")
     annotationProcessor("org.projectlombok:lombok:1.18.46")
@@ -51,7 +51,7 @@ dependencies {
         // Spring Boot 4 moved MVC test support out of starter-test.
         testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test")
     }
-    testImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
+    testImplementation("com.squareup.okhttp3:mockwebserver:4.12.1")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 
     val effectiveTestJavaVersion = testJavaVersion.orNull ?: JavaVersion.current().majorVersion.toInt()
