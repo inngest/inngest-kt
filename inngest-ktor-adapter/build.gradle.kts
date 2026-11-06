@@ -26,12 +26,12 @@ dependencies {
     val pkg = if (System.getenv("RELEASE") != null) "com.inngest:inngest:[0.2.0, 0.3.0)" else project(":inngest")
     api(pkg)
 
-    implementation("io.ktor:ktor-server-core:2.3.5")
+    implementation("io.ktor:ktor-server-core:3.6.1")
 
     testImplementation(kotlin("test"))
     testImplementation(testFixtures(project(":inngest")))
     testImplementation("com.fasterxml.jackson.core:jackson-databind:2.22.4")
-    testImplementation("io.ktor:ktor-server-test-host:2.3.5")
+    testImplementation("io.ktor:ktor-server-test-host:3.6.1")
     testImplementation("com.squareup.okhttp3:mockwebserver:4.12.1")
 }
 
