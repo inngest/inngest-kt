@@ -28,7 +28,7 @@ repositories {
 val testJavaVersion = providers.gradleProperty("testJavaVersion").map { it.toInt() }
 
 dependencies {
-    implementation("com.beust:klaxon:5.6")
+    implementation("com.beust:klaxon:5.5")
     implementation("com.fasterxml.jackson.core:jackson-core:2.22.4")
 
     implementation("com.fasterxml.jackson.core:jackson-databind:2.22.4")
