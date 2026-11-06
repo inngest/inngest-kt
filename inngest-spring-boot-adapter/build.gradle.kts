@@ -1,3 +1,4 @@
+import org.gradle.api.attributes.java.TargetJvmVersion
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.gradle.api.tasks.testing.logging.TestLogEvent
 
@@ -5,8 +6,9 @@ group = "com.inngest"
 description = "Spring Boot adapter for Inngest SDK"
 version = file("VERSION").readText().trim()
 
-val springBootVersion = providers.gradleProperty("springBootVersion").orElse("2.7.18")
-val springBootMajorVersion = springBootVersion.map { it.substringBefore(".").toInt() }
+val springBootVersion = "2.7.18"
+val testSpringBootVersion = providers.gradleProperty("springBootVersion").orElse(springBootVersion)
+val testSpringBootMajorVersion = testSpringBootVersion.map { it.substringBefore(".").toInt() }
 
 plugins {
     id("java-library")
@@ -16,16 +18,28 @@ plugins {
 }
 
 java {
-    // Spring Boot 3+ moved its runtime baseline to Java 17. Keep Boot 2.x
-    // publishing on Java 8 so the adapter remains usable by legacy apps.
-    sourceCompatibility =
-        if (springBootMajorVersion.get() >= 3) {
-            JavaVersion.VERSION_17
-        } else {
-            JavaVersion.VERSION_1_8
-        }
+    // Every consumer must exercise the same Java 8 / Boot 2 release artifact.
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
     withJavadocJar()
     withSourcesJar()
+}
+
+tasks.compileJava {
+    options.release.set(8)
+}
+
+// MockMvc is not binary-compatible across Spring majors. Keep compiling the
+// framework-specific tests against the consumer version, never the adapter.
+val testCompilationVersion = if (testSpringBootMajorVersion.get() >= 3) 17 else 8
+tasks.compileTestJava {
+    sourceCompatibility = testCompilationVersion.toString()
+    targetCompatibility = testCompilationVersion.toString()
+}
+listOf(configurations.testCompileClasspath, configurations.testRuntimeClasspath).forEach {
+    it.configure {
+        attributes.attribute(TargetJvmVersion.TARGET_JVM_VERSION_ATTRIBUTE, testCompilationVersion)
+    }
 }
 
 repositories {
@@ -50,8 +64,18 @@ dependencyManagement {
     imports {
         // Import the Spring Boot BOM directly instead of applying the Boot
         // Gradle plugin; the Boot 2.7 plugin is not compatible with Gradle 9.
-        mavenBom("org.springframework.boot:spring-boot-dependencies:${springBootVersion.get()}") {
+        mavenBom("org.springframework.boot:spring-boot-dependencies:$springBootVersion") {
             bomProperty("kotlin.version", "1.9.10")
+        }
+    }
+    // Configuration-scoped imports are exposed through the plugin's Groovy DSL.
+    withGroovyBuilder {
+        "configurations"("testCompileClasspath", "testRuntimeClasspath") {
+            "imports" {
+                "mavenBom"("org.springframework.boot:spring-boot-dependencies:${testSpringBootVersion.get()}") {
+                    "bomProperty"("kotlin.version", "1.9.10")
+                }
+            }
         }
     }
 }
@@ -148,7 +172,7 @@ tasks.withType<Test> {
     testJavaVersion.orNull?.let { version ->
         // The CI matrix asks for each Java version explicitly. Boot 3/4 tests
         // still need at least Java 17, so clamp older requested JVMs upward.
-        val minimumVersion = if (springBootMajorVersion.get() >= 3) 17 else 8
+        val minimumVersion = testCompilationVersion
         javaLauncher.set(
             javaToolchains.launcherFor {
                 languageVersion.set(JavaLanguageVersion.of(maxOf(version, minimumVersion)))

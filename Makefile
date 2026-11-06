@@ -2,6 +2,7 @@ TEST_ARGS=--console=rich --warning-mode=all
 GRADLE=./gradlew
 SPRING_BOOT_VERSION?=2.7.18
 SPRING_BOOT_ARGS=-PspringBootVersion=$(SPRING_BOOT_VERSION)
+SPRING_BOOT_RUNTIME_VERSION?=2.7.18
 TEST_JAVA_VERSION?=
 TEST_JAVA_ARGS=$(if $(TEST_JAVA_VERSION),-PtestJavaVersion=$(TEST_JAVA_VERSION),)
 
@@ -19,6 +20,10 @@ test: test-core test-ktor test-springboot-adapter test-springboot-demo
 .PHONY: itest
 itest:
 	$(GRADLE) test $(TEST_ARGS) $(SPRING_BOOT_ARGS) $(TEST_JAVA_ARGS) -p inngest-spring-boot-demo integrationTest
+
+.PHONY: itest-spring-compatibility
+itest-spring-compatibility:
+	$(GRADLE) $(TEST_ARGS) $(TEST_JAVA_ARGS) -PspringBootRuntimeVersion=$(SPRING_BOOT_RUNTIME_VERSION) :inngest-spring-boot-demo:compatibilityTest
 
 .PHONY: test-core
 test-core:

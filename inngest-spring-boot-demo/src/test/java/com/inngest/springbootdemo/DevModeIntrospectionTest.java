@@ -1,38 +1,42 @@
 package com.inngest.springbootdemo;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.BooleanNode;
 import com.inngest.InngestHeaderKey;
-import com.inngest.Version;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.junit.jupiter.api.parallel.Execution;
 import org.junit.jupiter.api.parallel.ExecutionMode;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import org.springframework.web.context.WebApplicationContext;
+import org.springframework.beans.factory.annotation.Value;
 
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 @IntegrationTest
 @Execution(ExecutionMode.CONCURRENT)
 public class DevModeIntrospectionTest {
-    @Autowired
-    private WebApplicationContext webApplicationContext;
+    @Value("${local.server.port}")
+    private int port;
 
     @Test
     public void shouldReturnInsecureIntrospectPayload() throws Exception {
-        MockMvc mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build();
-
-        mockMvc.perform(get("/api/inngest").header("Host", "localhost:8080"))
-            .andExpect(status().isOk())
-            .andExpect(content().contentType("application/json"))
-            .andExpect(header().string(InngestHeaderKey.Framework.getValue(), "springboot"))
-            .andExpect(jsonPath("$.authentication_succeeded").isEmpty())
-            .andExpect(jsonPath("$.function_count").isNumber())
-            .andExpect(jsonPath("$.has_event_key").value(false))
-            .andExpect(jsonPath("$.has_signing_key").value(false))
-            .andExpect(jsonPath("$.mode").value("dev"))
-            .andExpect(jsonPath("$.schema_version").value("2024-05-24"));
+        // Exercise the real servlet stack. MockMvc's request-builder signatures
+        // are not binary-compatible between Spring 5 and Spring 7.
+        Request request = new Request.Builder().url("http://127.0.0.1:" + port + "/api/inngest").build();
+        try (Response response = new OkHttpClient().newCall(request).execute()) {
+            assertEquals(200, response.code());
+            assertEquals("application/json", response.header("Content-Type"));
+            assertEquals("springboot", response.header(InngestHeaderKey.Framework.getValue()));
+            assertNotNull(response.body());
+            JsonNode payload = new ObjectMapper().readTree(response.body().string());
+            assertTrue(payload.path("authentication_succeeded").isNull());
+            assertTrue(payload.path("function_count").isNumber());
+            assertEquals(BooleanNode.FALSE, payload.path("has_event_key"));
+            assertEquals(BooleanNode.FALSE, payload.path("has_signing_key"));
+            assertEquals("dev", payload.path("mode").textValue());
+            assertEquals("2024-05-24", payload.path("schema_version").textValue());
+        }
     }
 }
