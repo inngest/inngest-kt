@@ -1,6 +1,12 @@
 name: Release Packages
 
 on:
+  workflow_dispatch:
+    inputs:
+      release_commit:
+        description: "Release merge commit SHA to publish (must contain VERSION changes)"
+        required: true
+        type: string
   pull_request_target:
     types:
       - closed
@@ -9,7 +15,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: release-tag-${{ github.event.pull_request.number }}
+  group: release-tag-${{ inputs.release_commit || github.event.pull_request.merge_commit_sha }}
   cancel-in-progress: false
 
 env:
@@ -20,7 +26,7 @@ env:
 
 jobs:
   release:
-    if: github.event.pull_request.merged == true && github.event.pull_request.head.ref == 'release/next' && github.event.pull_request.head.repo.full_name == github.repository
+    if: github.event_name == 'workflow_dispatch' || (github.event.pull_request.merged == true && github.event.pull_request.head.ref == 'release/next' && github.event.pull_request.head.repo.full_name == github.repository)
     runs-on: ubuntu-latest
     steps:
       - name: Validate release token
@@ -30,11 +36,11 @@ jobs:
             exit 1
           fi
 
-      - name: Checkout merged release commit
+      - name: Checkout release commit
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          ref: ${{ github.event.pull_request.merge_commit_sha }}
+          ref: ${{ inputs.release_commit || github.event.pull_request.merge_commit_sha }}
           token: ${{ env.RELEASE_TOKEN }}
 
       - name: Setup Java
@@ -51,7 +57,7 @@ jobs:
 
       - name: Tag and release packages
         env:
-          MERGE_COMMIT_SHA: ${{ github.event.pull_request.merge_commit_sha }}
+          MERGE_COMMIT_SHA: ${{ inputs.release_commit || github.event.pull_request.merge_commit_sha }}
           MAVEN_USERNAME: ${{ secrets.MAVEN_USERNAME }}
           MAVEN_PASSWORD: ${{ secrets.MAVEN_PASSWORD }}
           GPG_SIGNING_KEY: ${{ secrets.GPG_SIGNING_KEY }}
