@@ -2,7 +2,7 @@
 
 All notable changes to this package will be documented in this file.
 
-## [inngest-spring-boot-adapter-0.3.0] - 2026-11-06
+## [inngest-spring-boot-adapter-0.4.0] - 2026-11-07
 
 ### 🚀 Features
 
