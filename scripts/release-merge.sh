@@ -15,13 +15,6 @@ git fetch --tags origin
 declare -a release_packages=()
 
 for pkg in "${RELEASE_PACKAGES[@]}"; do
-  if [[ "${RELEASE_ADAPTERS_ONLY:-false}" == "true" ]]; then
-    if [[ "$(cat "$(package_version_file "$pkg")")" != "$(git show "${merge_commit}:$(package_version_file "$pkg")")" ]]; then
-      echo "Recovery version for ${pkg} does not match release commit ${merge_commit}" >&2
-      exit 1
-    fi
-    [[ "$pkg" != "inngest" ]] || continue
-  fi
   if git diff-tree --no-commit-id --name-only -r -m "$merge_commit" | grep -Fxq "$(package_version_file "$pkg")"; then
     release_packages+=("$pkg")
   fi
@@ -31,6 +24,16 @@ if [[ "${#release_packages[@]}" -eq 0 ]]; then
   echo "No package version files changed in merge commit ${merge_commit}" >&2
   exit 1
 fi
+
+# Build and sign the entire release set before creating tags or uploading anything.
+declare -a preflight_tasks=()
+for pkg in "${release_packages[@]}"; do
+  preflight_tasks+=(":${pkg}:publishAllPublicationsToMavenRepository")
+done
+./gradlew "${preflight_tasks[@]}" --info
+for pkg in "${release_packages[@]}"; do
+  (cd "$pkg" && ./maven-bundle)
+done
 
 git config user.name 'github-actions[bot]'
 git config user.email 'github-actions[bot]@users.noreply.github.com'
