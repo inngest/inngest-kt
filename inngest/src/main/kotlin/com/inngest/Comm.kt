@@ -167,7 +167,7 @@ class CommHandler(
         try {
             val payload = Klaxon().parse<ExecutionRequestPayload>(requestBody)
             // TODO - check that payload is not null and throw error
-            val function = functionsById[functionId] ?: return protocolErrorResponse(Exception("Function not found"))
+            val function = functionsById[functionId] ?: throw Exception("Function not found")
             val execution = ExecutionRequestContext.from(payload!!.ctx, stepId)
 
             val ctx = execution.toFunctionContext(payload.event, payload.events)
@@ -198,11 +198,10 @@ class CommHandler(
         }
     }
 
-    // These errors can be returned to unauthenticated callers. Keep exception details private.
-    @Suppress("UNUSED_PARAMETER")
+    // Adapters must authenticate execution requests before returning exception diagnostics.
     fun protocolErrorResponse(e: Throwable): CommResponse =
         CommResponse(
-            body = parseRequestBody(CommError(name = "Error", message = "Invalid execution request", stack = null)),
+            body = parseRequestBody(commError(e)),
             statusCode = ResultStatusCode.RetriableError,
             headers = headers,
         )

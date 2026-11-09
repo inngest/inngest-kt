@@ -92,11 +92,15 @@ public abstract class InngestController {
         @RequestBody String body
     ) {
         try {
+            SignatureVerificationKt.checkHeadersAndValidateSignature(signature, body, serverKind, commHandler.getConfig());
+        } catch (Exception e) {
+            return ResponseEntity.status(401).contentType(MediaType.APPLICATION_JSON).body("{\"message\":\"Unauthorized\"}");
+        }
+
+        try {
             if (functionId == null) {
                 return commResponse(commHandler.protocolErrorResponse(new IllegalArgumentException("Missing fnId parameter")));
             }
-
-            SignatureVerificationKt.checkHeadersAndValidateSignature(signature, body, serverKind, commHandler.getConfig());
 
             CommResponse response = commHandler.callFunction(functionId, body, stepId);
 

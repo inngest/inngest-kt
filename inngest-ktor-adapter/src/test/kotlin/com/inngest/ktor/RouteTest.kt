@@ -94,18 +94,11 @@ internal class RouteTest {
             }
 
             val requestBody = ProtocolFixtures.executionRequestPayloadJson("echo-fn")
-            val timestamp = Instant.now().epochSecond
-            val mac = Mac.getInstance("HmacSHA256")
-            mac.init(SecretKeySpec("12345678".toByteArray(Charsets.UTF_8), "HmacSHA256"))
-            val signature =
-                mac
-                    .doFinal((requestBody + timestamp).toByteArray(Charsets.UTF_8))
-                    .joinToString("") { "%02x".format(it) }
 
             val response =
                 client.post("/api/inngest?fnId=echo-fn&stepId=step") {
                     header(InngestHeaderKey.ServerKind.value, "cloud")
-                    header(InngestHeaderKey.Signature.value, "t=$timestamp&s=$signature")
+                    header(InngestHeaderKey.Signature.value, sign(requestBody))
                     contentType(ContentType.Application.Json)
                     setBody(requestBody)
                 }
@@ -114,10 +107,24 @@ internal class RouteTest {
             assertEquals("2", response.headers[InngestHeaderKey.RequestVersion.value])
             assertEquals("ktor", response.headers[InngestHeaderKey.Framework.value])
             assertEquals("\"done\"", response.bodyAsText())
+
+            for ((query, payload) in listOf("" to requestBody, "?fnId=unknown" to requestBody, "?fnId=echo-fn" to "{broken")) {
+                val failure =
+                    client.post("/api/inngest$query") {
+                        header(InngestHeaderKey.ServerKind.value, "cloud")
+                        header(InngestHeaderKey.Signature.value, sign(payload))
+                        contentType(ContentType.Application.Json)
+                        setBody(payload)
+                    }
+                val failureBody = mapper.readTree(failure.bodyAsText())
+                assertEquals(HttpStatusCode.InternalServerError, failure.status)
+                assertTrue(failureBody["stack"].asText().isNotBlank())
+                assertTrue(failureBody["__serialized"].asBoolean())
+            }
         }
 
     @Test
-    fun `post route returns JSON protocol failure when signature is missing in cloud`() =
+    fun `post route authenticates before returning execution diagnostics in cloud`() =
         testApplication {
             application {
                 routing {
@@ -130,21 +137,22 @@ internal class RouteTest {
                 }
             }
 
-            val response =
-                client.post("/api/inngest?fnId=echo-fn&stepId=step") {
-                    header(InngestHeaderKey.ServerKind.value, "cloud")
-                    contentType(ContentType.Application.Json)
-                    setBody(ProtocolFixtures.executionRequestPayloadJson("echo-fn"))
+            val payload = ProtocolFixtures.executionRequestPayloadJson("echo-fn")
+            val timestamp = Instant.now().epochSecond
+            val signatures = listOf(null, "t=$timestamp&s=invalid", "t=invalid&s=invalid", "t=1&s=invalid")
+            for (signature in signatures) {
+                for ((query, requestBody) in listOf("" to payload, "?fnId=unknown" to payload, "?fnId=echo-fn" to payload, "?fnId=echo-fn" to "{broken")) {
+                    val response =
+                        client.post("/api/inngest$query") {
+                            header(InngestHeaderKey.ServerKind.value, "dev")
+                            signature?.let { header(InngestHeaderKey.Signature.value, it) }
+                            contentType(ContentType.Application.Json)
+                            setBody(requestBody)
+                        }
+                    assertEquals(HttpStatusCode.Unauthorized, response.status)
+                    assertEquals(mapper.readTree("""{"message":"Unauthorized"}"""), mapper.readTree(response.bodyAsText()))
                 }
-
-            val body = mapper.readTree(response.bodyAsText())
-
-            assertEquals(HttpStatusCode.InternalServerError, response.status)
-            assertEquals("2", response.headers[InngestHeaderKey.RequestVersion.value])
-            assertEquals("Error", body["name"].asText())
-            assertEquals("Invalid execution request", body["message"].asText())
-            assertTrue(body["stack"].isNull)
-            assertTrue(body["__serialized"].asBoolean())
+            }
         }
 
     @Test
@@ -217,6 +225,14 @@ internal class RouteTest {
             assertEquals("invalid config", body["message"].asText())
             assertEquals(false, body["modified"].asBoolean())
         }
+
+    private fun sign(body: String): String {
+        val timestamp = Instant.now().epochSecond
+        val mac = Mac.getInstance("HmacSHA256")
+        mac.init(SecretKeySpec("12345678".toByteArray(Charsets.UTF_8), "HmacSHA256"))
+        val digest = mac.doFinal((body + timestamp).toByteArray(Charsets.UTF_8)).joinToString("") { "%02x".format(it) }
+        return "t=$timestamp&s=$digest"
+    }
 
     private class EchoFunction : InngestFunction() {
         override fun config(builder: InngestFunctionConfigBuilder): InngestFunctionConfigBuilder = builder.id("echo-fn")

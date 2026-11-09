@@ -18,14 +18,21 @@ import okhttp3.mockwebserver.RecordedRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
+import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.HashMap;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -88,27 +95,57 @@ public class InngestControllerTest {
     }
 
     @Test
-    void postRouteReturnsJsonProtocolFailureWhenSignatureIsMissingInCloud() throws Exception {
+    void postRouteAuthenticatesBeforeReturningExecutionDiagnosticsInCloud() throws Exception {
         setUpController(false, "signkey-test-12345678");
 
-        String responseBody = mockMvc.perform(post("/api/inngest")
-                .queryParam("fnId", "echo-fn")
-                .queryParam("stepId", "step")
-                .header(InngestHeaderKey.ServerKind.getValue(), "cloud")
-                .contentType("application/json")
-                .content(ProtocolFixtures.executionRequestPayloadJson("echo-fn")))
-            .andExpect(status().isInternalServerError())
-            .andExpect(header().string(InngestHeaderKey.RequestVersion.getValue(), "2"))
-            .andReturn()
-            .getResponse()
-            .getContentAsString();
+        String payload = ProtocolFixtures.executionRequestPayloadJson("echo-fn");
+        long timestamp = Instant.now().getEpochSecond();
+        String[] signatures = {null, "t=" + timestamp + "&s=invalid", "t=invalid&s=invalid", "t=1&s=invalid"};
+        for (String signature : signatures) {
+            for (String[] request : new String[][] {{"", payload}, {"?fnId=unknown", payload}, {"?fnId=echo-fn", payload}, {"?fnId=echo-fn", "{broken"}}) {
+                MockHttpServletRequestBuilder builder = post("/api/inngest" + request[0])
+                    .header(InngestHeaderKey.ServerKind.getValue(), "dev")
+                    .contentType("application/json")
+                    .content(request[1]);
+                if (signature != null) {
+                    builder.header(InngestHeaderKey.Signature.getValue(), signature);
+                }
+                String responseBody = mockMvc.perform(builder)
+                    .andExpect(status().isUnauthorized())
+                    .andReturn().getResponse().getContentAsString();
+                assertEquals(MAPPER.readTree("{\"message\":\"Unauthorized\"}"), MAPPER.readTree(responseBody));
+            }
+        }
+    }
 
-        JsonNode body = MAPPER.readTree(responseBody);
-
-        assertEquals("Error", body.get("name").asText());
-        assertEquals("Invalid execution request", body.get("message").asText());
-        assertTrue(body.get("stack").isNull());
-        assertTrue(body.get("__serialized").asBoolean());
+    @Test
+    void postRouteRetainsDiagnosticsOnlyAfterValidCloudAuthentication() throws Exception {
+        setUpController(false, "signkey-test-12345678");
+        String payload = ProtocolFixtures.executionRequestPayloadJson("echo-fn");
+        for (String[] request : new String[][] {{"?fnId=echo-fn", payload}, {"", payload}, {"?fnId=unknown", payload}, {"?fnId=echo-fn", "{broken"}}) {
+            long timestamp = Instant.now().getEpochSecond();
+            Mac mac = Mac.getInstance("HmacSHA256");
+            mac.init(new SecretKeySpec("12345678".getBytes(StandardCharsets.UTF_8), "HmacSHA256"));
+            StringBuilder digest = new StringBuilder();
+            for (byte b : mac.doFinal((request[1] + timestamp).getBytes(StandardCharsets.UTF_8))) {
+                digest.append(String.format("%02x", b));
+            }
+            MockHttpServletResponse response = mockMvc.perform(post("/api/inngest" + request[0])
+                    .header(InngestHeaderKey.ServerKind.getValue(), "cloud")
+                    .header(InngestHeaderKey.Signature.getValue(), "t=" + timestamp + "&s=" + digest)
+                    .contentType("application/json")
+                    .content(request[1]))
+                .andReturn().getResponse();
+            if (request[0].equals("?fnId=echo-fn") && request[1].equals(payload)) {
+                assertEquals(200, response.getStatus());
+                assertEquals("\"done\"", response.getContentAsString());
+            } else {
+                assertEquals(500, response.getStatus());
+                JsonNode body = MAPPER.readTree(response.getContentAsString());
+                assertFalse(body.get("stack").asText().trim().isEmpty());
+                assertTrue(body.get("__serialized").asBoolean());
+            }
+        }
     }
 
     @Test
