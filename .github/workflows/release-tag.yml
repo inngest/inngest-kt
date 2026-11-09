@@ -13,6 +13,7 @@ on:
 
 permissions:
   contents: write
+  packages: write
 
 concurrency:
   group: release-tag-${{ inputs.release_commit || github.event.pull_request.merge_commit_sha }}
@@ -58,6 +59,7 @@ jobs:
       - name: Tag and release packages
         env:
           MERGE_COMMIT_SHA: ${{ inputs.release_commit || github.event.pull_request.merge_commit_sha }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           MAVEN_USERNAME: ${{ secrets.MAVEN_USERNAME }}
           MAVEN_PASSWORD: ${{ secrets.MAVEN_PASSWORD }}
           GPG_SIGNING_KEY: ${{ secrets.GPG_SIGNING_KEY }}
