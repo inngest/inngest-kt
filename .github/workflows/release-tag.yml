@@ -7,6 +7,10 @@ on:
         description: "Release merge commit SHA to publish (must contain VERSION changes)"
         required: true
         type: string
+      adapters_only:
+        description: "Temporary 0.3.0 recovery: publish only adapters from the workflow revision"
+        default: false
+        type: boolean
   pull_request_target:
     types:
       - closed
@@ -41,7 +45,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          ref: ${{ inputs.release_commit || github.event.pull_request.merge_commit_sha }}
+          ref: ${{ inputs.adapters_only && github.sha || inputs.release_commit || github.event.pull_request.merge_commit_sha }}
           token: ${{ env.RELEASE_TOKEN }}
 
       - name: Setup Java
@@ -59,6 +63,7 @@ jobs:
       - name: Tag and release packages
         env:
           MERGE_COMMIT_SHA: ${{ inputs.release_commit || github.event.pull_request.merge_commit_sha }}
+          RELEASE_ADAPTERS_ONLY: ${{ inputs.adapters_only }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           MAVEN_USERNAME: ${{ secrets.MAVEN_USERNAME }}
           MAVEN_PASSWORD: ${{ secrets.MAVEN_PASSWORD }}

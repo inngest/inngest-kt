@@ -23,8 +23,7 @@ repositories {
 }
 
 dependencies {
-    val pkg = if (System.getenv("RELEASE") != null) "com.inngest:inngest:[0.2.0, 0.3.0)" else project(":inngest")
-    api(pkg)
+    api(project(":inngest"))
 
     implementation("io.ktor:ktor-server-core:3.6.1")
 

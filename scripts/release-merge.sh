@@ -15,6 +15,13 @@ git fetch --tags origin
 declare -a release_packages=()
 
 for pkg in "${RELEASE_PACKAGES[@]}"; do
+  if [[ "${RELEASE_ADAPTERS_ONLY:-false}" == "true" ]]; then
+    if [[ "$(cat "$(package_version_file "$pkg")")" != "$(git show "${merge_commit}:$(package_version_file "$pkg")")" ]]; then
+      echo "Recovery version for ${pkg} does not match release commit ${merge_commit}" >&2
+      exit 1
+    fi
+    [[ "$pkg" != "inngest" ]] || continue
+  fi
   if git diff-tree --no-commit-id --name-only -r -m "$merge_commit" | grep -Fxq "$(package_version_file "$pkg")"; then
     release_packages+=("$pkg")
   fi
