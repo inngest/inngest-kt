@@ -18,6 +18,25 @@ internal class CommHandlerTest {
     private val mapper = ObjectMapper()
     private var mockWebServer: MockWebServer? = null
 
+    @Test
+    fun `protocol failures do not expose exception details`() {
+        val handler = commHandler(EchoFunction())
+        val responses =
+            listOf(
+                handler.protocolErrorResponse(IllegalArgumentException("private exception detail")),
+                handler.callFunction("unknown-fn", ProtocolFixtures.executionRequestPayloadJson("echo-fn")),
+            )
+
+        for (response in responses) {
+            assertEquals(ResultStatusCode.RetriableError, response.statusCode)
+            assertEquals("2", response.headers[InngestHeaderKey.RequestVersion.value])
+            assertEquals(
+                mapper.readTree("""{"name":"Error","message":"Invalid execution request","stack":null,"__serialized":true}"""),
+                mapper.readTree(response.body),
+            )
+        }
+    }
+
     @AfterEach
     fun tearDown() {
         mockWebServer?.shutdown()
@@ -199,6 +218,7 @@ internal class CommHandlerTest {
         assertEquals("true", response.headers[InngestHeaderKey.NoRetry.value])
         assertEquals("2", response.headers[InngestHeaderKey.RequestVersion.value])
         assertEquals("hard failure", body["message"].asText())
+        assertTrue(body["stack"].asText().contains("NonRetriableFailureFunction.execute"))
     }
 
     @Test

@@ -105,7 +105,9 @@ public class InngestControllerTest {
 
         JsonNode body = MAPPER.readTree(responseBody);
 
-        assertEquals("Using cloud inngest but did not receive X-Inngest-Signature", body.get("message").asText());
+        assertEquals("Error", body.get("name").asText());
+        assertEquals("Invalid execution request", body.get("message").asText());
+        assertTrue(body.get("stack").isNull());
         assertTrue(body.get("__serialized").asBoolean());
     }
 

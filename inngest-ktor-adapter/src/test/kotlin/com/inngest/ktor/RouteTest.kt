@@ -141,7 +141,9 @@ internal class RouteTest {
 
             assertEquals(HttpStatusCode.InternalServerError, response.status)
             assertEquals("2", response.headers[InngestHeaderKey.RequestVersion.value])
-            assertEquals("Using cloud inngest but did not receive X-Inngest-Signature", body["message"].asText())
+            assertEquals("Error", body["name"].asText())
+            assertEquals("Invalid execution request", body["message"].asText())
+            assertTrue(body["stack"].isNull)
             assertTrue(body["__serialized"].asBoolean())
         }
 
