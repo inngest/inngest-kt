@@ -18,6 +18,27 @@ internal class CommHandlerTest {
     private val mapper = ObjectMapper()
     private var mockWebServer: MockWebServer? = null
 
+    @Test
+    fun `authenticated protocol failures retain exception diagnostics`() {
+        val handler = commHandler(EchoFunction())
+        val responses =
+            listOf(
+                handler.protocolErrorResponse(IllegalArgumentException("diagnostic detail")),
+                handler.callFunction("unknown-fn", ProtocolFixtures.executionRequestPayloadJson("echo-fn")),
+            )
+
+        for (response in responses) {
+            assertEquals(ResultStatusCode.RetriableError, response.statusCode)
+            assertEquals("2", response.headers[InngestHeaderKey.RequestVersion.value])
+            val body = mapper.readTree(response.body)
+            assertTrue(body["name"].asText().contains("Exception"))
+            assertTrue(body["stack"].asText().isNotBlank())
+            assertTrue(body["__serialized"].asBoolean())
+        }
+        assertEquals("diagnostic detail", mapper.readTree(responses[0].body)["message"].asText())
+        assertEquals("Function not found", mapper.readTree(responses[1].body)["message"].asText())
+    }
+
     @AfterEach
     fun tearDown() {
         mockWebServer?.shutdown()
@@ -199,6 +220,7 @@ internal class CommHandlerTest {
         assertEquals("true", response.headers[InngestHeaderKey.NoRetry.value])
         assertEquals("2", response.headers[InngestHeaderKey.RequestVersion.value])
         assertEquals("hard failure", body["message"].asText())
+        assertTrue(body["stack"].asText().contains("NonRetriableFailureFunction.execute"))
     }
 
     @Test

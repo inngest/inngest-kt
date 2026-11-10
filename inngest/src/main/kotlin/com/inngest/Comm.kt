@@ -198,6 +198,7 @@ class CommHandler(
         }
     }
 
+    // Adapters must authenticate execution requests before returning exception diagnostics.
     fun protocolErrorResponse(e: Throwable): CommResponse =
         CommResponse(
             body = parseRequestBody(commError(e)),

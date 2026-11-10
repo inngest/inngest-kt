@@ -54,24 +54,24 @@ fun Route.serve(
         }
 
         post("") {
-            val fnId = call.request.queryParameters["fnId"]
-            val stepId = call.request.queryParameters["stepId"]
-            if (fnId == null) {
-                val response = comm.protocolErrorResponse(IllegalArgumentException("Missing fnId parameter"))
-                call.respondComm(response)
-            } else {
-                val body = call.receiveText()
-                try {
-                    val signature = call.request.headers[InngestHeaderKey.Signature.value]
-                    val serverKind = call.request.headers[InngestHeaderKey.ServerKind.value]
-                    checkHeadersAndValidateSignature(signature, body, serverKind, comm.config)
+            val body = call.receiveText()
+            try {
+                val signature = call.request.headers[InngestHeaderKey.Signature.value]
+                val serverKind = call.request.headers[InngestHeaderKey.ServerKind.value]
+                checkHeadersAndValidateSignature(signature, body, serverKind, comm.config)
+            } catch (_: Exception) {
+                call.respondText("""{"message":"Unauthorized"}""", ContentType.Application.Json, HttpStatusCode.Unauthorized)
+                return@post
+            }
 
-                    val response = comm.callFunction(fnId, body, stepId)
-                    call.respondComm(response)
-                } catch (e: Exception) {
-                    val response = comm.protocolErrorResponse(e)
-                    call.respondComm(response)
-                }
+            try {
+                val fnId = call.request.queryParameters["fnId"] ?: throw IllegalArgumentException("Missing fnId parameter")
+                val stepId = call.request.queryParameters["stepId"]
+                val response = comm.callFunction(fnId, body, stepId)
+                call.respondComm(response)
+            } catch (e: Exception) {
+                val response = comm.protocolErrorResponse(e)
+                call.respondComm(response)
             }
         }
 
