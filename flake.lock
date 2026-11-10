@@ -23,11 +23,11 @@
         "nixpkgs": "nixpkgs"
       },
       "locked": {
-        "lastModified": 1793964628,
-        "narHash": "sha256-GJHBXGcCMgVwgY1d+ZIsnPB5BqFgYzkqASTnJrNhdX0=",
+        "lastModified": 1794323174,
+        "narHash": "sha256-EzjCbTTXQ+yuQg4AM569QTMMZiA2eT4SF4PVK2cb7mM=",
         "owner": "inngest",
         "repo": "inngest.nix",
-        "rev": "a0bd5f8893431140b3fcedde2a4fa22dd3759364",
+        "rev": "29538648f6df6ad177eb4c7116c45560b7be6c83",
         "type": "github"
       },
       "original": {
