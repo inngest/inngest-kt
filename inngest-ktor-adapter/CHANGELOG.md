@@ -2,6 +2,13 @@
 
 All notable changes to this package will be documented in this file.
 
+## [inngest-ktor-adapter-0.3.1] - 2026-11-10
+
+### 🐛 Bug Fixes
+
+- *(release)* Build adapters against matching core (#128)
+- *(inngest)* Authenticate before returning execution diagnostics (#130)
+
 ## [inngest-ktor-adapter-0.3.0] - 2026-11-06
 
 ### 🚀 Features

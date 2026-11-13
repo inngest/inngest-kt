@@ -2,6 +2,12 @@
 
 All notable changes to this package will be documented in this file.
 
+## [inngest-0.3.1] - 2026-11-10
+
+### 🐛 Bug Fixes
+
+- *(inngest)* Authenticate before returning execution diagnostics (#130)
+
 ## [inngest-0.3.0] - 2026-11-06
 
 ### 🚀 Features
