@@ -3,7 +3,8 @@ package com.inngest
 import java.math.BigInteger
 import kotlin.test.Test
 import kotlin.test.assertEquals
-
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 internal class EventDataParsingTest {
 
@@ -14,7 +15,7 @@ internal class EventDataParsingTest {
                 {
                     "int": 1,
                     "negativeInt": -7,
-                    "long": 3000000000
+                    "long": 3000000000,
                     "bigInteger": 12345678901234567890123,
                     "decimal": 1.5,
                     "negativeDecimal": -0.25,
@@ -34,8 +35,98 @@ internal class EventDataParsingTest {
         assertEquals(1000.0, data["exponent"])
         assertEquals(true, data["bool"])
         assertEquals("hé \"quoted\" ✓", data["text"])
+    }
 
+    @Test
+    fun `nested object becomes a Map`() {
+        val data = callWithData("""{"reference": {"url": "https://inngest.com", "label": "ref"}}""")
 
+        val reference = data["reference"]
+        assertTrue(reference is Map<*, *>)
+        val referenceMap = reference
+        assertEquals("https://inngest.com", referenceMap["url"])
+        assertEquals("ref", referenceMap["label"])
+    }
+
+    @Test
+    fun `object nested three levels deep survives`() {
+        val data = callWithData("""{"a": {"b": {"c": "leaf"}}}""")
+
+        val a = data["a"] as Map<*, *>
+        val b = a["b"] as Map<*, *>
+        assertEquals("leaf", b["c"])
+    }
+
+    @Test
+    fun `array of objects becomes a list of Maps`() {
+        val data = callWithData("""{"items": [{"id": 1}, {"id": 2}]}""")
+
+        val items = data["items"] as List<*>
+        assertEquals(2, items.size)
+        assertEquals(1, (items[0] as Map<*, *>)["id"])
+        assertEquals(2, (items[1] as Map<*, *>)["id"])
+    }
+
+    @Test
+    fun `mixed array keeps order and types`() {
+        val data = callWithData("""{"mixed": [1, "x", {"k": "v"}, [2, 3], null]}""")
+
+        val mixed = data["mixed"] as List<*>
+        assertEquals(5, mixed.size)
+        assertEquals(1, mixed[0])
+        assertEquals("x", mixed[1])
+        assertEquals("v", (mixed[2] as Map<*, *>)["k"])
+        assertEquals(listOf(2, 3), mixed[3])
+        assertNull(mixed[4])
+    }
+
+    @Test
+    fun `empty object and array stay empty`() {
+        val data = callWithData("""{"emptyObject": {}, "emptyArray": []}""")
+
+        assertEquals(emptyMap<String, Any?>(), data["emptyObject"])
+        assertEquals(emptyList<Any?>(), data["emptyArray"])
+    }
+
+    @Test
+    fun `null values are preserved`() {
+        val data = callWithData("""{"missing": null, "nested": {"value": null}}""")
+
+        assertTrue(data.containsKey("missing"))
+        assertNull(data["missing"])
+        assertNull((data["nested"] as Map<*, *>)["value"])
+    }
+
+    @Test
+    fun `batch request parses nested data for every event`() {
+        val first = """{"name": "test/run", "data": {"ref": {"id": 1}}}"""
+        val second = """{"name": "test/run", "data": {"ref": {"id": 2}}}"""
+        val ctx = callWithEvents(first, listOf(first, second))
+
+        assertEquals(2, ctx.events.size)
+        assertEquals(1, (ctx.events[0].data["ref"] as Map<*, *>)["id"])
+        assertEquals(2, (ctx.events[1].data["ref"] as Map<*, *>)["id"])
+    }
+
+    @Test
+    fun `function-failed system event exposes nested event and error data`() {
+        val event = """
+            {
+              "name": "inngest/function.failed",
+              "data": {
+                "event": {"name": "demo/echo", "data": {"jobId": 1}},
+                "error": {"name": "Error", "message": "boom"}
+              }
+            }
+        """.trimIndent()
+        val ctx = callWithEvents(event, listOf(event))
+
+        val innerEvent = ctx.event.data["event"] as Map<*, *>
+        val innerEventData = innerEvent["data"] as Map<*, *>
+        assertEquals(1, innerEventData["jobId"])
+
+        val error = ctx.event.data["error"] as Map<*, *>
+        assertEquals("boom", error["message"])
     }
 
     private fun callWithData(dataJson: String): Map<String, Any?> {
@@ -81,7 +172,7 @@ internal class EventDataParsingTest {
         override fun config(builder: InngestFunctionConfigBuilder): InngestFunctionConfigBuilder =
             builder.id(CAPTURE_FN_ID)
 
-        override fun execute(ctx: FunctionContext, step: Step): Any? {
+        override fun execute(ctx: FunctionContext, step: Step): Any {
             captured = ctx
             return "captured"
         }
@@ -90,6 +181,4 @@ internal class EventDataParsingTest {
     private companion object {
         const val CAPTURE_FN_ID = "capture-fn"
     }
-
-
 }
