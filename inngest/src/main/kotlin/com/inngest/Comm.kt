@@ -165,7 +165,10 @@ class CommHandler(
         stepId: String? = DEFAULT_STEP_ID,
     ): CommResponse {
         try {
-            val payload = Klaxon().parse<ExecutionRequestPayload>(requestBody)
+            val payload =
+                Klaxon()
+                    .fieldConverter(KlaxonEventData::class, eventDataConverter)
+                    .parse<ExecutionRequestPayload>(requestBody)
             // TODO - check that payload is not null and throw error
             val function = functionsById[functionId] ?: throw Exception("Function not found")
             val execution = ExecutionRequestContext.from(payload!!.ctx, stepId)
