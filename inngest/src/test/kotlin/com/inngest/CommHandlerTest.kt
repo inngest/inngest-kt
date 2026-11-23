@@ -46,6 +46,23 @@ internal class CommHandlerTest {
     }
 
     @Test
+    fun `introspect does not throw when signing key is blank with no fallback in prod`() {
+        val client = Inngest(appId = "test-app", eventKey = "evt-key", isDev = false)
+        val handler =
+            CommHandler(
+                functions = mapOf(EchoFunction().id() to EchoFunction()),
+                client = client,
+                config = ServeConfig(client, signingKey = " "),
+                framework = SupportedFrameworkName.SpringBoot,
+            )
+
+        val response = handler.introspect(signature = null, requestBody = "", serverKind = null)
+
+        val body = mapper.readTree(response)
+        assertFalse(body["has_signing_key"].asBoolean())
+    }
+
+    @Test
     fun `callFunction returns success payload with required headers`() {
         val response =
             commHandler(EchoFunction())

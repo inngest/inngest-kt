@@ -11,6 +11,21 @@ internal class EnvironmentTest {
     }
 
     @Test
+    fun `test inngestEventKey treats blank key arg as unset`() {
+        assertEquals("NO_EVENT_KEY_SET", Environment.inngestEventKey(" "))
+    }
+
+    @Test
+    fun `test inngestEventKey treats blank system property as unset`() {
+        System.setProperty(InngestSystem.EventKey.value, " ")
+        try {
+            assertEquals("NO_EVENT_KEY_SET", Environment.inngestEventKey())
+        } finally {
+            System.clearProperty(InngestSystem.EventKey.value)
+        }
+    }
+
+    @Test
     fun `test inngestEventKey with key value`() {
         val key = "event"
         assertEquals(key, Environment.inngestEventKey(key))
@@ -51,6 +66,21 @@ internal class EnvironmentTest {
         )
     }
 
+    @Test
+    fun `test inngestEventApiBaseUrl treats blank url arg as unset`() {
+        assertEquals("http://127.0.0.1:8288", Environment.inngestEventApiBaseUrl(env = InngestEnv.Dev, url = " "))
+    }
+
+    @Test
+    fun `test inngestEventApiBaseUrl treats blank system property as unset`() {
+        System.setProperty(InngestSystem.EventApiBaseUrl.value, " ")
+        try {
+            assertEquals("http://127.0.0.1:8288", Environment.inngestEventApiBaseUrl(env = InngestEnv.Dev))
+        } finally {
+            System.clearProperty(InngestSystem.EventApiBaseUrl.value)
+        }
+    }
+
     // TODO: Test with env `INNGEST_BASE_URL`
     // @Test
     // fun `test inngestEventApiBaseUrl with INNGEST_BASE_URL value`() { }
@@ -59,6 +89,31 @@ internal class EnvironmentTest {
     @Test
     fun `test inngestEnv with no params`() {
         assertEquals(InngestEnv.Dev, Environment.inngestEnv())
+    }
+
+    @Test
+    fun `test inngestEnv treats blank env arg as unset`() {
+        assertEquals(InngestEnv.Dev, Environment.inngestEnv(env = " "))
+    }
+
+    @Test
+    fun `test inngestEnv treats blank INNGEST_DEV system property as unset`() {
+        System.setProperty(InngestSystem.Dev.value, " ")
+        try {
+            assertEquals(InngestEnv.Dev, Environment.inngestEnv())
+        } finally {
+            System.clearProperty(InngestSystem.Dev.value)
+        }
+    }
+
+    @Test
+    fun `test inngestEnv treats blank INNGEST_ENV system property as unset`() {
+        System.setProperty(InngestSystem.Env.value, " ")
+        try {
+            assertEquals(InngestEnv.Dev, Environment.inngestEnv())
+        } finally {
+            System.clearProperty(InngestSystem.Env.value)
+        }
     }
 
     @Test
