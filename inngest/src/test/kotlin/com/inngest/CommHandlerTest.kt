@@ -63,6 +63,25 @@ internal class CommHandlerTest {
     }
 
     @Test
+    fun `register returns sync failure payload instead of throwing when signing key is blank with no fallback in prod`() {
+        val client = Inngest(appId = "test-app", eventKey = "evt-key", isDev = false)
+        val handler =
+            CommHandler(
+                functions = mapOf(EchoFunction().id() to EchoFunction()),
+                client = client,
+                config = ServeConfig(client, signingKey = " "),
+                framework = SupportedFrameworkName.SpringBoot,
+            )
+
+        val response = handler.register(origin = "https://example.com", syncId = null)
+
+        assertEquals(500, response.statusCode)
+        val body = mapper.readTree(response.body)
+        assertEquals("signing key is required", body["message"].asText())
+        assertFalse(body["modified"].asBoolean())
+    }
+
+    @Test
     fun `callFunction returns success payload with required headers`() {
         val response =
             commHandler(EchoFunction())

@@ -1,5 +1,6 @@
 package com.inngest
 
+import org.junitpioneer.jupiter.SetEnvironmentVariable
 import kotlin.test.*
 
 // NOTE: not sure how to test values using environment variables
@@ -29,6 +30,16 @@ internal class EnvironmentTest {
     fun `test inngestEventKey with key value`() {
         val key = "event"
         assertEquals(key, Environment.inngestEventKey(key))
+    }
+
+    @Test
+    fun `test inngestEventKey falls back to system property when key arg is blank`() {
+        System.setProperty(InngestSystem.EventKey.value, "real-event-key")
+        try {
+            assertEquals("real-event-key", Environment.inngestEventKey(" "))
+        } finally {
+            System.clearProperty(InngestSystem.EventKey.value)
+        }
     }
 
     @Test
@@ -81,9 +92,31 @@ internal class EnvironmentTest {
         }
     }
 
+    @Test
+    fun `test inngestEventApiBaseUrl falls back to system property when url arg is blank`() {
+        System.setProperty(InngestSystem.EventApiBaseUrl.value, "https://yolo.com")
+        try {
+            assertEquals("https://yolo.com", Environment.inngestEventApiBaseUrl(env = InngestEnv.Dev, url = " "))
+        } finally {
+            System.clearProperty(InngestSystem.EventApiBaseUrl.value)
+        }
+    }
+
     // TODO: Test with env `INNGEST_BASE_URL`
     // @Test
     // fun `test inngestEventApiBaseUrl with INNGEST_BASE_URL value`() { }
+
+    // systemValue()
+    @Test
+    @SetEnvironmentVariable(key = "INNGEST_TEST_SYSTEM_VALUE_KEY", value = "real-env-value")
+    fun `systemValue treats blank system property as unset and falls back to environment variable`() {
+        System.setProperty("INNGEST_TEST_SYSTEM_VALUE_KEY", " ")
+        try {
+            assertEquals("real-env-value", Environment.systemValue("INNGEST_TEST_SYSTEM_VALUE_KEY"))
+        } finally {
+            System.clearProperty("INNGEST_TEST_SYSTEM_VALUE_KEY")
+        }
+    }
 
     // Env
     @Test
