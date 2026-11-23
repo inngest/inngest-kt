@@ -305,7 +305,7 @@ class CommHandler(
             InsecureIntrospection(
                 functionCount = allFunctions.size,
                 hasEventKey = Environment.isInngestEventKeySet(client.eventKey),
-                hasSigningKey = config.hasSigningKey(),
+                hasSigningKey = runCatching { config.hasSigningKey() }.getOrDefault(false),
                 mode = if (client.env == InngestEnv.Dev) "dev" else "cloud",
             )
 
