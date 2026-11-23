@@ -2,7 +2,6 @@ package com.inngest.springboot;
 
 import com.inngest.CommHandler;
 import com.inngest.CommResponse;
-import com.inngest.InngestEnv;
 import com.inngest.InngestQueryParamKey;
 import com.inngest.SyncResponse;
 import com.inngest.signingkey.SignatureVerificationKt;
