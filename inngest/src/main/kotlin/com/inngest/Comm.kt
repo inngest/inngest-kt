@@ -4,6 +4,7 @@ import com.beust.klaxon.Json
 import com.beust.klaxon.Klaxon
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.SerializationFeature
+import com.inngest.exception.SigningKeyRequiredException
 import com.inngest.signingkey.checkHeadersAndValidateSignature
 import com.inngest.signingkey.getAuthorizationHeader
 import com.inngest.signingkey.hashedSigningKey
@@ -244,12 +245,28 @@ class CommHandler(
         syncId: String?,
         expectedServerKind: String? = null,
     ): SyncResponse {
+        val signingKey =
+            try {
+                config.signingKey()
+            } catch (e: SigningKeyRequiredException) {
+                return SyncResponse(
+                    body =
+                        parseRequestBody(
+                            mapOf(
+                                "message" to (e.message ?: "signing key is required"),
+                                "modified" to false,
+                            ),
+                        ),
+                    statusCode = 500,
+                    headers = headers,
+                )
+            }
+
         val registrationUrl = "${config.baseUrl()}/fn/register"
         val requestPayload = getRegistrationRequestPayload(origin)
 
         val httpClient = client.httpClient
 
-        val signingKey = config.signingKey()
         val requestHeaders = mutableMapOf<String, String>()
         if (config.client.env != InngestEnv.Dev) {
             requestHeaders.putAll(getAuthorizationHeader(signingKey))
@@ -305,7 +322,12 @@ class CommHandler(
             InsecureIntrospection(
                 functionCount = allFunctions.size,
                 hasEventKey = Environment.isInngestEventKeySet(client.eventKey),
-                hasSigningKey = runCatching { config.hasSigningKey() }.getOrDefault(false),
+                hasSigningKey =
+                    try {
+                        config.hasSigningKey()
+                    } catch (e: SigningKeyRequiredException) {
+                        false
+                    },
                 mode = if (client.env == InngestEnv.Dev) "dev" else "cloud",
             )
 

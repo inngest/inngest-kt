@@ -1,5 +1,6 @@
 package com.inngest
 
+import com.inngest.exception.SigningKeyRequiredException
 import com.inngest.utility.nonBlankOrNull
 
 const val DUMMY_SIGNING_KEY = "test"
@@ -31,7 +32,7 @@ class ServeConfig
 
                 else -> {
                     Environment.systemValue(InngestSystem.SigningKey.value)
-                        ?: throw Exception("signing key is required")
+                        ?: throw SigningKeyRequiredException()
                 }
             }
         }
