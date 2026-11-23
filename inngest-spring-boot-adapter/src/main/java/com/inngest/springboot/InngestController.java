@@ -48,7 +48,7 @@ public abstract class InngestController {
         NativeWebRequest request
     ) {
         String origin = String.format("%s://%s", getRequestScheme(request), hostHeader);
-        if (this.serveOrigin != null && !this.serveOrigin.isEmpty()) {
+        if (this.serveOrigin != null && !this.serveOrigin.trim().isEmpty()) {
             origin = this.serveOrigin;
         }
         SyncResponse response = commHandler.register(
