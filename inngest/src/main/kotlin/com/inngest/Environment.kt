@@ -1,7 +1,9 @@
 package com.inngest
 
+import com.inngest.utility.nonBlankOrNull
+
 object Environment {
-    private fun systemValue(key: String): String? = System.getProperty(key) ?: System.getenv(key)
+    internal fun systemValue(key: String): String? = System.getProperty(key).nonBlankOrNull() ?: System.getenv(key).nonBlankOrNull()
 
     fun inngestSdk(): String = "inngest-kt:${Version.getVersion()}"
 
@@ -19,7 +21,7 @@ object Environment {
     private const val DUMMY_KEY_EVENT = "NO_EVENT_KEY_SET"
 
     fun inngestEventKey(key: String? = null): String {
-        if (key != null) return key
+        key.nonBlankOrNull()?.let { return it }
         return systemValue(InngestSystem.EventKey.value) ?: DUMMY_KEY_EVENT
     }
 
@@ -34,7 +36,7 @@ object Environment {
         env: InngestEnv,
         url: String? = null,
     ): String {
-        if (url != null) return url
+        url.nonBlankOrNull()?.let { return it }
 
         val baseUrl = systemValue(InngestSystem.EventApiBaseUrl.value)
         if (baseUrl != null) {
@@ -77,6 +79,7 @@ object Environment {
             }
         }
 
+        val env = env.nonBlankOrNull()
         if (env != null) {
             return when (env) {
                 "dev" -> {

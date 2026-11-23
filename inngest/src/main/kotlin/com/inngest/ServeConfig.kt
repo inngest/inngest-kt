@@ -1,5 +1,8 @@
 package com.inngest
 
+import com.inngest.exception.SigningKeyRequiredException
+import com.inngest.utility.nonBlankOrNull
+
 const val DUMMY_SIGNING_KEY = "test"
 
 class ServeConfig
@@ -15,12 +18,12 @@ class ServeConfig
         private val baseUrl: String? = null,
     ) {
         fun appId(): String {
-            if (id != null) return id
+            id.nonBlankOrNull()?.let { return it }
             return client.appId
         }
 
         fun signingKey(): String {
-            if (signingKey != null) return signingKey
+            signingKey.nonBlankOrNull()?.let { return it }
 
             return when (client.env) {
                 InngestEnv.Dev -> {
@@ -28,11 +31,8 @@ class ServeConfig
                 }
 
                 else -> {
-                    val signingKey =
-                        System.getProperty(InngestSystem.SigningKey.value)
-                            ?: System.getenv(InngestSystem.SigningKey.value)
-                            ?: throw Exception("signing key is required")
-                    signingKey
+                    Environment.systemValue(InngestSystem.SigningKey.value)
+                        ?: throw SigningKeyRequiredException()
                 }
             }
         }
@@ -40,14 +40,13 @@ class ServeConfig
         fun hasSigningKey() =
             when (signingKey()) {
                 DUMMY_SIGNING_KEY -> false
-                "" -> false
                 else -> true
             }
 
         fun baseUrl(): String {
-            if (baseUrl != null) return baseUrl
+            baseUrl.nonBlankOrNull()?.let { return it }
 
-            val url = System.getProperty(InngestSystem.ApiBaseUrl.value) ?: System.getenv(InngestSystem.ApiBaseUrl.value)
+            val url = Environment.systemValue(InngestSystem.ApiBaseUrl.value)
             if (url != null) {
                 return url
             }
@@ -59,17 +58,17 @@ class ServeConfig
         }
 
         fun serveOrigin(): String? {
-            if (serveOrigin != null) return serveOrigin
-            return System.getProperty(InngestSystem.ServeOrigin.value) ?: System.getenv(InngestSystem.ServeOrigin.value)
+            serveOrigin.nonBlankOrNull()?.let { return it }
+            return Environment.systemValue(InngestSystem.ServeOrigin.value)
         }
 
         fun servePath(): String? {
-            if (servePath != null) return servePath
-            return System.getProperty(InngestSystem.ServePath.value) ?: System.getenv(InngestSystem.ServePath.value)
+            servePath.nonBlankOrNull()?.let { return it }
+            return Environment.systemValue(InngestSystem.ServePath.value)
         }
 
         fun logLevel(): String {
-            if (logLevel != null) return logLevel
-            return System.getProperty(InngestSystem.LogLevel.value) ?: System.getenv(InngestSystem.LogLevel.value) ?: "info"
+            logLevel.nonBlankOrNull()?.let { return it }
+            return Environment.systemValue(InngestSystem.LogLevel.value) ?: "info"
         }
     }

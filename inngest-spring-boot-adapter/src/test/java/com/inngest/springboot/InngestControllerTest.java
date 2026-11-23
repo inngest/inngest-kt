@@ -19,6 +19,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockHttpServletResponse;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -51,6 +52,8 @@ public class InngestControllerTest {
 
     private MockWebServer mockWebServer;
 
+    private TestController controller;
+
     @BeforeEach
     void setUp() {
         setUpController(true, null);
@@ -65,6 +68,7 @@ public class InngestControllerTest {
             new ServeConfig(client, null, signingKey, null, null, null, null),
             SupportedFrameworkName.SpringBoot
         );
+        this.controller = controller;
         mockMvc = MockMvcBuilders.standaloneSetup(controller).build();
     }
 
@@ -205,6 +209,27 @@ public class InngestControllerTest {
         JsonNode body = MAPPER.readTree(responseBody);
         assertEquals("invalid config", body.get("message").asText());
         assertEquals(false, body.get("modified").asBoolean());
+    }
+
+    @Test
+    void putRouteFallsBackToHostOriginWhenServeOriginIsBlank() throws Exception {
+        mockWebServer = new MockWebServer();
+        mockWebServer.enqueue(new MockResponse().setBody("{\"ok\":true,\"modified\":true}"));
+        mockWebServer.start();
+        System.setProperty(
+            "INNGEST_API_BASE_URL",
+            mockWebServer.url("").toString().substring(0, mockWebServer.url("").toString().length() - 1)
+        );
+        ReflectionTestUtils.setField(controller, "serveOrigin", " ");
+
+        mockMvc.perform(put("/api/inngest")
+                .header("Host", "localhost:8080")
+                .param("deployId", "deploy-1"))
+            .andExpect(status().isOk());
+
+        RecordedRequest recordedRequest = mockWebServer.takeRequest();
+        JsonNode requestBody = MAPPER.readTree(recordedRequest.getBody().readUtf8());
+        assertEquals("http://localhost:8080/api/inngest", requestBody.get("url").asText());
     }
 
     @RestController

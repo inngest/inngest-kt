@@ -2,7 +2,6 @@ package com.inngest.springboot;
 
 import com.inngest.CommHandler;
 import com.inngest.CommResponse;
-import com.inngest.InngestEnv;
 import com.inngest.InngestQueryParamKey;
 import com.inngest.SyncResponse;
 import com.inngest.signingkey.SignatureVerificationKt;
@@ -48,7 +47,7 @@ public abstract class InngestController {
         NativeWebRequest request
     ) {
         String origin = String.format("%s://%s", getRequestScheme(request), hostHeader);
-        if (this.serveOrigin != null && !this.serveOrigin.isEmpty()) {
+        if (this.serveOrigin != null && !this.serveOrigin.trim().isEmpty()) {
             origin = this.serveOrigin;
         }
         SyncResponse response = commHandler.register(
